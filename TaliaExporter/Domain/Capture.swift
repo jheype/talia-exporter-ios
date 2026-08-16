@@ -84,7 +84,7 @@ struct CapturedMessage: Codable, Identifiable, Hashable, Sendable {
 
     var containsPrice: Bool {
         guard !isRevoked else { return false }
-        body.range(
+        return body.range(
             of: #"(?:£|\$|€|HKD|GBP|USD|EUR)\s?\d"#,
             options: [.regularExpression, .caseInsensitive]
         ) != nil
