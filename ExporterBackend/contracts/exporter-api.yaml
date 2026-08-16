@@ -1,0 +1,533 @@
+openapi: 3.1.0
+info:
+  title: Talia Exporter API
+  version: 0.1.0
+  description: Control plane and read API for linked WhatsApp capture sessions.
+servers:
+  - url: https://app.taliaai.com/api/v1
+security:
+  - cookieAuth: []
+paths:
+  /exporter/dashboard:
+    get:
+      operationId: getExporterDashboard
+      responses:
+        "200":
+          description: Current session, groups and recent activity.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dashboard"
+        "401":
+          $ref: "#/components/responses/Unauthorised"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /exporter/session:
+    get:
+      operationId: getExporterSession
+      responses:
+        "200":
+          description: Current user's exporter session.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+        "401":
+          $ref: "#/components/responses/Unauthorised"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: unlinkExporterSession
+      parameters:
+        - $ref: "#/components/parameters/ClientHeader"
+      responses:
+        "204":
+          description: WhatsApp was unlinked and the exporter session was removed.
+        "401":
+          $ref: "#/components/responses/Unauthorised"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /exporter/session/pair:
+    post:
+      operationId: pairExporterSession
+      parameters:
+        - $ref: "#/components/parameters/ClientHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [phone_number]
+              properties:
+                phone_number:
+                  type: string
+                  pattern: '^\+[1-9][0-9]{7,14}$'
+                  examples: ["+447700900123"]
+      responses:
+        "201":
+          description: Pairing code generated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PairingCode"
+        "401":
+          $ref: "#/components/responses/Unauthorised"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/InvalidRequest"
+  /exporter/session/capture:
+    put:
+      operationId: setExporterCapture
+      parameters:
+        - $ref: "#/components/parameters/ClientHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [enabled]
+              properties:
+                enabled:
+                  type: boolean
+      responses:
+        "200":
+          description: Updated exporter session.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+        "401":
+          $ref: "#/components/responses/Unauthorised"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/InvalidRequest"
+  /exporter/session/preferences:
+    put:
+      operationId: setExporterPreferences
+      parameters:
+        - $ref: "#/components/parameters/ClientHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [include_media]
+              properties:
+                include_media:
+                  type: boolean
+      responses:
+        "200":
+          description: Updated exporter session.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+        "401":
+          $ref: "#/components/responses/Unauthorised"
+  /exporter/groups:
+    get:
+      operationId: listExporterGroups
+      responses:
+        "200":
+          description: Groups discovered from the linked account.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Group"
+        "401":
+          $ref: "#/components/responses/Unauthorised"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /exporter/groups/selection:
+    put:
+      operationId: saveExporterGroupSelection
+      parameters:
+        - $ref: "#/components/parameters/ClientHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [group_jids]
+              properties:
+                group_jids:
+                  type: array
+                  maxItems: 2000
+                  uniqueItems: true
+                  items:
+                    type: string
+      responses:
+        "200":
+          description: Updated exporter session.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+        "401":
+          $ref: "#/components/responses/Unauthorised"
+        "422":
+          $ref: "#/components/responses/InvalidRequest"
+  /exporter/messages:
+    get:
+      operationId: listCapturedMessages
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: Captured messages in reverse chronological order.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessagePage"
+        "401":
+          $ref: "#/components/responses/Unauthorised"
+  /exporter/events:
+    get:
+      operationId: listExporterEvents
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: Operational events in reverse chronological order.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventPage"
+        "401":
+          $ref: "#/components/responses/Unauthorised"
+  /exporter/devices:
+    post:
+      operationId: registerExporterDevice
+      parameters:
+        - $ref: "#/components/parameters/ClientHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [token, platform]
+              properties:
+                token:
+                  type: string
+                  pattern: '^[0-9a-f]{64}$'
+                platform:
+                  type: string
+                  const: ios
+      responses:
+        "204":
+          description: Device token registered.
+        "401":
+          $ref: "#/components/responses/Unauthorised"
+        "422":
+          $ref: "#/components/responses/InvalidRequest"
+    delete:
+      operationId: unregisterExporterDevices
+      parameters:
+        - $ref: "#/components/parameters/ClientHeader"
+      responses:
+        "204":
+          description: All notification tokens for the user were removed.
+        "401":
+          $ref: "#/components/responses/Unauthorised"
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: access_token
+  parameters:
+    ClientHeader:
+      name: X-Talia-Client
+      in: header
+      required: true
+      schema:
+        type: string
+        enum: [ios, web-v14]
+    Limit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+    Cursor:
+      name: cursor
+      in: query
+      required: false
+      schema:
+        type: string
+  responses:
+    Unauthorised:
+      description: The v14 session is missing or expired.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFound:
+      description: Exporter session not found.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Conflict:
+      description: Current exporter state does not permit the operation.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    InvalidRequest:
+      description: Supplied values are invalid.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+  schemas:
+    Session:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - user_id
+        - status
+        - capture_enabled
+        - include_media
+        - selected_group_count
+        - captured_message_count
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        phone_number:
+          type: [string, "null"]
+        status:
+          type: string
+          enum: [unlinked, pairing, connecting, connected, reconnecting, paused, interrupted, logged_out]
+        capture_enabled:
+          type: boolean
+        include_media:
+          type: boolean
+        linked_at:
+          type: [string, "null"]
+          format: date-time
+        last_connected_at:
+          type: [string, "null"]
+          format: date-time
+        last_message_at:
+          type: [string, "null"]
+          format: date-time
+        last_synchronised_at:
+          type: [string, "null"]
+          format: date-time
+        last_error:
+          type: [string, "null"]
+        selected_group_count:
+          type: integer
+          minimum: 0
+        captured_message_count:
+          type: integer
+          minimum: 0
+    PairingCode:
+      type: object
+      additionalProperties: false
+      required: [session, code, expires_at]
+      properties:
+        session:
+          $ref: "#/components/schemas/Session"
+        code:
+          type: string
+          pattern: '^[0-9]{8}$'
+        expires_at:
+          type: string
+          format: date-time
+    Group:
+      type: object
+      additionalProperties: false
+      required: [jid, name, participant_count, is_selected]
+      properties:
+        jid:
+          type: string
+        name:
+          type: string
+        participant_count:
+          type: integer
+          minimum: 0
+        is_selected:
+          type: boolean
+        last_message_at:
+          type: [string, "null"]
+          format: date-time
+    Message:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - whatsapp_message_id
+        - group_jid
+        - group_name
+        - sender_jid
+        - sender
+        - body
+        - type
+        - timestamp
+        - is_from_me
+        - has_media
+        - is_edited
+        - is_revoked
+        - revision
+        - media_metadata
+      properties:
+        id:
+          type: string
+          format: uuid
+        whatsapp_message_id:
+          type: string
+        group_jid:
+          type: string
+        group_name:
+          type: string
+        sender_jid:
+          type: string
+        sender:
+          type: string
+        body:
+          type: string
+        type:
+          type: string
+          enum: [text, image, video, audio, document, sticker, contact, location, poll, reaction, system, unknown]
+        timestamp:
+          type: string
+          format: date-time
+        is_from_me:
+          type: boolean
+        has_media:
+          type: boolean
+        is_edited:
+          type: boolean
+        is_revoked:
+          type: boolean
+        revision:
+          type: integer
+          minimum: 1
+        media_metadata:
+          oneOf:
+            - $ref: "#/components/schemas/MediaMetadata"
+            - type: "null"
+    MediaMetadata:
+      type: object
+      additionalProperties: false
+      properties:
+        mime_type:
+          type: string
+        file_name:
+          type: string
+        file_size_bytes:
+          type: integer
+          minimum: 0
+        width:
+          type: integer
+          minimum: 0
+        height:
+          type: integer
+          minimum: 0
+        duration_seconds:
+          type: integer
+          minimum: 0
+        page_count:
+          type: integer
+          minimum: 0
+        is_animated:
+          type: boolean
+        is_voice_message:
+          type: boolean
+    Event:
+      type: object
+      additionalProperties: false
+      required: [id, group_name, detail, created_at, kind]
+      properties:
+        id:
+          type: string
+          format: uuid
+        group_name:
+          type: string
+        detail:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        kind:
+          type: string
+          enum: [Captured, Synchronised, Needs attention]
+    Dashboard:
+      type: object
+      additionalProperties: false
+      required: [session, groups, events, messages]
+      properties:
+        session:
+          $ref: "#/components/schemas/Session"
+        groups:
+          type: array
+          items:
+            $ref: "#/components/schemas/Group"
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/Event"
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/Message"
+    MessagePage:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Message"
+        next_cursor:
+          type: [string, "null"]
+    EventPage:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Event"
+        next_cursor:
+          type: [string, "null"]
+    Error:
+      type: object
+      required: [detail]
+      properties:
+        detail:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+            message:
+              type: string

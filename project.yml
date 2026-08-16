@@ -1,0 +1,46 @@
+name: TaliaExporter
+
+options:
+  bundleIdPrefix: com.talia
+  deploymentTarget:
+    iOS: "17.0"
+  generateEmptyDirectories: true
+
+settings:
+  base:
+    SWIFT_VERSION: 5.0
+    CURRENT_PROJECT_VERSION: 1
+    MARKETING_VERSION: 0.1.0
+
+targets:
+  TaliaExporter:
+    type: application
+    platform: iOS
+    sources:
+      - path: TaliaExporter
+    settings:
+      base:
+        CODE_SIGN_ENTITLEMENTS: TaliaExporter/Resources/TaliaExporter.entitlements
+        PRODUCT_BUNDLE_IDENTIFIER: com.talia.exporter
+        PRODUCT_NAME: Talia Exporter
+        GENERATE_INFOPLIST_FILE: false
+        INFOPLIST_FILE: TaliaExporter/Resources/Info.plist
+        TARGETED_DEVICE_FAMILY: 1
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        SUPPORTS_MACCATALYST: false
+        ENABLE_PREVIEWS: true
+      configs:
+        Debug:
+          APS_ENVIRONMENT: development
+        Release:
+          APS_ENVIRONMENT: production
+
+schemes:
+  TaliaExporter:
+    build:
+      targets:
+        TaliaExporter: all
+    run:
+      config: Debug
+    archive:
+      config: Release

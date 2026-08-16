@@ -1,0 +1,63 @@
+name: Exporter backend
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: talia
+          POSTGRES_PASSWORD: talia-test
+          POSTGRES_DB: talia_exporter_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U talia -d talia_exporter_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgres://talia:talia-test@localhost:5432/talia_exporter_test?sslmode=disable
+    defaults:
+      run:
+        working-directory: ExporterBackend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.25.0"
+          cache-dependency-path: ExporterBackend/go.sum
+
+      - name: Verify dependencies
+        run: go mod verify
+
+      - name: Check formatting
+        run: test -z "$(gofmt -l .)"
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test with race detector
+        run: go test -race -coverprofile=coverage.out ./...
+
+      - name: Vulnerability scan
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.7.0 ./...
+
+      - name: Build
+        run: CGO_ENABLED=0 go build -trimpath ./cmd/exporter-api
