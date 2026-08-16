@@ -39,7 +39,7 @@ enum AppConfiguration {
             return url
         }
 
-        return URL(string: "https://app.taliaai.com/api/v1/")!
+        return URL(string: "https://api.talia.co.uk/api/v1/")!
     }
 
     private static func validatedBaseURL(_ value: String) -> URL? {

@@ -4,7 +4,7 @@ The service is the long-running capture component behind the iOS app. The iPhone
 
 ## Runtime boundaries
 
-- Talia remains the identity authority. Every Exporter request is authenticated by forwarding the existing cookie or bearer credential to `/api/auth/me`.
+- v14 remains the identity authority. Every Exporter request is authenticated by forwarding the existing cookie or bearer credential to v14 `/api/v1/auth/me`.
 - The public API should remain on the v14 origin. Route `/api/v1/exporter/*` to this service and all other `/api/v1/*` routes to v14.
 - WhatsApp device keys are persisted by `whatsmeow` in PostgreSQL. They never reach the iPhone or API responses.
 - Captured records use separate `exporter_*` tables. `exporter_delivery_outbox` is the idempotent boundary for the later v14 ingestion worker.

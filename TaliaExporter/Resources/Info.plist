@@ -34,7 +34,7 @@
 		<true/>
 	</dict>
 	<key>TALIA_API_BASE_URL</key>
-	<string>https://app.taliaai.com/api/v1/</string>
+	<string>https://api.talia.co.uk/api/v1/</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchScreen</key>

@@ -39,10 +39,6 @@ private extension URLError {
 }
 
 actor APIClient {
-    private enum IdentityPath {
-        static let refresh = "/api/auth/refresh"
-    }
-
     private let baseURL: URL
     private let session: URLSession
     private let decoder: JSONDecoder
@@ -125,7 +121,7 @@ actor APIClient {
         let task = Task { [baseURL, session] in
             guard let refreshURL = Self.endpointURL(
                 baseURL: baseURL,
-                path: IdentityPath.refresh
+                path: "auth/refresh"
             ) else {
                 throw APIError(
                     statusCode: nil,

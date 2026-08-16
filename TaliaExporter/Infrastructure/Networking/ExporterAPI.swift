@@ -19,16 +19,6 @@ protocol ExporterServing: Sendable {
 }
 
 actor ExporterAPI: ExporterServing {
-    private enum IdentityPath {
-        static let currentUser = "/api/auth/me"
-        static let login = "/api/auth/login"
-        static let logout = "/api/auth/logout"
-    }
-
-    private struct CurrentUserResponse: Codable, Sendable {
-        let user: TaliaUser
-    }
-
     private struct Credentials: Codable, Sendable {
         let email: String
         let password: String
@@ -53,17 +43,13 @@ actor ExporterAPI: ExporterServing {
     }
 
     func currentUser() async throws -> TaliaUser {
-        let response: CurrentUserResponse = try await client.send(
-            .get,
-            path: IdentityPath.currentUser
-        )
-        return response.user
+        try await client.send(.get, path: "auth/me")
     }
 
     func signIn(email: String, password: String) async throws -> TaliaUser {
         let response: LoginResponse = try await client.send(
             .post,
-            path: IdentityPath.login,
+            path: "auth/login",
             body: Credentials(email: email, password: password),
             allowsRefresh: false
         )
@@ -74,7 +60,7 @@ actor ExporterAPI: ExporterServing {
         do {
             try await client.sendWithoutResponse(
                 .post,
-                path: IdentityPath.logout,
+                path: "auth/logout",
                 allowsRefresh: false
             )
         } catch {

@@ -58,7 +58,7 @@ func TestLoadRejectsInvalidDuration(t *testing.T) {
 func setRequiredEnvironment(t *testing.T) {
 	t.Helper()
 	t.Setenv("DATABASE_URL", "postgres://talia:talia@postgres/talia")
-	t.Setenv("V14_AUTH_ME_URL", "https://app.taliaai.com/api/auth/me")
+	t.Setenv("V14_AUTH_ME_URL", "https://api.talia.co.uk/api/v1/auth/me")
 	t.Setenv("AUTH_TIMEOUT", "")
 	t.Setenv("SHUTDOWN_TIMEOUT", "")
 	t.Setenv("SESSION_RECONCILE_INTERVAL", "")

@@ -4,7 +4,7 @@ info:
   version: 0.1.0
   description: Control plane and read API for linked WhatsApp capture sessions.
 servers:
-  - url: https://app.taliaai.com/api/v1
+  - url: https://api.talia.co.uk/api/v1
 security:
   - cookieAuth: []
 paths:

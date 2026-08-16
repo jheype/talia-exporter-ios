@@ -12,17 +12,15 @@ docs/                Architecture and v14 integration boundary
 
 ## iOS application
 
-The app targets iOS 17 and later. It uses the existing Talia identity endpoints, requests phone-number pairing, discovers groups, stores a minimal encrypted dashboard cache and controls capture through the Exporter API.
+The app targets iOS 17 and later. It uses the existing v14 authentication endpoints, requests phone-number pairing, discovers groups, stores a minimal encrypted dashboard cache and controls capture through the Exporter API.
 
 Open `TaliaExporter.xcodeproj`, select an iPhone simulator and press `Command + R`.
 
 The default API URL is:
 
 ```text
-https://app.taliaai.com/api/v1/
+https://api.talia.co.uk/api/v1/
 ```
-
-Identity requests use the canonical `/api/auth/*` routes on the same origin. Exporter requests remain under `/api/v1/exporter/*`.
 
 For a Debug run, set `TALIA_API_BASE_URL` in the Xcode scheme environment to point to another deployment. The URL must include `/api/v1/`.
 

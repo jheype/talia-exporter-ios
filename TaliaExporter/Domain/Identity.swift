@@ -31,4 +31,3 @@ struct TaliaUser: Codable, Equatable, Sendable {
 struct LoginResponse: Codable, Sendable {
     let user: TaliaUser
 }
-
