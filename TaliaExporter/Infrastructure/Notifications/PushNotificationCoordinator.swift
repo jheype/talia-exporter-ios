@@ -1,11 +1,12 @@
 import UIKit
 import UserNotifications
 
-@MainActor
 protocol PushNotificationCoordinating: Sendable {
     func isAuthorised() async -> Bool
     func requestAuthorisation() async throws -> Bool
+    @MainActor
     func registerForRemoteNotifications()
+    @MainActor
     func unregisterForRemoteNotifications()
 }
 
@@ -28,10 +29,12 @@ struct SystemPushNotificationCoordinator: PushNotificationCoordinating {
         )
     }
 
+    @MainActor
     func registerForRemoteNotifications() {
         UIApplication.shared.registerForRemoteNotifications()
     }
 
+    @MainActor
     func unregisterForRemoteNotifications() {
         UIApplication.shared.unregisterForRemoteNotifications()
     }
@@ -40,6 +43,8 @@ struct SystemPushNotificationCoordinator: PushNotificationCoordinating {
 struct PreviewPushNotificationCoordinator: PushNotificationCoordinating {
     func isAuthorised() async -> Bool { true }
     func requestAuthorisation() async throws -> Bool { true }
+    @MainActor
     func registerForRemoteNotifications() {}
+    @MainActor
     func unregisterForRemoteNotifications() {}
 }

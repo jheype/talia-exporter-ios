@@ -4,6 +4,7 @@ import UIKit
 import UserNotifications
 
 @main
+@MainActor
 struct TaliaExporterApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var appModel = AppModel()
