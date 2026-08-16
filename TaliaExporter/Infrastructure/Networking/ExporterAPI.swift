@@ -19,6 +19,16 @@ protocol ExporterServing: Sendable {
 }
 
 actor ExporterAPI: ExporterServing {
+    private enum IdentityPath {
+        static let currentUser = "/api/auth/me"
+        static let login = "/api/auth/login"
+        static let logout = "/api/auth/logout"
+    }
+
+    private struct CurrentUserResponse: Codable, Sendable {
+        let user: TaliaUser
+    }
+
     private struct Credentials: Codable, Sendable {
         let email: String
         let password: String
@@ -43,13 +53,17 @@ actor ExporterAPI: ExporterServing {
     }
 
     func currentUser() async throws -> TaliaUser {
-        try await client.send(.get, path: "auth/me")
+        let response: CurrentUserResponse = try await client.send(
+            .get,
+            path: IdentityPath.currentUser
+        )
+        return response.user
     }
 
     func signIn(email: String, password: String) async throws -> TaliaUser {
         let response: LoginResponse = try await client.send(
             .post,
-            path: "auth/login",
+            path: IdentityPath.login,
             body: Credentials(email: email, password: password),
             allowsRefresh: false
         )
@@ -58,7 +72,11 @@ actor ExporterAPI: ExporterServing {
 
     func signOut() async throws {
         do {
-            try await client.sendWithoutResponse(.post, path: "auth/logout", allowsRefresh: false)
+            try await client.sendWithoutResponse(
+                .post,
+                path: IdentityPath.logout,
+                allowsRefresh: false
+            )
         } catch {
             await client.clearAuthenticationCookies()
             throw error

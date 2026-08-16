@@ -39,6 +39,10 @@ private extension URLError {
 }
 
 actor APIClient {
+    private enum IdentityPath {
+        static let refresh = "/api/auth/refresh"
+    }
+
     private let baseURL: URL
     private let session: URLSession
     private let decoder: JSONDecoder
@@ -119,7 +123,17 @@ actor APIClient {
         }
 
         let task = Task { [baseURL, session] in
-            var request = URLRequest(url: baseURL.appending(path: "auth/refresh"))
+            guard let refreshURL = Self.endpointURL(
+                baseURL: baseURL,
+                path: IdentityPath.refresh
+            ) else {
+                throw APIError(
+                    statusCode: nil,
+                    code: "CLIENT.INVALID_URL",
+                    message: "Invalid service URL."
+                )
+            }
+            var request = URLRequest(url: refreshURL)
             request.httpMethod = HTTPMethod.post.rawValue
             request.timeoutInterval = 20
             request.setValue("application/json", forHTTPHeaderField: "Accept")
@@ -169,10 +183,10 @@ actor APIClient {
         queryItems: [URLQueryItem],
         body: (any Encodable & Sendable)?
     ) throws -> URLRequest {
-        var components = URLComponents(
-            url: baseURL.appending(path: path),
-            resolvingAgainstBaseURL: false
-        )
+        guard let endpointURL = Self.endpointURL(baseURL: baseURL, path: path) else {
+            throw APIError(statusCode: nil, code: "CLIENT.INVALID_URL", message: "Invalid service URL.")
+        }
+        var components = URLComponents(url: endpointURL, resolvingAgainstBaseURL: false)
         if !queryItems.isEmpty {
             components?.queryItems = queryItems
         }
@@ -253,16 +267,32 @@ actor APIClient {
                 message = detail
             } else {
                 code = object["code"] as? String ?? code
-                message = object["message"] as? String ?? message
+                message = object["message"] as? String
+                    ?? object["error"] as? String
+                    ?? message
             }
         }
         return APIError(statusCode: statusCode, code: code, message: message)
     }
 
+    private static func endpointURL(baseURL: URL, path: String) -> URL? {
+        guard path.hasPrefix("/") else {
+            return baseURL.appending(path: path)
+        }
+
+        guard var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false) else {
+            return nil
+        }
+        components.path = path
+        components.query = nil
+        components.fragment = nil
+        return components.url
+    }
+
     private static func makeSession() -> URLSession {
         let configuration = URLSessionConfiguration.default
         configuration.httpShouldSetCookies = true
-        configuration.httpCookieAcceptPolicy = .onlyFromMainDocumentDomain
+        configuration.httpCookieAcceptPolicy = .always
         configuration.httpCookieStorage = .shared
         configuration.waitsForConnectivity = true
         configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
