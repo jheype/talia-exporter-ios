@@ -57,8 +57,19 @@ extension AppModel {
 
         do {
             let selected = groups.filter(\.isSelected).map(\.id)
-            session = try await api.saveSelection(groupJIDs: selected)
-            session = try await api.setCaptureEnabled(true)
+            // The backend atomically enables capture with the first non-empty
+            // selection, then starts history only after that transaction commits.
+            // A second capture request recreated the exact window in which early
+            // history pages could be acknowledged but discarded.
+            let startedSession = try await api.saveSelection(groupJIDs: selected)
+            guard startedSession.captureEnabled else {
+                throw APIError(
+                    statusCode: nil,
+                    code: "CLIENT.ATOMIC_CAPTURE_NOT_ENABLED",
+                    message: "Exporter did not enable capture with the selected groups. Update the backend before using this app build."
+                )
+            }
+            session = startedSession
             route = .main
             selectedTab = .home
             pairingCode = nil

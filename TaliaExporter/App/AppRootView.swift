@@ -2,6 +2,7 @@ import SwiftUI
 
 struct AppRootView: View {
     @EnvironmentObject private var appModel: AppModel
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         Group {
@@ -23,11 +24,11 @@ struct AppRootView: View {
         .task {
             await appModel.bootstrap()
         }
-        .task(id: appModel.route) {
-            guard appModel.route == .main else { return }
+        .task(id: "\(appModel.route)-\(scenePhase)") {
+            guard appModel.route == .main, scenePhase == .active else { return }
             while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(5))
-                guard !Task.isCancelled else { return }
+                try? await Task.sleep(for: .seconds(10))
+                guard !Task.isCancelled, scenePhase == .active else { return }
                 await appModel.refreshDashboard(showErrors: false)
             }
         }

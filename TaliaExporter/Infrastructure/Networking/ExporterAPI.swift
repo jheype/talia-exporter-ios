@@ -8,13 +8,12 @@ protocol ExporterServing: Sendable {
     func session() async throws -> ExporterSession?
     func requestPairingCode(phoneNumber: String) async throws -> PairingCodeResponse
     func groups() async throws -> [ExportGroup]
-    func historySyncGroups() async throws -> [ExportGroup]
     func retryHistorySync(groupJIDs: [String]) async throws -> [ExportGroup]
     func saveSelection(groupJIDs: [String]) async throws -> ExporterSession
     func setCaptureEnabled(_ enabled: Bool) async throws -> ExporterSession
     func setPreferences(_ preferences: CapturePreferences) async throws -> ExporterSession
     func unlinkSession() async throws
-    func messages(limit: Int) async throws -> [CapturedMessage]
+    func messagesPage(limit: Int, cursor: String?) async throws -> CursorPage<CapturedMessage>
     func events(limit: Int) async throws -> [CaptureEvent]
     func registerDevice(token: String) async throws
     func unregisterDevices() async throws
@@ -96,10 +95,6 @@ actor ExporterAPI: ExporterServing {
         try await client.send(.get, path: "exporter/groups")
     }
 
-    func historySyncGroups() async throws -> [ExportGroup] {
-        try await client.send(.get, path: "exporter/groups/history-sync")
-    }
-
     func retryHistorySync(groupJIDs: [String]) async throws -> [ExportGroup] {
         try await client.send(
             .post,
@@ -136,13 +131,14 @@ actor ExporterAPI: ExporterServing {
         try await client.sendWithoutResponse(.delete, path: "exporter/session")
     }
 
-    func messages(limit: Int) async throws -> [CapturedMessage] {
-        let page: CursorPage<CapturedMessage> = try await client.send(
+    func messagesPage(limit: Int, cursor: String?) async throws -> CursorPage<CapturedMessage> {
+        var queryItems = [URLQueryItem(name: "limit", value: String(limit))]
+        if let cursor { queryItems.append(URLQueryItem(name: "cursor", value: cursor)) }
+        return try await client.send(
             .get,
             path: "exporter/messages",
-            queryItems: [URLQueryItem(name: "limit", value: String(limit))]
+            queryItems: queryItems
         )
-        return page.items
     }
 
     func events(limit: Int) async throws -> [CaptureEvent] {
@@ -196,8 +192,6 @@ actor PreviewExporterAPI: ExporterServing {
 
     func groups() async throws -> [ExportGroup] { currentGroups }
 
-    func historySyncGroups() async throws -> [ExportGroup] { currentGroups }
-
     func retryHistorySync(groupJIDs: [String]) async throws -> [ExportGroup] {
         currentGroups = currentGroups.map { group in
             guard groupJIDs.contains(group.id) else { return group }
@@ -233,7 +227,17 @@ actor PreviewExporterAPI: ExporterServing {
     func setCaptureEnabled(_ enabled: Bool) async throws -> ExporterSession { currentSession }
     func setPreferences(_ preferences: CapturePreferences) async throws -> ExporterSession { currentSession }
     func unlinkSession() async throws {}
-    func messages(limit: Int) async throws -> [CapturedMessage] { Array(PreviewData.messages.prefix(limit)) }
+
+    func messagesPage(limit: Int, cursor: String?) async throws -> CursorPage<CapturedMessage> {
+        let offset = max(0, Int(cursor ?? "0") ?? 0)
+        let end = min(offset + max(1, limit), PreviewData.messages.count)
+        let items = offset < end ? Array(PreviewData.messages[offset..<end]) : []
+        return CursorPage(
+            items: items,
+            nextCursor: end < PreviewData.messages.count ? String(end) : nil
+        )
+    }
+
     func events(limit: Int) async throws -> [CaptureEvent] { Array(PreviewData.events.prefix(limit)) }
     func registerDevice(token: String) async throws {}
     func unregisterDevices() async throws {}

@@ -8,20 +8,33 @@ enum GroupHistorySyncState: String, Codable, Hashable, Sendable {
     case receiving
     case complete
     case stalled
+    case availabilityLimited = "availability_limited"
     case failed
+    case unknown
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let value = try container.decode(String.self)
+        self = Self(rawValue: value) ?? .unknown
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
 
     var isActive: Bool {
         switch self {
         case .idle, .queued, .requesting, .receiving:
             true
-        case .waitingForAnchor, .complete, .stalled, .failed:
+        case .waitingForAnchor, .complete, .stalled, .availabilityLimited, .failed, .unknown:
             false
         }
     }
 
     var canRetry: Bool {
         switch self {
-        case .waitingForAnchor, .stalled, .failed:
+        case .waitingForAnchor, .stalled, .availabilityLimited, .failed:
             true
         default:
             false

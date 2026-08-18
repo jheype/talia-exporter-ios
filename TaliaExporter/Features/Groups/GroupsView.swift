@@ -36,9 +36,6 @@ struct GroupsView: View {
             .refreshable {
                 await appModel.refreshGroups()
             }
-            .task {
-                await appModel.monitorHistorySync()
-            }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
@@ -145,18 +142,18 @@ private struct GroupHistoryProgress: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 7) {
-            if state == .complete {
-                ProgressView(value: 1)
-                    .progressViewStyle(.linear)
-                    .tint(Color.taliaLive)
-            } else if state.isActive {
+            if state.isActive {
                 ProgressView()
                     .progressViewStyle(.linear)
                     .tint(Color.taliaBlue)
-            } else {
+            } else if state != .complete {
                 ProgressView(value: 0)
                     .progressViewStyle(.linear)
-                    .tint(state == .waitingForAnchor ? Color.orange : Color.red)
+                    .tint(
+                        state == .waitingForAnchor || state == .availabilityLimited || state == .unknown
+                            ? Color.orange
+                            : Color.red
+                    )
             }
 
             HStack(alignment: .firstTextBaseline, spacing: 8) {
@@ -202,17 +199,21 @@ private struct GroupHistoryProgress: View {
         case .waitingForAnchor:
             "Waiting for a recent message"
         case .complete:
-            "Available history captured"
+            "Latest available batch captured"
         case .stalled:
             "History capture stalled"
+        case .availabilityLimited:
+            "Older history is phone-limited"
         case .failed:
             "History capture failed"
+        case .unknown:
+            "History status unavailable"
         }
     }
 
     private var statusDetail: String {
         if let error = group.historySyncLastError,
-           state == .waitingForAnchor || state == .stalled || state == .failed {
+           state == .waitingForAnchor || state == .stalled || state == .availabilityLimited || state == .failed {
             return "\(group.capturedTextDescription). \(error)"
         }
         let batches = group.historyBatchCount ?? 0
@@ -220,6 +221,9 @@ private struct GroupHistoryProgress: View {
             date: .abbreviated,
             time: .shortened
         ) ?? "not available yet"
+        if state == .complete {
+            return "\(group.capturedTextDescription) · oldest \(oldest). Live capture stays on."
+        }
         return "\(group.capturedTextDescription) · \(batches) \(batches == 1 ? "batch" : "batches") · oldest \(oldest)"
     }
 
@@ -227,7 +231,7 @@ private struct GroupHistoryProgress: View {
         switch state {
         case .complete:
             .taliaLive
-        case .waitingForAnchor:
+        case .waitingForAnchor, .availabilityLimited, .unknown:
             .orange
         case .stalled, .failed:
             .red

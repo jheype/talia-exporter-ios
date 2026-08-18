@@ -58,6 +58,7 @@ struct CapturedMessage: Codable, Identifiable, Hashable, Sendable {
     let isEdited: Bool
     let isRevoked: Bool
     let revision: Int
+    var updatedAt: Date? = nil
     let mediaMetadata: CapturedMediaMetadata?
 
     enum CodingKeys: String, CodingKey {
@@ -75,7 +76,16 @@ struct CapturedMessage: Codable, Identifiable, Hashable, Sendable {
         case isEdited = "is_edited"
         case isRevoked = "is_revoked"
         case revision
+        case updatedAt = "updated_at"
         case mediaMetadata = "media_metadata"
+    }
+
+    var changeTimestamp: Date {
+        updatedAt ?? timestamp
+    }
+
+    var isTombstone: Bool {
+        isRevoked || type != .text || body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     var time: String {
@@ -140,4 +150,39 @@ struct DashboardSnapshot: Codable, Sendable {
     let groups: [ExportGroup]
     let events: [CaptureEvent]
     let messages: [CapturedMessage]
+}
+
+struct MessageChangeWatermark: Equatable, Sendable {
+    let updatedAt: Date
+    let id: UUID
+
+    func isAtOrBefore(_ other: MessageChangeWatermark) -> Bool {
+        if updatedAt != other.updatedAt { return updatedAt < other.updatedAt }
+        return id.uuidString <= other.id.uuidString
+    }
+}
+
+struct MessageChangeRecord: Sendable {
+    let updatedAt: Date
+    let revision: Int
+    let isTombstone: Bool
+
+    func isOlder(than other: MessageChangeRecord) -> Bool {
+        if updatedAt != other.updatedAt { return updatedAt < other.updatedAt }
+        return revision < other.revision
+    }
+}
+
+extension CapturedMessage {
+    var changeWatermark: MessageChangeWatermark {
+        MessageChangeWatermark(updatedAt: changeTimestamp, id: id)
+    }
+
+    var changeRecord: MessageChangeRecord {
+        MessageChangeRecord(
+            updatedAt: changeTimestamp,
+            revision: revision,
+            isTombstone: isTombstone
+        )
+    }
 }

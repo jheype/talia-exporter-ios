@@ -27,7 +27,16 @@ final class AppModel: ObservableObject {
     let pushNotifications: any PushNotificationCoordinating
     var pairingTask: Task<Void, Never>?
     var selectionTask: Task<Void, Never>?
+    var selectionTaskID: UUID?
+    var selectionRevision: UInt64 = 0
+    var stateReadRevision: UInt64 = 0
     var isRefreshingDashboard = false
+    var isRefreshingMessages = false
+    var messageChangeWatermark: MessageChangeWatermark?
+    var messageCatchupCursor: String?
+    var messageCatchupTarget: MessageChangeWatermark?
+    var messageCatchupHead: MessageChangeWatermark?
+    var latestMessageChanges: [UUID: MessageChangeRecord] = [:]
 
     static let interruptionAlertsKey = "talia.exporter.interruption-alerts"
 
@@ -106,10 +115,22 @@ final class AppModel: ObservableObject {
     }
 
     func performBackgroundRefresh() async -> Bool {
-        guard user != nil, route == .main else { return true }
+        guard user != nil, route == .main, !isRefreshingDashboard else { return true }
+        isRefreshingDashboard = true
+        defer { isRefreshingDashboard = false }
+        stateReadRevision &+= 1
+        let requestedStateReadRevision = stateReadRevision
+        let requestedSelectionRevision = selectionRevision
+        let selectionWasStable = selectionTask == nil
         do {
             let snapshot = try await api.dashboard()
-            apply(snapshot)
+            apply(
+                snapshot,
+                requestedStateReadRevision: requestedStateReadRevision,
+                requestedSelectionRevision: requestedSelectionRevision,
+                selectionWasStable: selectionWasStable
+            )
+            _ = await refreshMessageChanges(showErrors: false, pageBudget: 2)
             await persistDashboard()
             return true
         } catch {
@@ -117,11 +138,79 @@ final class AppModel: ObservableObject {
         }
     }
 
-    func apply(_ snapshot: DashboardSnapshot) {
-        session = snapshot.session
-        groups = snapshot.groups
-        events = snapshot.events
-        messages = snapshot.messages
+    func apply(
+        _ snapshot: DashboardSnapshot,
+        requestedStateReadRevision: UInt64,
+        requestedSelectionRevision: UInt64,
+        selectionWasStable: Bool
+    ) {
+        // A GET that started before or during an optimistic selection edit may
+        // complete after the PUT. Only a request made from the same stable
+        // selection generation may replace selection-derived session/group
+        // fields. Events and message changes are independent and remain safe to
+        // merge.
+        if selectionWasStable,
+           selectionTask == nil,
+           requestedStateReadRevision == stateReadRevision,
+           requestedSelectionRevision == selectionRevision {
+            session = snapshot.session
+            groups = snapshot.groups
+        }
+        if requestedStateReadRevision == stateReadRevision {
+            events = snapshot.events
+        }
+        mergeMessages(snapshot.messages)
+    }
+
+    func mergeMessages(_ incoming: [CapturedMessage]) {
+        var byID = Dictionary(uniqueKeysWithValues: messages.map { ($0.id, $0) })
+        for message in messages where latestMessageChanges[message.id] == nil {
+            latestMessageChanges[message.id] = message.changeRecord
+        }
+        for message in incoming {
+            let candidate = message.changeRecord
+            if let latest = latestMessageChanges[message.id] {
+                if candidate.isOlder(than: latest) { continue }
+                if !latest.isOlder(than: candidate),
+                   latest.isTombstone,
+                   !candidate.isTombstone {
+                    continue
+                }
+            }
+            latestMessageChanges[message.id] = candidate
+            if message.isTombstone {
+                byID.removeValue(forKey: message.id)
+            } else {
+                byID[message.id] = message
+            }
+        }
+        messages = byID.values.sorted { left, right in
+            if left.timestamp != right.timestamp {
+                return left.timestamp > right.timestamp
+            }
+            return left.id.uuidString < right.id.uuidString
+        }
+        pruneMessageChangeLedger()
+    }
+
+    private func pruneMessageChangeLedger(limit: Int = 20_000) {
+        guard latestMessageChanges.count > limit else { return }
+        let activeIDs = Set(messages.map(\.id))
+        let tombstoneCapacity = max(0, limit - activeIDs.count)
+        let newestTombstones = latestMessageChanges
+            .filter { !activeIDs.contains($0.key) }
+            .sorted { left, right in
+                if left.value.updatedAt != right.value.updatedAt {
+                    return left.value.updatedAt > right.value.updatedAt
+                }
+                return left.key.uuidString > right.key.uuidString
+            }
+            .prefix(tombstoneCapacity)
+        var retained = latestMessageChanges.filter { activeIDs.contains($0.key) }
+        for entry in newestTombstones {
+            retained[entry.key] = entry.value
+        }
+        latestMessageChanges = retained
     }
 
     func restoreCache() async {
@@ -139,6 +228,10 @@ final class AppModel: ObservableObject {
     func resetAuthenticatedState() async {
         pairingTask?.cancel()
         selectionTask?.cancel()
+        selectionTask = nil
+        selectionTaskID = nil
+        selectionRevision &+= 1
+        stateReadRevision &+= 1
         pushNotifications.unregisterForRemoteNotifications()
         UserDefaults.standard.set(false, forKey: Self.interruptionAlertsKey)
         user = nil
@@ -146,6 +239,11 @@ final class AppModel: ObservableObject {
         groups = []
         events = []
         messages = []
+        messageChangeWatermark = nil
+        messageCatchupCursor = nil
+        messageCatchupTarget = nil
+        messageCatchupHead = nil
+        latestMessageChanges = [:]
         pairingCode = nil
         pairingExpiresAt = nil
         historyRetryingGroupIDs = []
