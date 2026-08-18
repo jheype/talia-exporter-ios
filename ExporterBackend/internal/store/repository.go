@@ -30,10 +30,17 @@ type Repository interface {
 	UpsertGroups(context.Context, uuid.UUID, []domain.Group) error
 	Groups(context.Context, uuid.UUID) ([]domain.Group, error)
 	SaveSelection(context.Context, uuid.UUID, []string) (domain.Session, error)
+	QueueHistorySync(context.Context, uuid.UUID, []string) ([]domain.Group, error)
+	HistoryAnchor(context.Context, uuid.UUID, string) (domain.HistoryAnchor, error)
+	RecordHistoryAnchor(context.Context, uuid.UUID, domain.HistoryAnchor) error
+	MarkHistorySyncRequest(context.Context, uuid.UUID, string) error
+	RecordHistoryBatch(context.Context, uuid.UUID, string, int, *domain.HistoryAnchor) error
+	SetHistorySyncState(context.Context, uuid.UUID, string, domain.HistorySyncState, *string) error
 
 	InsertMessage(context.Context, domain.IncomingMessage) (bool, error)
 	PurgeExpiredPendingMessages(context.Context, time.Duration) error
 	Messages(context.Context, uuid.UUID, int, *string) (domain.CursorPage[domain.CapturedMessage], error)
+	MarkMessagesQueuedForIngestion(context.Context, uuid.UUID, []uuid.UUID, uuid.UUID) error
 	Events(context.Context, uuid.UUID, int, *string) (domain.CursorPage[domain.CaptureEvent], error)
 	Dashboard(context.Context, uuid.UUID) (domain.Dashboard, error)
 	RegisterDevice(context.Context, uuid.UUID, string, string) error

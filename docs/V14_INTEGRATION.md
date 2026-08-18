@@ -1,17 +1,25 @@
-# Future v14 integration
+# Manual v14 integration
 
-The current implementation intentionally stops at the delivery outbox. This preserves the captured WhatsApp event before v14 parsing and lets the later integration retry without duplicating records.
+Captured WhatsApp text is staging data. It must never enter the watch-ingestion pipeline merely because capture succeeded.
 
-## Recommended bridge
+## Operator flow
 
-1. Claim pending rows and their `revision` from `exporter_delivery_outbox` with `FOR UPDATE SKIP LOCKED`.
-2. Read the associated active `exporter_messages` row.
-3. Convert it to a versioned v14 ingestion command.
-4. Use a deterministic idempotency key such as `whatsapp:<session_id>:<group_jid>:<whatsapp_message_id>`.
-5. Upsert by that key so later edits and revokes replace the same v14 record.
-6. Commit the v14 record before marking the outbox row `delivered`; the final update must match the claimed `revision`.
-7. On a transient failure, increase `attempt_count` and schedule `next_attempt_at` with capped exponential backoff.
+1. Open **Exporter Chats** in the authenticated v14 workspace.
+2. Inspect per-group history state, batch count, oldest captured timestamp and any stall reason.
+3. Filter and select only the messages that should be ingested.
+4. Press **Review ingestion**.
+5. Verify the selected message/group/date summary and source market.
+6. Press **Confirm and ingest into v14**.
 
-Do not have the WhatsApp event handler write directly to v14 `raw_messages`. That would couple connection health to parser availability, remove the replay boundary and make duplicate prevention harder.
+The final button is the only ingestion trigger. It creates text-only, WhatsApp-format files grouped by chat and posts them to the canonical `POST /api/v2/upload/` endpoint. From there, S3 storage, queueing, parsing, extraction, duplicate protection, Upload History and human review are the same as for a normal file upload.
 
-The future v14 page should read the Exporter message/event endpoints or a purpose-built read model. It should not query WhatsApp device-key tables.
+After v14 accepts the upload, the page records the returned upload-session UUID against the selected `exporter_messages` rows. This provenance marker prevents those rows from being offered again. A later WhatsApp edit resets the changed message to `available`, requiring another deliberate review.
+
+## Safety boundaries
+
+- The WhatsApp event handler writes only to Exporter tables.
+- It does not write to v14 `raw_messages`, call `/api/v2/upload/` or enqueue a delivery outbox row.
+- Images, image captions and media metadata are discarded before persistence.
+- Only authenticated users can read their Exporter session. Mutations also require `X-Talia-Client: v14-web` (or `ios` from the native app).
+- v14's byte-identical upload guard remains authoritative and rejects accidental duplicate uploads.
+- If v14 accepts an upload but the provenance acknowledgement fails, the UI reports the accepted session ID and tells the operator not to upload again; acknowledgement is retried three times first.

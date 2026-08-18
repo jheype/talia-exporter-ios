@@ -55,7 +55,7 @@ func Load() (Config, error) {
 		HTTPAddress:              value("HTTP_ADDRESS", ":8080"),
 		DatabaseURL:              strings.TrimSpace(os.Getenv("DATABASE_URL")),
 		V14AuthMeURL:             strings.TrimSpace(os.Getenv("V14_AUTH_ME_URL")),
-		AllowedClient:            value("ALLOWED_CLIENT", "ios"),
+		AllowedClient:            value("ALLOWED_CLIENT", "ios,v14-web"),
 		LogLevel:                 value("LOG_LEVEL", "info"),
 		AuthTimeout:              authTimeout,
 		ShutdownTimeout:          shutdownTimeout,

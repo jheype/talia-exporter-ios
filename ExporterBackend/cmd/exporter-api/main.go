@@ -42,7 +42,7 @@ func main() {
 		logger.Error("connect to exporter database", "error", err)
 		os.Exit(1)
 	}
-	if err := repository.Migrate(rootContext, migrations.Initial); err != nil {
+	if err := repository.Migrate(rootContext, migrations.All()); err != nil {
 		logger.Error("migrate exporter database", "error", err)
 		os.Exit(1)
 	}

@@ -16,6 +16,12 @@ import (
 )
 
 func (postgres *Postgres) InsertMessage(ctx context.Context, incoming domain.IncomingMessage) (bool, error) {
+	if !incoming.IsRevoke && (incoming.Type != domain.MessageText || strings.TrimSpace(incoming.Body) == "") {
+		return false, nil
+	}
+	incoming.HasMedia = false
+	incoming.MediaMetadata = domain.MediaMetadata{}
+
 	rawMetadata, err := json.Marshal(incoming.RawMetadata)
 	if err != nil {
 		return false, fmt.Errorf("marshal message metadata: %w", err)
@@ -41,17 +47,15 @@ func (postgres *Postgres) InsertMessage(ctx context.Context, incoming domain.Inc
 
 	var selectionFinalised sql.NullTime
 	var captureEnabled bool
-	var includeMedia bool
 	var selected bool
 	err = transaction.QueryRow(ctx, `
-		SELECT s.selection_finalised_at, s.capture_enabled, s.include_media, g.is_selected
+		SELECT s.selection_finalised_at, s.capture_enabled, g.is_selected
 		FROM exporter_sessions s
 		JOIN exporter_groups g ON g.session_id = s.id AND g.jid = $2
 		WHERE s.id = $1
 		FOR UPDATE OF s`, incoming.SessionID, incoming.GroupJID).Scan(
 		&selectionFinalised,
 		&captureEnabled,
-		&includeMedia,
 		&selected,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -59,9 +63,6 @@ func (postgres *Postgres) InsertMessage(ctx context.Context, incoming domain.Inc
 	}
 	if err != nil {
 		return false, err
-	}
-	if !includeMedia {
-		mediaMetadata = []byte(`{}`)
 	}
 	if selectionFinalised.Valid && (!selected || !captureEnabled) {
 		if incoming.IsEdit || incoming.IsRevoke {
@@ -148,12 +149,6 @@ func (postgres *Postgres) InsertMessage(ctx context.Context, incoming domain.Inc
 
 	if captureState == "active" {
 		_, err = transaction.Exec(ctx, `
-			INSERT INTO exporter_delivery_outbox (message_id, revision)
-			VALUES ($1, 1) ON CONFLICT (message_id) DO NOTHING`, messageID)
-		if err != nil {
-			return false, err
-		}
-		_, err = transaction.Exec(ctx, `
 			INSERT INTO exporter_events (
 				session_id, kind, group_jid, group_name, detail, metadata, event_bucket
 			)
@@ -188,8 +183,6 @@ func applyMessageMutation(
 	rawMetadata []byte,
 ) (bool, error) {
 	var messageID uuid.UUID
-	var captureState string
-	var revision int
 	err := transaction.QueryRow(ctx, `
 		UPDATE exporter_messages
 		SET body = CASE WHEN is_revoked OR $7 THEN '' ELSE $4 END,
@@ -199,7 +192,10 @@ func applyMessageMutation(
 			revision = revision + 1,
 			has_media = CASE WHEN is_revoked OR $7 THEN FALSE ELSE $8 END,
 			media_metadata = CASE WHEN is_revoked OR $7 THEN '{}'::JSONB ELSE $9 END,
-			raw_metadata = $10
+			raw_metadata = $10,
+			v14_ingestion_status = 'available',
+			v14_upload_session_id = NULL,
+			v14_ingestion_queued_at = NULL
 		WHERE session_id = $1
 		  AND group_jid = $2
 		  AND whatsapp_message_id = $3
@@ -215,7 +211,7 @@ func applyMessageMutation(
 				)
 			)
 		  )
-		RETURNING id, capture_state, revision`,
+		RETURNING id`,
 		incoming.SessionID,
 		incoming.GroupJID,
 		incoming.WhatsAppMessageID,
@@ -226,17 +222,12 @@ func applyMessageMutation(
 		incoming.HasMedia,
 		mediaMetadata,
 		rawMetadata,
-	).Scan(&messageID, &captureState, &revision)
+	).Scan(&messageID)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return false, nil
 	}
 	if err != nil {
 		return false, err
-	}
-	if captureState == "active" {
-		if err := resetOutbox(ctx, transaction, messageID, revision); err != nil {
-			return false, err
-		}
 	}
 	return true, nil
 }
@@ -266,11 +257,15 @@ func (postgres *Postgres) Messages(
 	rows, err := postgres.pool.Query(ctx, `
 		SELECT m.id, m.whatsapp_message_id, m.group_jid, g.name, m.sender_jid,
 			m.sender_name, m.body, m.message_type, m.message_timestamp,
-			m.is_from_me, m.has_media, m.is_edited, m.is_revoked, m.revision, m.media_metadata
+			m.is_from_me, m.has_media, m.is_edited, m.is_revoked, m.revision, m.media_metadata,
+			m.v14_ingestion_status, m.v14_upload_session_id, m.v14_ingestion_queued_at
 		FROM exporter_messages m
 		JOIN exporter_groups g ON g.session_id = m.session_id AND g.jid = m.group_jid
 		WHERE m.session_id = $1
 		  AND m.capture_state = 'active'
+		  AND m.message_type = 'text'
+		  AND NOT m.is_revoked
+		  AND BTRIM(m.body) <> ''
 		  AND ($2::TIMESTAMPTZ IS NULL OR (m.message_timestamp, m.id) < ($2, $3))
 		ORDER BY m.message_timestamp DESC, m.id DESC
 		LIMIT $4`, sessionID, cursorTime, cursorID, limit+1)
@@ -283,6 +278,8 @@ func (postgres *Postgres) Messages(
 	for rows.Next() {
 		var message domain.CapturedMessage
 		var encodedMediaMetadata []byte
+		var uploadSessionID uuid.NullUUID
+		var ingestionQueuedAt sql.NullTime
 		if err := rows.Scan(
 			&message.ID,
 			&message.WhatsAppMessageID,
@@ -299,6 +296,9 @@ func (postgres *Postgres) Messages(
 			&message.IsRevoked,
 			&message.Revision,
 			&encodedMediaMetadata,
+			&message.IngestionStatus,
+			&uploadSessionID,
+			&ingestionQueuedAt,
 		); err != nil {
 			return domain.CursorPage[domain.CapturedMessage]{}, err
 		}
@@ -309,6 +309,10 @@ func (postgres *Postgres) Messages(
 		if !mediaMetadata.IsEmpty() {
 			message.MediaMetadata = &mediaMetadata
 		}
+		if uploadSessionID.Valid {
+			message.UploadSessionID = &uploadSessionID.UUID
+		}
+		message.IngestionQueuedAt = nullableTime(ingestionQueuedAt)
 		items = append(items, message)
 	}
 	if err := rows.Err(); err != nil {
@@ -324,20 +328,67 @@ func (postgres *Postgres) Messages(
 	return domain.CursorPage[domain.CapturedMessage]{Items: items, NextCursor: next}, nil
 }
 
-func resetOutbox(ctx context.Context, transaction pgx.Tx, messageID uuid.UUID, revision int) error {
-	_, err := transaction.Exec(ctx, `
-		INSERT INTO exporter_delivery_outbox (message_id, revision)
-		VALUES ($1, $2)
-		ON CONFLICT (message_id) DO UPDATE SET
-			revision = EXCLUDED.revision,
-			status = 'pending',
-			attempt_count = 0,
-			next_attempt_at = NOW(),
-			locked_at = NULL,
-			locked_by = NULL,
-			delivered_at = NULL,
-			last_error = NULL`, messageID, revision)
-	return err
+func (postgres *Postgres) MarkMessagesQueuedForIngestion(
+	ctx context.Context,
+	userID uuid.UUID,
+	messageIDs []uuid.UUID,
+	uploadSessionID uuid.UUID,
+) error {
+	messageIDs = uniqueUUIDs(messageIDs)
+	if len(messageIDs) == 0 || uploadSessionID == uuid.Nil {
+		return domain.ErrInvalidInput
+	}
+
+	transaction, err := postgres.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = transaction.Rollback(ctx) }()
+
+	command, err := transaction.Exec(ctx, `
+		UPDATE exporter_messages AS messages
+		SET v14_ingestion_status = 'queued',
+			v14_upload_session_id = $3,
+			v14_ingestion_queued_at = NOW()
+		FROM exporter_sessions AS sessions
+		WHERE messages.session_id = sessions.id
+		  AND sessions.user_id = $1
+		  AND sessions.archived_at IS NULL
+		  AND messages.id = ANY($2::UUID[])
+		  AND messages.capture_state = 'active'
+		  AND messages.message_type = 'text'
+		  AND NOT messages.is_revoked
+		  AND BTRIM(messages.body) <> ''
+		  AND (
+			messages.v14_ingestion_status = 'available'
+			OR (
+				messages.v14_ingestion_status = 'queued'
+				AND messages.v14_upload_session_id = $3
+			)
+		  )`, userID, messageIDs, uploadSessionID)
+	if err != nil {
+		return err
+	}
+	if command.RowsAffected() != int64(len(messageIDs)) {
+		return fmt.Errorf("%w: one or more messages are unavailable", domain.ErrInvalidInput)
+	}
+	return transaction.Commit(ctx)
+}
+
+func uniqueUUIDs(values []uuid.UUID) []uuid.UUID {
+	seen := make(map[uuid.UUID]struct{}, len(values))
+	result := make([]uuid.UUID, 0, len(values))
+	for _, value := range values {
+		if value == uuid.Nil {
+			continue
+		}
+		if _, exists := seen[value]; exists {
+			continue
+		}
+		seen[value] = struct{}{}
+		result = append(result, value)
+	}
+	return result
 }
 
 func (postgres *Postgres) Events(

@@ -12,6 +12,7 @@ import (
 	"strings"
 	"unicode"
 
+	"github.com/google/uuid"
 	"github.com/talia/exporter/internal/auth"
 	"github.com/talia/exporter/internal/domain"
 	"github.com/talia/exporter/internal/store"
@@ -96,7 +97,47 @@ func (handler *handlers) saveSelection(writer http.ResponseWriter, request *http
 		writeAPIError(writer, handler.logger, err)
 		return
 	}
+	if err := handler.whatsapp.StartHistorySync(request.Context(), user.ID); err != nil {
+		handler.logger.Warn("start WhatsApp history sync", "user_id", user.ID, "error", err)
+	}
 	writeJSON(writer, http.StatusOK, session)
+}
+
+func (handler *handlers) historySyncStatus(writer http.ResponseWriter, request *http.Request) {
+	user, _ := auth.UserFromContext(request.Context())
+	session, err := handler.repository.SessionByUser(request.Context(), user.ID)
+	if err != nil {
+		writeAPIError(writer, handler.logger, err)
+		return
+	}
+	groups, err := handler.repository.Groups(request.Context(), session.ID)
+	if err != nil {
+		writeAPIError(writer, handler.logger, err)
+		return
+	}
+	writeJSON(writer, http.StatusOK, groups)
+}
+
+func (handler *handlers) retryHistorySync(writer http.ResponseWriter, request *http.Request) {
+	var input struct {
+		GroupJIDs []string `json:"group_jids"`
+	}
+	if err := decodeJSON(request, &input); err != nil {
+		writeInvalidJSON(writer)
+		return
+	}
+	if len(input.GroupJIDs) == 0 || len(input.GroupJIDs) > 2_000 {
+		writeAPIError(writer, handler.logger, domain.ErrInvalidInput)
+		return
+	}
+
+	user, _ := auth.UserFromContext(request.Context())
+	groups, err := handler.whatsapp.RetryHistorySync(request.Context(), user.ID, input.GroupJIDs)
+	if err != nil {
+		writeAPIError(writer, handler.logger, err)
+		return
+	}
+	writeJSON(writer, http.StatusAccepted, groups)
 }
 
 func (handler *handlers) setCapture(writer http.ResponseWriter, request *http.Request) {
@@ -160,6 +201,33 @@ func (handler *handlers) messages(writer http.ResponseWriter, request *http.Requ
 		return
 	}
 	writeJSON(writer, http.StatusOK, page)
+}
+
+func (handler *handlers) markMessagesQueuedForIngestion(writer http.ResponseWriter, request *http.Request) {
+	var input struct {
+		MessageIDs      []uuid.UUID `json:"message_ids"`
+		UploadSessionID uuid.UUID   `json:"upload_session_id"`
+	}
+	if err := decodeJSON(request, &input); err != nil {
+		writeInvalidJSON(writer)
+		return
+	}
+	if len(input.MessageIDs) == 0 || len(input.MessageIDs) > 1_000 || input.UploadSessionID == uuid.Nil {
+		writeAPIError(writer, handler.logger, domain.ErrInvalidInput)
+		return
+	}
+
+	user, _ := auth.UserFromContext(request.Context())
+	if err := handler.repository.MarkMessagesQueuedForIngestion(
+		request.Context(),
+		user.ID,
+		input.MessageIDs,
+		input.UploadSessionID,
+	); err != nil {
+		writeAPIError(writer, handler.logger, err)
+		return
+	}
+	writer.WriteHeader(http.StatusNoContent)
 }
 
 func (handler *handlers) events(writer http.ResponseWriter, request *http.Request) {

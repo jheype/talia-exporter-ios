@@ -38,13 +38,13 @@ The service is in [ExporterBackend](ExporterBackend). It owns linked WhatsApp se
 - v14-backed authentication without a duplicate user store;
 - phone-number pairing;
 - group discovery and transactional selection;
-- real-time and available history capture for group conversations;
-- typed metadata for supported media messages without persisting message bodies on the iPhone;
+- real-time and resumable available-history capture for selected group conversations;
+- text-only persistence (images, image captions and media metadata are discarded);
 - edit and revoke handling against the original WhatsApp message identifier;
 - deduplication using original WhatsApp message identifiers;
 - PostgreSQL persistence and restart recovery;
 - stable cursor APIs for messages and operational events;
-- an idempotent delivery outbox for the later v14 page/ingestion bridge.
+- a v14 staging page where a person selects captured text and explicitly confirms ingestion through the existing upload pipeline.
 
 Run its checks with Go 1.25 or later:
 
@@ -65,7 +65,7 @@ make check
 - `Preview/` — preview-only fixtures.
 - `DesignSystem/` — Talia tokens and reusable native components.
 
-The complete service design is documented in [Architecture](docs/ARCHITECTURE.md). The planned v14 bridge is documented in [Future v14 integration](docs/V14_INTEGRATION.md).
+The complete service design is documented in [Architecture](docs/ARCHITECTURE.md). The manual v14 bridge is documented in [v14 integration](docs/V14_INTEGRATION.md).
 
 ## Xcode project generation
 

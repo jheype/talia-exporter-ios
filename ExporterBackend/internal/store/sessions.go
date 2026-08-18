@@ -27,7 +27,13 @@ const sessionProjection = `
     s.last_synchronised_at,
     s.last_error_message,
     (SELECT COUNT(*)::INTEGER FROM exporter_groups g WHERE g.session_id = s.id AND g.is_selected),
-    (SELECT COUNT(*)::BIGINT FROM exporter_messages m WHERE m.session_id = s.id AND m.capture_state = 'active')`
+    (SELECT COUNT(*)::BIGINT
+     FROM exporter_messages m
+     WHERE m.session_id = s.id
+       AND m.capture_state = 'active'
+       AND m.message_type = 'text'
+       AND NOT m.is_revoked
+       AND BTRIM(m.body) <> '')`
 
 func (postgres *Postgres) SessionByUser(ctx context.Context, userID uuid.UUID) (domain.Session, error) {
 	query := `SELECT ` + sessionProjection + ` FROM exporter_sessions s WHERE s.user_id = $1 AND s.archived_at IS NULL`
@@ -185,9 +191,9 @@ func (postgres *Postgres) SetCaptureEnabled(ctx context.Context, userID uuid.UUI
 	return postgres.SessionByUser(ctx, userID)
 }
 
-func (postgres *Postgres) SetIncludeMedia(ctx context.Context, userID uuid.UUID, enabled bool) (domain.Session, error) {
+func (postgres *Postgres) SetIncludeMedia(ctx context.Context, userID uuid.UUID, _ bool) (domain.Session, error) {
 	result, err := postgres.pool.Exec(ctx, `
-		UPDATE exporter_sessions SET include_media = $2 WHERE user_id = $1 AND archived_at IS NULL`, userID, enabled)
+		UPDATE exporter_sessions SET include_media = FALSE WHERE user_id = $1 AND archived_at IS NULL`, userID)
 	if err != nil {
 		return domain.Session{}, err
 	}

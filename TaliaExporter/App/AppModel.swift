@@ -13,6 +13,7 @@ final class AppModel: ObservableObject {
     @Published var messages: [CapturedMessage] = []
     @Published var pairingCode: String?
     @Published var pairingExpiresAt: Date?
+    @Published var historyRetryingGroupIDs: Set<String> = []
     @Published var isWorking = false
     @Published var alert: AppAlert?
     @Published var appearance: AppearanceMode {
@@ -56,7 +57,7 @@ final class AppModel: ObservableObject {
 
     var captureEnabled: Bool { session?.captureEnabled ?? false }
     var captureIsLive: Bool { captureEnabled && session?.status == .connected }
-    var includeMedia: Bool { session?.includeMedia ?? true }
+    var includeMedia: Bool { session?.includeMedia ?? false }
     var selectedGroupCount: Int { groups.lazy.filter(\.isSelected).count }
     var selectedGroupsDescription: String {
         "\(selectedGroupCount) \(selectedGroupCount == 1 ? "group" : "groups")"
@@ -147,6 +148,7 @@ final class AppModel: ObservableObject {
         messages = []
         pairingCode = nil
         pairingExpiresAt = nil
+        historyRetryingGroupIDs = []
         route = .signedOut
         await cache.clear()
     }

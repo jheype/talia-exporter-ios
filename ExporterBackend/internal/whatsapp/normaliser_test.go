@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/talia/exporter/internal/domain"
 	"go.mau.fi/whatsmeow/proto/waCommon"
 	"go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/types"
@@ -63,7 +64,7 @@ func TestNormaliserRejectsDirectMessages(t *testing.T) {
 	}
 }
 
-func TestNormaliseImageMetadata(t *testing.T) {
+func TestNormaliserRejectsImageAndCaption(t *testing.T) {
 	t.Parallel()
 	event := groupEvent(t, "IMAGE-1", &waE2E.Message{
 		ImageMessage: &waE2E.ImageMessage{
@@ -75,17 +76,8 @@ func TestNormaliseImageMetadata(t *testing.T) {
 		},
 	})
 
-	message, ok := normaliseMessage(uuid.New(), event, false)
-	if !ok {
-		t.Fatal("expected image to be accepted")
-	}
-	if message.Type != "image" || !message.HasMedia || message.Body != "Vehicle exterior" {
-		t.Fatalf("unexpected image content: %#v", message)
-	}
-	if message.MediaMetadata.MIMEType != "image/jpeg" ||
-		message.MediaMetadata.FileSizeBytes != 128_000 ||
-		message.MediaMetadata.Width != 1200 || message.MediaMetadata.Height != 800 {
-		t.Fatalf("unexpected image metadata: %#v", message.MediaMetadata)
+	if _, ok := normaliseMessage(uuid.New(), event, false); ok {
+		t.Fatal("images and their captions must not be captured")
 	}
 }
 
@@ -107,6 +99,102 @@ func TestNormaliseRevokeTargetsOriginalMessage(t *testing.T) {
 	}
 	if message.Body != "" || message.HasMedia || message.Type != "system" {
 		t.Fatalf("unexpected revoke content: %#v", message)
+	}
+}
+
+func TestOlderAnchorOrdersByTimestampThenMessageID(t *testing.T) {
+	t.Parallel()
+	timestamp := time.Date(2026, time.August, 17, 20, 0, 0, 0, time.UTC)
+	current := &domain.HistoryAnchor{
+		WhatsAppMessageID: "MESSAGE-B",
+		Timestamp:         timestamp,
+	}
+
+	if !olderAnchor(current, domain.HistoryAnchor{
+		WhatsAppMessageID: "MESSAGE-Z",
+		Timestamp:         timestamp.Add(-time.Second),
+	}) {
+		t.Fatal("an earlier timestamp must advance the history cursor")
+	}
+	if !olderAnchor(current, domain.HistoryAnchor{
+		WhatsAppMessageID: "MESSAGE-A",
+		Timestamp:         timestamp,
+	}) {
+		t.Fatal("message ID must break equal-timestamp ties deterministically")
+	}
+	if olderAnchor(current, domain.HistoryAnchor{
+		WhatsAppMessageID: "MESSAGE-C",
+		Timestamp:         timestamp,
+	}) {
+		t.Fatal("a later equal-timestamp message must not move the cursor forward")
+	}
+}
+
+func TestShortHistoryBatchDoesNotMeanHistoryIsComplete(t *testing.T) {
+	t.Parallel()
+	batch := historyBatch{
+		groupJID:     "120363001@g.us",
+		messageCount: 22,
+		oldest: &domain.HistoryAnchor{
+			WhatsAppMessageID: "OLDER-MESSAGE",
+			Timestamp:         time.Date(2026, time.August, 1, 12, 0, 0, 0, time.UTC),
+		},
+	}
+	seen := map[string]struct{}{"NEWER-MESSAGE": {}}
+
+	if got := classifyHistoryBatch(batch, seen); got != historyBatchContinue {
+		t.Fatal("a short non-empty batch must continue from its oldest anchor")
+	}
+}
+
+func TestHistoryBatchCompletesOnlyWhenWhatsAppReportsTheEnd(t *testing.T) {
+	t.Parallel()
+	if got := classifyHistoryBatch(
+		historyBatch{groupJID: "120363001@g.us", endOfHistory: true},
+		nil,
+	); got != historyBatchComplete {
+		t.Fatal("an explicit end-of-history response must finish the history walk")
+	}
+	if got := classifyHistoryBatch(
+		historyBatch{groupJID: "120363001@g.us"},
+		nil,
+	); got != historyBatchStalled {
+		t.Fatal("an ambiguous empty conversation must stall rather than falsely report completion")
+	}
+}
+
+func TestEmptyOnDemandResponseIsCorrelatedAsExplicitEnd(t *testing.T) {
+	t.Parallel()
+	if got := classifyHistoryBatch(
+		historyBatch{groupJID: "120363001@g.us", endOfHistory: true},
+		nil,
+	); got != historyBatchComplete {
+		t.Fatal("the correlated empty ON_DEMAND response must finish the history walk")
+	}
+}
+
+func TestHistoryBatchStallsOnRepeatedCursorOrUnavailableHistory(t *testing.T) {
+	t.Parallel()
+	anchor := &domain.HistoryAnchor{
+		WhatsAppMessageID: "REPEATED-MESSAGE",
+		Timestamp:         time.Date(2026, time.July, 1, 12, 0, 0, 0, time.UTC),
+	}
+	if got := classifyHistoryBatch(
+		historyBatch{groupJID: "120363001@g.us", messageCount: 50, oldest: anchor},
+		map[string]struct{}{anchor.WhatsAppMessageID: {}},
+	); got != historyBatchStalled {
+		t.Fatal("a repeated oldest cursor must be shown as stalled, not complete")
+	}
+	if got := classifyHistoryBatch(
+		historyBatch{
+			groupJID:      "120363001@g.us",
+			messageCount:  22,
+			oldest:        anchor,
+			accessLimited: true,
+		},
+		nil,
+	); got != historyBatchStalled {
+		t.Fatal("history that remains on the phone but cannot be accessed must be shown as stalled")
 	}
 }
 

@@ -16,6 +16,7 @@ import (
 	"github.com/talia/exporter/internal/notify"
 	"github.com/talia/exporter/internal/store"
 	"go.mau.fi/whatsmeow"
+	waHistorySync "go.mau.fi/whatsmeow/proto/waHistorySync"
 	waStore "go.mau.fi/whatsmeow/store"
 	"go.mau.fi/whatsmeow/store/sqlstore"
 	"go.mau.fi/whatsmeow/types"
@@ -23,10 +24,14 @@ import (
 )
 
 const (
-	leaseDuration        = 45 * time.Second
-	eventQueueSize       = 512
-	notificationCooldown = time.Hour
-	historySyncTimeout   = time.Hour
+	leaseDuration             = 45 * time.Second
+	eventQueueSize            = 512
+	notificationCooldown      = time.Hour
+	historyEventTimeout       = time.Hour
+	historyBatchSize          = 50
+	historyBatchesPerPass     = 20
+	historyRequestTimeout     = 45 * time.Second
+	historyBatchResponseLimit = 90 * time.Second
 )
 
 type Manager struct {
@@ -47,13 +52,33 @@ type Manager struct {
 }
 
 type worker struct {
-	sessionID uuid.UUID
-	client    *whatsmeow.Client
-	queue     chan any
-	ctx       context.Context
-	cancel    context.CancelFunc
-	stopping  atomic.Bool
+	sessionID           uuid.UUID
+	client              *whatsmeow.Client
+	queue               chan any
+	historyBatches      chan historyBatch
+	ctx                 context.Context
+	cancel              context.CancelFunc
+	stopping            atomic.Bool
+	historySyncing      atomic.Bool
+	historyRequestMu    sync.RWMutex
+	historyRequestGroup string
 }
+
+type historyBatch struct {
+	groupJID      string
+	messageCount  int
+	oldest        *domain.HistoryAnchor
+	endOfHistory  bool
+	accessLimited bool
+}
+
+type historyBatchResult int
+
+const (
+	historyBatchContinue historyBatchResult = iota
+	historyBatchComplete
+	historyBatchStalled
+)
 
 func NewManager(
 	parent context.Context,
@@ -67,6 +92,16 @@ func NewManager(
 ) (*Manager, error) {
 	if notifier == nil {
 		notifier = notify.NoopSender{}
+	}
+	// Reconciliation renews the database lease. Keep a three-tick safety
+	// margin so a healthy worker cannot repeatedly lose ownership and open a
+	// second WhatsApp client for the same device.
+	if reconcileInterval <= 0 || reconcileInterval*3 > leaseDuration {
+		return nil, fmt.Errorf(
+			"SESSION_RECONCILE_INTERVAL (%s) must be at most a third of the %s session lease",
+			reconcileInterval,
+			leaseDuration,
+		)
 	}
 	database, err := sql.Open("pgx", databaseURL)
 	if err != nil {
@@ -207,6 +242,35 @@ func (manager *Manager) SynchroniseGroups(ctx context.Context, userID uuid.UUID)
 	return manager.synchroniseGroups(ctx, session.ID, createdWorker.client)
 }
 
+func (manager *Manager) StartHistorySync(ctx context.Context, userID uuid.UUID) error {
+	session, err := manager.repository.SessionByUser(ctx, userID)
+	if err != nil {
+		return err
+	}
+	if !session.IsLinked() {
+		return domain.ErrNotLinked
+	}
+	if createdWorker := manager.worker(session.ID); createdWorker != nil {
+		manager.ensureHistorySync(createdWorker)
+	}
+	return nil
+}
+
+func (manager *Manager) RetryHistorySync(
+	ctx context.Context,
+	userID uuid.UUID,
+	groupJIDs []string,
+) ([]domain.Group, error) {
+	groups, err := manager.repository.QueueHistorySync(ctx, userID, groupJIDs)
+	if err != nil {
+		return nil, err
+	}
+	if err := manager.StartHistorySync(ctx, userID); err != nil {
+		return nil, err
+	}
+	return groups, nil
+}
+
 func (manager *Manager) Unlink(ctx context.Context, userID uuid.UUID) error {
 	session, err := manager.repository.SessionByUser(ctx, userID)
 	if err != nil {
@@ -279,11 +343,12 @@ func (manager *Manager) Close(ctx context.Context) error {
 func (manager *Manager) newWorker(sessionID uuid.UUID, client *whatsmeow.Client) *worker {
 	ctx, cancel := context.WithCancel(manager.ctx)
 	createdWorker := &worker{
-		sessionID: sessionID,
-		client:    client,
-		queue:     make(chan any, eventQueueSize),
-		ctx:       ctx,
-		cancel:    cancel,
+		sessionID:      sessionID,
+		client:         client,
+		queue:          make(chan any, eventQueueSize),
+		historyBatches: make(chan historyBatch, eventQueueSize),
+		ctx:            ctx,
+		cancel:         cancel,
 	}
 	client.AddEventHandler(func(event any) {
 		select {
@@ -341,7 +406,7 @@ func (manager *Manager) eventLoop(createdWorker *worker) {
 func (manager *Manager) handleEvent(createdWorker *worker, raw any) {
 	timeout := 2 * time.Minute
 	if _, isHistorySync := raw.(*events.HistorySync); isHistorySync {
-		timeout = historySyncTimeout
+		timeout = historyEventTimeout
 	}
 	ctx, cancel := context.WithTimeout(createdWorker.ctx, timeout)
 	defer cancel()
@@ -356,10 +421,25 @@ func (manager *Manager) handleEvent(createdWorker *worker, raw any) {
 			manager.logger.Error("mark WhatsApp session linked", "session_id", createdWorker.sessionID, "error", err)
 			return
 		}
-		_, _ = manager.repository.AcquireLease(ctx, createdWorker.sessionID, manager.workerID, leaseDuration)
+		owned, err := manager.repository.AcquireLease(
+			ctx,
+			createdWorker.sessionID,
+			manager.workerID,
+			leaseDuration,
+		)
+		if err != nil || !owned {
+			manager.logger.Warn(
+				"WhatsApp session lease not held on connect; releasing worker",
+				"session_id", createdWorker.sessionID,
+				"error", err,
+			)
+			go manager.removeWorker(createdWorker.sessionID, true)
+			return
+		}
 		if _, err := manager.synchroniseGroups(ctx, createdWorker.sessionID, createdWorker.client); err != nil {
 			manager.logger.Warn("synchronise WhatsApp groups", "session_id", createdWorker.sessionID, "error", err)
 		}
+		manager.ensureHistorySync(createdWorker)
 
 	case *events.Disconnected:
 		if !createdWorker.stopping.Load() {
@@ -392,7 +472,9 @@ func (manager *Manager) handleEvent(createdWorker *worker, raw any) {
 		go manager.removeWorker(createdWorker.sessionID, false)
 
 	case *events.Message:
+		manager.recordMessageAnchor(ctx, createdWorker.sessionID, event)
 		manager.persistMessage(ctx, createdWorker.sessionID, event, false)
+		manager.ensureHistorySync(createdWorker)
 
 	case *events.HistorySync:
 		manager.persistHistory(ctx, createdWorker, event)
@@ -431,10 +513,25 @@ func (manager *Manager) persistHistory(ctx context.Context, createdWorker *worke
 	if history == nil || history.Data == nil {
 		return
 	}
+	conversationCount := 0
 	for _, conversation := range history.Data.GetConversations() {
 		chatJID, err := types.ParseJID(conversation.GetID())
-		if err != nil {
+		if err != nil || chatJID.Server != types.GroupServer {
 			continue
+		}
+		conversationCount++
+		batch := historyBatch{
+			groupJID:     chatJID.String(),
+			messageCount: len(conversation.GetMessages()),
+			endOfHistory: conversation.GetEndOfHistoryTransfer(),
+		}
+		if conversation.EndOfHistoryTransferType != nil {
+			switch conversation.GetEndOfHistoryTransferType() {
+			case waHistorySync.Conversation_COMPLETE_AND_NO_MORE_MESSAGE_REMAIN_ON_PRIMARY:
+				batch.endOfHistory = true
+			case waHistorySync.Conversation_COMPLETE_ON_DEMAND_SYNC_WITH_MORE_MSG_ON_PRIMARY_BUT_NO_ACCESS:
+				batch.accessLimited = true
+			}
 		}
 		for _, historyMessage := range conversation.GetMessages() {
 			parsed, err := createdWorker.client.ParseWebMessage(chatJID, historyMessage.GetMessage())
@@ -442,9 +539,133 @@ func (manager *Manager) persistHistory(ctx context.Context, createdWorker *worke
 				manager.logger.Debug("parse WhatsApp history message", "session_id", createdWorker.sessionID, "error", err)
 				continue
 			}
+			if anchor, ok := historyAnchor(parsed); ok && olderAnchor(batch.oldest, anchor) {
+				anchorCopy := anchor
+				batch.oldest = &anchorCopy
+			}
 			manager.persistMessage(ctx, createdWorker.sessionID, parsed, true)
 		}
+		if err := manager.repository.RecordHistoryBatch(
+			ctx,
+			createdWorker.sessionID,
+			batch.groupJID,
+			batch.messageCount,
+			batch.oldest,
+		); err != nil {
+			manager.logger.Warn(
+				"record WhatsApp history batch",
+				"session_id", createdWorker.sessionID,
+				"group_jid", batch.groupJID,
+				"error", err,
+			)
+		}
+		manager.publishHistoryBatch(createdWorker, batch)
 	}
+
+	// An on-demand request can legitimately return an empty HistorySync (no
+	// conversations at all) when the primary phone has no older messages to
+	// provide. There is no conversation JID in that response, so correlate it
+	// with the single in-flight request. Without this signal the worker would
+	// wait for 90 seconds and incorrectly label a completed sync as stalled.
+	if conversationCount == 0 && history.Data.GetSyncType() == waHistorySync.HistorySync_ON_DEMAND {
+		groupJID := createdWorker.currentHistoryRequestGroup()
+		if groupJID == "" {
+			return
+		}
+		batch := historyBatch{groupJID: groupJID, endOfHistory: true}
+		if err := manager.repository.RecordHistoryBatch(
+			ctx,
+			createdWorker.sessionID,
+			groupJID,
+			0,
+			nil,
+		); err != nil {
+			manager.logger.Warn(
+				"record empty WhatsApp history batch",
+				"session_id", createdWorker.sessionID,
+				"group_jid", groupJID,
+				"error", err,
+			)
+		}
+		manager.publishHistoryBatch(createdWorker, batch)
+	}
+}
+
+func (manager *Manager) publishHistoryBatch(createdWorker *worker, batch historyBatch) {
+	select {
+	case createdWorker.historyBatches <- batch:
+	case <-createdWorker.ctx.Done():
+	default:
+		manager.logger.Debug(
+			"history response queue is full",
+			"session_id", createdWorker.sessionID,
+			"group_jid", batch.groupJID,
+		)
+	}
+}
+
+func (createdWorker *worker) setHistoryRequestGroup(groupJID string) {
+	createdWorker.historyRequestMu.Lock()
+	createdWorker.historyRequestGroup = groupJID
+	createdWorker.historyRequestMu.Unlock()
+}
+
+func (createdWorker *worker) clearHistoryRequestGroup(groupJID string) {
+	createdWorker.historyRequestMu.Lock()
+	if createdWorker.historyRequestGroup == groupJID {
+		createdWorker.historyRequestGroup = ""
+	}
+	createdWorker.historyRequestMu.Unlock()
+}
+
+func (createdWorker *worker) currentHistoryRequestGroup() string {
+	createdWorker.historyRequestMu.RLock()
+	defer createdWorker.historyRequestMu.RUnlock()
+	return createdWorker.historyRequestGroup
+}
+
+func (manager *Manager) recordMessageAnchor(
+	ctx context.Context,
+	sessionID uuid.UUID,
+	event *events.Message,
+) {
+	anchor, ok := historyAnchor(event)
+	if !ok {
+		return
+	}
+	if err := manager.repository.RecordHistoryAnchor(ctx, sessionID, anchor); err != nil &&
+		!errors.Is(err, context.Canceled) {
+		manager.logger.Debug(
+			"record WhatsApp history anchor",
+			"session_id", sessionID,
+			"group_jid", anchor.GroupJID,
+			"error", err,
+		)
+	}
+}
+
+func historyAnchor(event *events.Message) (domain.HistoryAnchor, bool) {
+	if event == nil || !event.Info.IsGroup || event.Info.Chat.IsEmpty() ||
+		event.Info.ID == "" || event.Info.Timestamp.IsZero() {
+		return domain.HistoryAnchor{}, false
+	}
+	return domain.HistoryAnchor{
+		GroupJID:          event.Info.Chat.String(),
+		WhatsAppMessageID: string(event.Info.ID),
+		Timestamp:         event.Info.Timestamp,
+		IsFromMe:          event.Info.IsFromMe,
+	}, true
+}
+
+func olderAnchor(current *domain.HistoryAnchor, candidate domain.HistoryAnchor) bool {
+	if current == nil {
+		return true
+	}
+	if candidate.Timestamp.Before(current.Timestamp) {
+		return true
+	}
+	return candidate.Timestamp.Equal(current.Timestamp) &&
+		candidate.WhatsAppMessageID < current.WhatsAppMessageID
 }
 
 func (manager *Manager) persistMessage(ctx context.Context, sessionID uuid.UUID, event *events.Message, history bool) {
@@ -459,6 +680,210 @@ func (manager *Manager) persistMessage(ctx context.Context, sessionID uuid.UUID,
 			"message_id", incoming.WhatsAppMessageID,
 			"error", err,
 		)
+	}
+}
+
+func (manager *Manager) ensureHistorySync(createdWorker *worker) {
+	if createdWorker == nil || createdWorker.stopping.Load() ||
+		!createdWorker.historySyncing.CompareAndSwap(false, true) {
+		return
+	}
+	go manager.syncSelectedHistory(createdWorker)
+}
+
+func (manager *Manager) syncSelectedHistory(createdWorker *worker) {
+	defer createdWorker.historySyncing.Store(false)
+
+	ctx, cancel := context.WithTimeout(createdWorker.ctx, 30*time.Minute)
+	defer cancel()
+	groups, err := manager.repository.Groups(ctx, createdWorker.sessionID)
+	if err != nil {
+		manager.logger.Warn("load groups for history sync", "session_id", createdWorker.sessionID, "error", err)
+		return
+	}
+
+	for _, group := range groups {
+		if !group.IsSelected {
+			continue
+		}
+		switch group.HistorySyncState {
+		case domain.HistorySyncComplete, domain.HistorySyncStalled, domain.HistorySyncFailed:
+			continue
+		}
+		manager.syncGroupHistory(ctx, createdWorker, group)
+	}
+}
+
+func (manager *Manager) syncGroupHistory(
+	ctx context.Context,
+	createdWorker *worker,
+	group domain.Group,
+) {
+	anchor, err := manager.repository.HistoryAnchor(ctx, createdWorker.sessionID, group.JID)
+	if errors.Is(err, domain.ErrNotFound) {
+		message := "Waiting for a recent group message before older WhatsApp history can be requested"
+		_ = manager.repository.SetHistorySyncState(
+			ctx,
+			createdWorker.sessionID,
+			group.JID,
+			domain.HistorySyncWaitingForAnchor,
+			&message,
+		)
+		return
+	}
+	if err != nil {
+		message := "Unable to load the saved history cursor"
+		_ = manager.repository.SetHistorySyncState(
+			ctx,
+			createdWorker.sessionID,
+			group.JID,
+			domain.HistorySyncFailed,
+			&message,
+		)
+		return
+	}
+
+	seenAnchors := map[string]struct{}{anchor.WhatsAppMessageID: struct{}{}}
+	for batchIndex := 0; batchIndex < historyBatchesPerPass; batchIndex++ {
+		if err := ctx.Err(); err != nil {
+			return
+		}
+		manager.drainHistoryBatches(createdWorker)
+		if err := manager.repository.MarkHistorySyncRequest(ctx, createdWorker.sessionID, group.JID); err != nil {
+			manager.logger.Warn("mark history request", "session_id", createdWorker.sessionID, "group_jid", group.JID, "error", err)
+			return
+		}
+
+		chatJID, err := types.ParseJID(anchor.GroupJID)
+		if err != nil {
+			message := "The saved WhatsApp group identifier is invalid"
+			_ = manager.repository.SetHistorySyncState(ctx, createdWorker.sessionID, group.JID, domain.HistorySyncFailed, &message)
+			return
+		}
+		messageInfo := &types.MessageInfo{
+			MessageSource: types.MessageSource{
+				Chat:     chatJID,
+				IsGroup:  true,
+				IsFromMe: anchor.IsFromMe,
+			},
+			ID:        types.MessageID(anchor.WhatsAppMessageID),
+			Timestamp: anchor.Timestamp,
+		}
+
+		requestContext, requestCancel := context.WithTimeout(ctx, historyRequestTimeout)
+		createdWorker.setHistoryRequestGroup(group.JID)
+		_, sendErr := createdWorker.client.SendPeerMessage(
+			requestContext,
+			createdWorker.client.BuildHistorySyncRequest(messageInfo, historyBatchSize),
+		)
+		requestCancel()
+		if sendErr != nil {
+			createdWorker.clearHistoryRequestGroup(group.JID)
+			message := "WhatsApp did not accept the history request; keep the primary phone online and retry"
+			_ = manager.repository.SetHistorySyncState(ctx, createdWorker.sessionID, group.JID, domain.HistorySyncStalled, &message)
+			return
+		}
+
+		batch, ok := manager.waitForHistoryBatch(ctx, createdWorker, group.JID)
+		createdWorker.clearHistoryRequestGroup(group.JID)
+		if !ok {
+			message := "WhatsApp did not return the requested history batch; keep the primary phone online and retry"
+			_ = manager.repository.SetHistorySyncState(ctx, createdWorker.sessionID, group.JID, domain.HistorySyncStalled, &message)
+			return
+		}
+		switch classifyHistoryBatch(batch, seenAnchors) {
+		case historyBatchComplete:
+			_ = manager.repository.SetHistorySyncState(ctx, createdWorker.sessionID, group.JID, domain.HistorySyncComplete, nil)
+			return
+		case historyBatchStalled:
+			message := "WhatsApp did not advance the history cursor; keep the primary phone online and retry"
+			if batch.accessLimited {
+				message = "WhatsApp reports older messages on the primary phone but did not grant access; keep it online and retry"
+			} else if batch.oldest == nil && batch.messageCount > 0 {
+				message = "WhatsApp returned a history batch that could not be decoded; retry the group history"
+			}
+			_ = manager.repository.SetHistorySyncState(
+				ctx,
+				createdWorker.sessionID,
+				group.JID,
+				domain.HistorySyncStalled,
+				&message,
+			)
+			return
+		}
+		seenAnchors[batch.oldest.WhatsAppMessageID] = struct{}{}
+		anchor = *batch.oldest
+		// A short batch is not proof that history is exhausted. The primary
+		// phone may return fewer than the requested 50 messages while older
+		// messages still exist, so keep walking backwards from the new cursor.
+	}
+
+	_ = manager.repository.SetHistorySyncState(
+		ctx,
+		createdWorker.sessionID,
+		group.JID,
+		domain.HistorySyncQueued,
+		nil,
+	)
+}
+
+func classifyHistoryBatch(
+	batch historyBatch,
+	seenAnchors map[string]struct{},
+) historyBatchResult {
+	if batch.accessLimited {
+		return historyBatchStalled
+	}
+	if batch.endOfHistory {
+		return historyBatchComplete
+	}
+	// An empty conversation without either the legacy end-of-transfer flag or
+	// the explicit no-more-messages enum is ambiguous. Never claim completion
+	// in that case: expose a retryable stall instead. A wholly empty ON_DEMAND
+	// response is correlated separately and marked endOfHistory by
+	// persistHistory.
+	if batch.messageCount == 0 {
+		return historyBatchStalled
+	}
+	if batch.oldest == nil {
+		return historyBatchStalled
+	}
+	_, repeated := seenAnchors[batch.oldest.WhatsAppMessageID]
+	if repeated {
+		return historyBatchStalled
+	}
+	return historyBatchContinue
+}
+
+func (manager *Manager) drainHistoryBatches(createdWorker *worker) {
+	for {
+		select {
+		case <-createdWorker.historyBatches:
+			continue
+		default:
+			return
+		}
+	}
+}
+
+func (manager *Manager) waitForHistoryBatch(
+	ctx context.Context,
+	createdWorker *worker,
+	groupJID string,
+) (historyBatch, bool) {
+	timer := time.NewTimer(historyBatchResponseLimit)
+	defer timer.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return historyBatch{}, false
+		case <-timer.C:
+			return historyBatch{}, false
+		case batch := <-createdWorker.historyBatches:
+			if batch.groupJID == groupJID {
+				return batch, true
+			}
+		}
 	}
 }
 
@@ -527,6 +952,8 @@ func (manager *Manager) reconcile() {
 			owned, err := manager.repository.RenewLease(ctx, session.ID, manager.workerID, leaseDuration)
 			if err != nil || !owned {
 				manager.removeWorker(session.ID, true)
+			} else {
+				manager.ensureHistorySync(existing)
 			}
 			continue
 		}

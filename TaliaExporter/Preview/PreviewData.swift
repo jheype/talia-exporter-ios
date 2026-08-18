@@ -14,7 +14,7 @@ enum PreviewData {
         phoneNumber: "+44 •••• 1842",
         status: .connected,
         captureEnabled: true,
-        includeMedia: true,
+        includeMedia: false,
         linkedAt: Date().addingTimeInterval(-86_400),
         lastConnectedAt: Date(),
         lastMessageAt: Date().addingTimeInterval(-18),
@@ -25,9 +25,46 @@ enum PreviewData {
     )
 
     static let groups: [ExportGroup] = [
-        .init(id: "120363001@g.us", name: "Project Phoenix", participantCount: 28, isSelected: true, lastMessageAt: Date()),
-        .init(id: "120363002@g.us", name: "Logistics Updates", participantCount: 14, isSelected: true, lastMessageAt: Date().addingTimeInterval(-120)),
-        .init(id: "120363003@g.us", name: "London Dealers", participantCount: 62, isSelected: true, lastMessageAt: Date().addingTimeInterval(-240)),
+        .init(
+            id: "120363001@g.us",
+            name: "Project Phoenix",
+            participantCount: 28,
+            isSelected: true,
+            lastMessageAt: Date(),
+            historySyncState: .receiving,
+            historyTextMessageCount: 1_842,
+            historyBatchCount: 37,
+            historyRequestCount: 38,
+            historySyncUpdatedAt: Date(),
+            historyOldestMessageAt: Date().addingTimeInterval(-2_592_000)
+        ),
+        .init(
+            id: "120363002@g.us",
+            name: "Logistics Updates",
+            participantCount: 14,
+            isSelected: true,
+            lastMessageAt: Date().addingTimeInterval(-120),
+            historySyncState: .complete,
+            historyTextMessageCount: 4_218,
+            historyBatchCount: 85,
+            historyRequestCount: 85,
+            historySyncCompletedAt: Date().addingTimeInterval(-60),
+            historyOldestMessageAt: Date().addingTimeInterval(-31_536_000)
+        ),
+        .init(
+            id: "120363003@g.us",
+            name: "London Dealers",
+            participantCount: 62,
+            isSelected: true,
+            lastMessageAt: Date().addingTimeInterval(-240),
+            historySyncState: .stalled,
+            historyTextMessageCount: 22,
+            historyBatchCount: 1,
+            historyRequestCount: 2,
+            historySyncUpdatedAt: Date().addingTimeInterval(-180),
+            historyOldestMessageAt: Date().addingTimeInterval(-86_400),
+            historySyncLastError: "WhatsApp did not return the requested history batch; keep the primary phone online and retry"
+        ),
         .init(id: "120363004@g.us", name: "Global Sourcing", participantCount: 31, isSelected: true, lastMessageAt: Date().addingTimeInterval(-420)),
         .init(id: "120363005@g.us", name: "NYC Showroom", participantCount: 12, isSelected: true, lastMessageAt: Date().addingTimeInterval(-720)),
         .init(id: "120363006@g.us", name: "Client Concierge", participantCount: 19, isSelected: true, lastMessageAt: Date().addingTimeInterval(-1_080)),

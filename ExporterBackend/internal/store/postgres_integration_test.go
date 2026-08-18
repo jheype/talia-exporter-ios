@@ -25,7 +25,7 @@ func TestPostgresCaptureLifecycle(t *testing.T) {
 		t.Fatalf("open PostgreSQL: %v", err)
 	}
 	defer repository.Close()
-	if err := repository.Migrate(ctx, migrations.Initial); err != nil {
+	if err := repository.Migrate(ctx, migrations.All()); err != nil {
 		t.Fatalf("migrate PostgreSQL: %v", err)
 	}
 	if _, err := repository.pool.Exec(ctx, `
@@ -85,13 +85,18 @@ func TestPostgresCaptureLifecycle(t *testing.T) {
 	if err != nil || captured {
 		t.Fatalf("deduplicate message: captured=%v error=%v", captured, err)
 	}
-	if _, err := repository.pool.Exec(ctx, `
-		UPDATE exporter_delivery_outbox
-		SET status = 'delivered', delivered_at = NOW()
-		WHERE message_id = (
-			SELECT id FROM exporter_messages WHERE whatsapp_message_id = 'MSG-1'
-		)`); err != nil {
-		t.Fatalf("mark outbox delivered: %v", err)
+	var messageID uuid.UUID
+	if err := repository.pool.QueryRow(ctx, `
+		SELECT id FROM exporter_messages WHERE whatsapp_message_id = 'MSG-1'`).Scan(&messageID); err != nil {
+		t.Fatalf("load message ID: %v", err)
+	}
+	var outboxCount int
+	if err := repository.pool.QueryRow(ctx, `
+		SELECT COUNT(*)::INTEGER FROM exporter_delivery_outbox`).Scan(&outboxCount); err != nil {
+		t.Fatalf("count delivery outbox: %v", err)
+	}
+	if outboxCount != 0 {
+		t.Fatalf("automatic outbox rows=%d, want 0 before manual confirmation", outboxCount)
 	}
 	edited := incoming
 	edited.Body = "Available for £26,500"
@@ -102,17 +107,50 @@ func TestPostgresCaptureLifecycle(t *testing.T) {
 	if captured, err := repository.InsertMessage(ctx, edited); err != nil || captured {
 		t.Fatalf("deduplicate edit: captured=%v error=%v", captured, err)
 	}
-	var outboxStatus string
-	var outboxRevision int
-	if err := repository.pool.QueryRow(ctx, `
-		SELECT o.status, o.revision
-		FROM exporter_delivery_outbox o
-		JOIN exporter_messages m ON m.id = o.message_id
-		WHERE m.whatsapp_message_id = 'MSG-1'`).Scan(&outboxStatus, &outboxRevision); err != nil {
-		t.Fatalf("load edited outbox: %v", err)
+	uploadSessionID := uuid.New()
+	if err := repository.MarkMessagesQueuedForIngestion(
+		ctx,
+		userID,
+		[]uuid.UUID{messageID},
+		uploadSessionID,
+	); err != nil {
+		t.Fatalf("acknowledge manually confirmed v14 upload: %v", err)
 	}
-	if outboxStatus != "pending" || outboxRevision != 2 {
-		t.Fatalf("edited outbox status=%q revision=%d, want pending revision 2", outboxStatus, outboxRevision)
+	var ingestionStatus string
+	var storedUploadSessionID uuid.UUID
+	if err := repository.pool.QueryRow(ctx, `
+		SELECT v14_ingestion_status, v14_upload_session_id
+		FROM exporter_messages
+		WHERE id = $1`, messageID).Scan(&ingestionStatus, &storedUploadSessionID); err != nil {
+		t.Fatalf("load ingestion status: %v", err)
+	}
+	if ingestionStatus != "queued" || storedUploadSessionID != uploadSessionID {
+		t.Fatalf("ingestion status=%q session=%s, want queued/%s", ingestionStatus, storedUploadSessionID, uploadSessionID)
+	}
+	if err := repository.MarkMessagesQueuedForIngestion(
+		ctx,
+		userID,
+		[]uuid.UUID{messageID},
+		uploadSessionID,
+	); err != nil {
+		t.Fatalf("repeat provenance acknowledgement must be idempotent: %v", err)
+	}
+	if err := repository.MarkMessagesQueuedForIngestion(
+		ctx,
+		userID,
+		[]uuid.UUID{messageID},
+		uuid.New(),
+	); !errors.Is(err, domain.ErrInvalidInput) {
+		t.Fatalf("replace upload provenance error=%v, want invalid input", err)
+	}
+	if err := repository.pool.QueryRow(ctx, `
+		SELECT v14_upload_session_id
+		FROM exporter_messages
+		WHERE id = $1`, messageID).Scan(&storedUploadSessionID); err != nil {
+		t.Fatalf("reload upload provenance: %v", err)
+	}
+	if storedUploadSessionID != uploadSessionID {
+		t.Fatalf("upload provenance changed to %s, want %s", storedUploadSessionID, uploadSessionID)
 	}
 	if _, err := repository.SetCaptureEnabled(ctx, userID, false); err != nil {
 		t.Fatalf("pause capture: %v", err)
@@ -121,6 +159,16 @@ func TestPostgresCaptureLifecycle(t *testing.T) {
 	pausedEdit.Body = "Available for £26,400"
 	if captured, err := repository.InsertMessage(ctx, pausedEdit); err != nil || captured {
 		t.Fatalf("edit stored message while paused: captured=%v error=%v", captured, err)
+	}
+	var uploadSessionCleared bool
+	if err := repository.pool.QueryRow(ctx, `
+		SELECT v14_ingestion_status, v14_upload_session_id IS NULL
+		FROM exporter_messages
+		WHERE id = $1`, messageID).Scan(&ingestionStatus, &uploadSessionCleared); err != nil {
+		t.Fatalf("load edited ingestion status: %v", err)
+	}
+	if ingestionStatus != "available" || !uploadSessionCleared {
+		t.Fatalf("edited ingestion status=%q cleared=%v, want available/true", ingestionStatus, uploadSessionCleared)
 	}
 	if _, err := repository.SetCaptureEnabled(ctx, userID, true); err != nil {
 		t.Fatalf("resume capture: %v", err)
@@ -137,30 +185,20 @@ func TestPostgresCaptureLifecycle(t *testing.T) {
 		Width:         1200,
 		Height:        800,
 	}
-	if captured, err := repository.InsertMessage(ctx, image); err != nil || !captured {
-		t.Fatalf("insert image: captured=%v error=%v", captured, err)
+	if captured, err := repository.InsertMessage(ctx, image); err != nil || captured {
+		t.Fatalf("reject image: captured=%v error=%v", captured, err)
 	}
 
 	dashboard, err := repository.Dashboard(ctx, userID)
 	if err != nil {
 		t.Fatalf("load dashboard: %v", err)
 	}
-	if dashboard.Session.CapturedMessageCount != 2 || len(dashboard.Messages) != 2 {
+	if dashboard.Session.CapturedMessageCount != 1 || len(dashboard.Messages) != 1 {
 		t.Fatalf(
-			"captured count=%d messages=%d, want two",
+			"captured count=%d messages=%d, want one text message",
 			dashboard.Session.CapturedMessageCount,
 			len(dashboard.Messages),
 		)
-	}
-	var imageMessage *domain.CapturedMessage
-	for index := range dashboard.Messages {
-		if dashboard.Messages[index].WhatsAppMessageID == "MSG-2" {
-			imageMessage = &dashboard.Messages[index]
-			break
-		}
-	}
-	if imageMessage == nil || imageMessage.MediaMetadata == nil || imageMessage.MediaMetadata.MIMEType != "image/jpeg" {
-		t.Fatalf("image message = %#v", imageMessage)
 	}
 	if len(dashboard.Events) != 2 {
 		t.Fatalf("events=%d, want selection and capture events", len(dashboard.Events))
@@ -169,29 +207,38 @@ func TestPostgresCaptureLifecycle(t *testing.T) {
 		t.Fatalf("clear selection before revoke: %v", err)
 	}
 
-	revoked := incoming
-	revoked.Body = ""
-	revoked.Type = domain.MessageSystem
-	revoked.IsRevoke = true
-	if captured, err := repository.InsertMessage(ctx, revoked); err != nil || captured {
+	revokeMessage := incoming
+	revokeMessage.Body = ""
+	revokeMessage.Type = domain.MessageSystem
+	revokeMessage.IsRevoke = true
+	if captured, err := repository.InsertMessage(ctx, revokeMessage); err != nil || captured {
 		t.Fatalf("revoke message: captured=%v error=%v", captured, err)
 	}
-	if captured, err := repository.InsertMessage(ctx, revoked); err != nil || captured {
+	if captured, err := repository.InsertMessage(ctx, revokeMessage); err != nil || captured {
 		t.Fatalf("deduplicate revoke: captured=%v error=%v", captured, err)
 	}
 	dashboard, err = repository.Dashboard(ctx, userID)
 	if err != nil {
 		t.Fatalf("load dashboard after revoke: %v", err)
 	}
-	var revokedMessage *domain.CapturedMessage
-	for index := range dashboard.Messages {
-		if dashboard.Messages[index].WhatsAppMessageID == "MSG-1" {
-			revokedMessage = &dashboard.Messages[index]
-			break
-		}
+	if dashboard.Session.CapturedMessageCount != 0 || len(dashboard.Messages) != 0 {
+		t.Fatalf(
+			"revoked text leaked into API: count=%d messages=%d",
+			dashboard.Session.CapturedMessageCount,
+			len(dashboard.Messages),
+		)
 	}
-	if revokedMessage == nil || !revokedMessage.IsRevoked || revokedMessage.Body != "" || revokedMessage.Revision != 4 {
-		t.Fatalf("revoked message = %#v", revokedMessage)
+	var revoked bool
+	var revokedBody string
+	var revokedRevision int
+	if err := repository.pool.QueryRow(ctx, `
+		SELECT is_revoked, body, revision
+		FROM exporter_messages
+		WHERE id = $1`, messageID).Scan(&revoked, &revokedBody, &revokedRevision); err != nil {
+		t.Fatalf("load revoked audit row: %v", err)
+	}
+	if !revoked || revokedBody != "" || revokedRevision != 4 {
+		t.Fatalf("revoked audit row: revoked=%v body=%q revision=%d", revoked, revokedBody, revokedRevision)
 	}
 
 	if err := repository.ArchiveSession(ctx, userID); err != nil {

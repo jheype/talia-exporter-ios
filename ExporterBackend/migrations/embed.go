@@ -7,3 +7,11 @@ import _ "embed"
 //
 //go:embed 001_exporter.sql
 var Initial string
+
+//go:embed 002_history_sync.sql
+var HistorySync string
+
+// All returns the full idempotent schema required by this binary.
+func All() string {
+	return Initial + "\n" + HistorySync
+}

@@ -33,12 +33,44 @@ extension AppModel {
         }
     }
 
-    func refreshGroups() async {
+    func refreshGroups(showErrors: Bool = true) async {
         do {
             groups = try await api.groups()
             await persistDashboard()
         } catch {
-            await handle(error, title: "Unable to load groups")
+            if showErrors {
+                await handle(error, title: "Unable to load groups")
+            }
+        }
+    }
+
+    func monitorHistorySync() async {
+        while !Task.isCancelled, route == .main {
+            if selectionTask == nil {
+                do {
+                    groups = try await api.historySyncGroups()
+                    await persistDashboard()
+                } catch {
+                    if !Task.isCancelled {
+                        present(error, title: "Unable to refresh history progress")
+                    }
+                    return
+                }
+            }
+            try? await Task.sleep(for: .seconds(3))
+        }
+    }
+
+    func retryHistorySync(for group: ExportGroup) async {
+        guard group.isSelected, !historyRetryingGroupIDs.contains(group.id) else { return }
+        historyRetryingGroupIDs.insert(group.id)
+        defer { historyRetryingGroupIDs.remove(group.id) }
+
+        do {
+            groups = try await api.retryHistorySync(groupJIDs: [group.id])
+            await persistDashboard()
+        } catch {
+            await handle(error, title: "Unable to retry message history")
         }
     }
 
@@ -113,6 +145,7 @@ extension AppModel {
             try? await Task.sleep(for: .milliseconds(500))
             guard !Task.isCancelled, let self else { return }
             await self.synchroniseSelection()
+            self.selectionTask = nil
         }
     }
 

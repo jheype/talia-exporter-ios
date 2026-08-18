@@ -53,16 +53,12 @@ func TestCapturedMessageJSONContract(t *testing.T) {
 		GroupName:         "Project Phoenix",
 		SenderJID:         "447700900123@s.whatsapp.net",
 		Sender:            "James",
-		Body:              "Vehicle exterior",
-		Type:              MessageImage,
+		Body:              "126500LN white dial, 2025 full set — £26,800",
+		Type:              MessageText,
 		Timestamp:         time.Now().UTC(),
-		HasMedia:          true,
 		IsEdited:          true,
 		Revision:          2,
-		MediaMetadata: &MediaMetadata{
-			MIMEType:      "image/jpeg",
-			FileSizeBytes: 128_000,
-		},
+		IngestionStatus:   "available",
 	}
 
 	encoded, err := json.Marshal(message)
@@ -76,14 +72,14 @@ func TestCapturedMessageJSONContract(t *testing.T) {
 	for _, key := range []string{
 		"id", "whatsapp_message_id", "group_jid", "group_name", "sender_jid",
 		"sender", "body", "type", "timestamp", "is_from_me", "has_media",
-		"is_edited", "is_revoked", "revision", "media_metadata",
+		"is_edited", "is_revoked", "revision", "media_metadata", "ingestion_status",
+		"upload_session_id", "ingestion_queued_at",
 	} {
 		if _, present := object[key]; !present {
 			t.Errorf("message JSON missing %q", key)
 		}
 	}
-	media, ok := object["media_metadata"].(map[string]any)
-	if !ok || media["mime_type"] != "image/jpeg" {
-		t.Fatalf("media metadata = %#v", object["media_metadata"])
+	if object["media_metadata"] != nil {
+		t.Fatalf("text message must not contain media metadata: %#v", object["media_metadata"])
 	}
 }

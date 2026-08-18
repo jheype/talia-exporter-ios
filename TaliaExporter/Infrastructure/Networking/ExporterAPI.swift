@@ -8,6 +8,8 @@ protocol ExporterServing: Sendable {
     func session() async throws -> ExporterSession?
     func requestPairingCode(phoneNumber: String) async throws -> PairingCodeResponse
     func groups() async throws -> [ExportGroup]
+    func historySyncGroups() async throws -> [ExportGroup]
+    func retryHistorySync(groupJIDs: [String]) async throws -> [ExportGroup]
     func saveSelection(groupJIDs: [String]) async throws -> ExporterSession
     func setCaptureEnabled(_ enabled: Bool) async throws -> ExporterSession
     func setPreferences(_ preferences: CapturePreferences) async throws -> ExporterSession
@@ -92,6 +94,18 @@ actor ExporterAPI: ExporterServing {
 
     func groups() async throws -> [ExportGroup] {
         try await client.send(.get, path: "exporter/groups")
+    }
+
+    func historySyncGroups() async throws -> [ExportGroup] {
+        try await client.send(.get, path: "exporter/groups/history-sync")
+    }
+
+    func retryHistorySync(groupJIDs: [String]) async throws -> [ExportGroup] {
+        try await client.send(
+            .post,
+            path: "exporter/groups/history-sync",
+            body: GroupSelectionRequest(groupJIDs: groupJIDs)
+        )
     }
 
     func saveSelection(groupJIDs: [String]) async throws -> ExporterSession {
@@ -181,6 +195,31 @@ actor PreviewExporterAPI: ExporterServing {
     }
 
     func groups() async throws -> [ExportGroup] { currentGroups }
+
+    func historySyncGroups() async throws -> [ExportGroup] { currentGroups }
+
+    func retryHistorySync(groupJIDs: [String]) async throws -> [ExportGroup] {
+        currentGroups = currentGroups.map { group in
+            guard groupJIDs.contains(group.id) else { return group }
+            return ExportGroup(
+                id: group.id,
+                name: group.name,
+                participantCount: group.participantCount,
+                isSelected: group.isSelected,
+                lastMessageAt: group.lastMessageAt,
+                historySyncState: .queued,
+                historyTextMessageCount: group.historyTextMessageCount,
+                historyBatchCount: group.historyBatchCount,
+                historyRequestCount: group.historyRequestCount,
+                historySyncStartedAt: group.historySyncStartedAt,
+                historySyncUpdatedAt: Date(),
+                historySyncCompletedAt: nil,
+                historyOldestMessageAt: group.historyOldestMessageAt,
+                historySyncLastError: nil
+            )
+        }
+        return currentGroups
+    }
 
     func saveSelection(groupJIDs: [String]) async throws -> ExporterSession {
         currentGroups = currentGroups.map { group in

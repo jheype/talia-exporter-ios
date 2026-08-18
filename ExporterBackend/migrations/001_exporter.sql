@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS exporter_sessions (
         'paused', 'interrupted', 'logged_out'
     )),
     capture_enabled BOOLEAN NOT NULL DEFAULT FALSE,
-    include_media BOOLEAN NOT NULL DEFAULT TRUE,
+    include_media BOOLEAN NOT NULL DEFAULT FALSE,
     selection_finalised_at TIMESTAMPTZ,
     linked_at TIMESTAMPTZ,
     last_connected_at TIMESTAMPTZ,
@@ -45,6 +45,20 @@ CREATE TABLE IF NOT EXISTS exporter_groups (
     is_selected BOOLEAN NOT NULL DEFAULT FALSE,
     is_available BOOLEAN NOT NULL DEFAULT TRUE,
     last_message_at TIMESTAMPTZ,
+    history_sync_state TEXT NOT NULL DEFAULT 'idle' CHECK (history_sync_state IN (
+        'idle', 'queued', 'waiting_for_anchor', 'requesting', 'receiving',
+        'complete', 'stalled', 'failed'
+    )),
+    history_batch_count INTEGER NOT NULL DEFAULT 0 CHECK (history_batch_count >= 0),
+    history_request_count INTEGER NOT NULL DEFAULT 0 CHECK (history_request_count >= 0),
+    history_sync_started_at TIMESTAMPTZ,
+    history_sync_updated_at TIMESTAMPTZ,
+    history_sync_completed_at TIMESTAMPTZ,
+    history_oldest_message_at TIMESTAMPTZ,
+    history_sync_last_error TEXT,
+    history_anchor_message_id TEXT,
+    history_anchor_timestamp TIMESTAMPTZ,
+    history_anchor_from_me BOOLEAN NOT NULL DEFAULT FALSE,
     discovered_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     PRIMARY KEY (session_id, jid)
@@ -74,6 +88,11 @@ CREATE TABLE IF NOT EXISTS exporter_messages (
     capture_state TEXT NOT NULL CHECK (capture_state IN ('pending', 'active')),
     media_metadata JSONB NOT NULL DEFAULT '{}'::JSONB,
     raw_metadata JSONB NOT NULL DEFAULT '{}'::JSONB,
+    v14_ingestion_status TEXT NOT NULL DEFAULT 'available' CHECK (
+        v14_ingestion_status IN ('available', 'queued')
+    ),
+    v14_upload_session_id UUID,
+    v14_ingestion_queued_at TIMESTAMPTZ,
     received_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE (session_id, group_jid, whatsapp_message_id)

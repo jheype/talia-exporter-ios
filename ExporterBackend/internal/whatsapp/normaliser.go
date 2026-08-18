@@ -32,6 +32,14 @@ func normaliseMessage(sessionID uuid.UUID, event *events.Message, history bool) 
 			mediaMetadata = domain.MediaMetadata{}
 		}
 	}
+	if !isRevoke {
+		body = strings.TrimSpace(body)
+		if messageType != domain.MessageText || body == "" {
+			return domain.IncomingMessage{}, false
+		}
+		hasMedia = false
+		mediaMetadata = domain.MediaMetadata{}
+	}
 	senderName := strings.TrimSpace(event.Info.PushName)
 	if senderName == "" {
 		senderName = event.Info.Sender.User

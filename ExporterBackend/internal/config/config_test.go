@@ -18,6 +18,9 @@ func TestLoadAllowsAPNsToRemainDisabled(t *testing.T) {
 	if settings.APNsBundleID != "com.talia.exporter" {
 		t.Fatalf("bundle ID = %q", settings.APNsBundleID)
 	}
+	if settings.AllowedClient != "ios,v14-web" {
+		t.Fatalf("allowed clients = %q, want ios,v14-web", settings.AllowedClient)
+	}
 }
 
 func TestLoadRejectsPartialAPNsConfiguration(t *testing.T) {

@@ -65,11 +65,40 @@ type PairingCode struct {
 }
 
 type Group struct {
-	JID              string     `json:"jid"`
-	Name             string     `json:"name"`
-	ParticipantCount int        `json:"participant_count"`
-	IsSelected       bool       `json:"is_selected"`
-	LastMessageAt    *time.Time `json:"last_message_at"`
+	JID                     string           `json:"jid"`
+	Name                    string           `json:"name"`
+	ParticipantCount        int              `json:"participant_count"`
+	IsSelected              bool             `json:"is_selected"`
+	LastMessageAt           *time.Time       `json:"last_message_at"`
+	HistorySyncState        HistorySyncState `json:"history_sync_state"`
+	HistoryTextMessageCount int64            `json:"history_text_message_count"`
+	HistoryBatchCount       int              `json:"history_batch_count"`
+	HistoryRequestCount     int              `json:"history_request_count"`
+	HistorySyncStartedAt    *time.Time       `json:"history_sync_started_at"`
+	HistorySyncUpdatedAt    *time.Time       `json:"history_sync_updated_at"`
+	HistorySyncCompletedAt  *time.Time       `json:"history_sync_completed_at"`
+	HistoryOldestMessageAt  *time.Time       `json:"history_oldest_message_at"`
+	HistorySyncLastError    *string          `json:"history_sync_last_error"`
+}
+
+type HistorySyncState string
+
+const (
+	HistorySyncIdle             HistorySyncState = "idle"
+	HistorySyncQueued           HistorySyncState = "queued"
+	HistorySyncWaitingForAnchor HistorySyncState = "waiting_for_anchor"
+	HistorySyncRequesting       HistorySyncState = "requesting"
+	HistorySyncReceiving        HistorySyncState = "receiving"
+	HistorySyncComplete         HistorySyncState = "complete"
+	HistorySyncStalled          HistorySyncState = "stalled"
+	HistorySyncFailed           HistorySyncState = "failed"
+)
+
+type HistoryAnchor struct {
+	GroupJID          string
+	WhatsAppMessageID string
+	Timestamp         time.Time
+	IsFromMe          bool
 }
 
 type MessageType string
@@ -105,6 +134,9 @@ type CapturedMessage struct {
 	IsRevoked         bool           `json:"is_revoked"`
 	Revision          int            `json:"revision"`
 	MediaMetadata     *MediaMetadata `json:"media_metadata"`
+	IngestionStatus   string         `json:"ingestion_status"`
+	UploadSessionID   *uuid.UUID     `json:"upload_session_id"`
+	IngestionQueuedAt *time.Time     `json:"ingestion_queued_at"`
 }
 
 type MediaMetadata struct {

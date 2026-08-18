@@ -74,15 +74,12 @@ struct SettingsView: View {
             }
             .tint(Color.taliaBlue)
 
-            Toggle(
-                isOn: Binding(
-                    get: { appModel.includeMedia },
-                    set: { value in Task { await appModel.setIncludeMedia(value) } }
-                )
-            ) {
-                Label("Include media metadata", systemImage: "photo.on.rectangle")
+            LabeledContent {
+                Text("Text only")
+                    .foregroundStyle(.secondary)
+            } label: {
+                Label("Captured content", systemImage: "text.bubble")
             }
-            .tint(Color.taliaBlue)
 
             Toggle(isOn: Binding(
                 get: { notificationsEnabled },
