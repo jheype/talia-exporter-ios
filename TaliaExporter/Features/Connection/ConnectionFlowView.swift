@@ -236,20 +236,37 @@ private struct PairingCodeView: View {
             }
             .frame(height: 54)
         } else {
-            HStack(spacing: 7) {
-                ForEach(digits.indices, id: \.self) { index in
-                    Text(String(digits[index]))
-                        .font(.system(size: 22, weight: .bold, design: .monospaced))
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 54)
-                        .background(Color.taliaSecondaryBackground)
-                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            GeometryReader { proxy in
+                let spacing: CGFloat = 6
+                let separatorWidth: CGFloat = 14
+                let digitWidth = max(
+                    24,
+                    (proxy.size.width - separatorWidth - (spacing * 8)) / 8
+                )
 
-                    if index == 3 && digits.count > 4 {
-                        Text("–").foregroundStyle(.tertiary)
+                HStack(spacing: spacing) {
+                    ForEach(digits.indices, id: \.self) { index in
+                        Text(String(digits[index]))
+                            .font(.system(size: 22, weight: .bold, design: .monospaced))
+                            .frame(width: digitWidth, height: 54)
+                            .background(Color.taliaSecondaryBackground)
+                            .clipShape(
+                                RoundedRectangle(
+                                    cornerRadius: 12,
+                                    style: .continuous
+                                )
+                            )
+
+                        if index == 3 && digits.count > 4 {
+                            Text("–")
+                                .foregroundStyle(.tertiary)
+                                .frame(width: separatorWidth)
+                        }
                     }
                 }
+                .frame(width: proxy.size.width, alignment: .leading)
             }
+            .frame(height: 54)
             .textSelection(.enabled)
         }
     }

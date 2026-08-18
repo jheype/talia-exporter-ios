@@ -22,11 +22,18 @@ extension AppModel {
 
         do {
             let response = try await api.requestPairingCode(phoneNumber: phoneNumber)
+            let digits = response.code.filter(\.isNumber)
+
+            guard digits.count == 8 else {
+                throw APIError(
+                    statusCode: nil,
+                    code: "CLIENT.INVALID_PAIRING_CODE",
+                    message: "The service returned an invalid pairing code."
+                )
+            }
+
             session = response.session
-            pairingCode = response.code.filter(\.isNumber)
-            pairingExpiresAt = response.expiresAt
-            connectionStage = .pairing
-            startPairingStatusPoll()
+            pairingCode = digits
         } catch {
             await handle(error, title: "Unable to generate code")
         }
