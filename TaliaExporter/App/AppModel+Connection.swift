@@ -21,7 +21,10 @@ extension AppModel {
         defer { isWorking = false }
 
         do {
-            let response = try await api.requestPairingCode(phoneNumber: phoneNumber)
+            let response = try await api.requestPairingCode(
+                phoneNumber: phoneNumber
+            )
+
             let digits = response.code.filter(\.isNumber)
 
             guard digits.count == 8 else {
@@ -34,8 +37,14 @@ extension AppModel {
 
             session = response.session
             pairingCode = digits
+            pairingExpiresAt = response.expiresAt
+            connectionStage = .pairing
+            startPairingStatusPoll()
         } catch {
-            await handle(error, title: "Unable to generate code")
+            await handle(
+                error,
+                title: "Unable to generate code"
+            )
         }
     }
 
