@@ -201,7 +201,7 @@ private struct GroupHistoryProgress: View {
         case .complete:
             "Latest available batch captured"
         case .stalled:
-            "History capture stalled"
+            "Older history paused"
         case .availabilityLimited:
             "Older history is phone-limited"
         case .failed:
@@ -231,9 +231,9 @@ private struct GroupHistoryProgress: View {
         switch state {
         case .complete:
             .taliaLive
-        case .waitingForAnchor, .availabilityLimited, .unknown:
+        case .waitingForAnchor, .stalled, .availabilityLimited, .unknown:
             .orange
-        case .stalled, .failed:
+        case .failed:
             .red
         default:
             .taliaBlue
