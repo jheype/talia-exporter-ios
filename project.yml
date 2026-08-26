@@ -21,11 +21,14 @@ targets:
     settings:
       base:
         CODE_SIGN_ENTITLEMENTS: TaliaExporter/Resources/TaliaExporter.entitlements
+        DEVELOPMENT_TEAM: S3SCDDP668
+        CODE_SIGN_STYLE: Automatic
         PRODUCT_BUNDLE_IDENTIFIER: com.talia.exporter
         PRODUCT_NAME: Talia Exporter
         GENERATE_INFOPLIST_FILE: false
         INFOPLIST_FILE: TaliaExporter/Resources/Info.plist
         TARGETED_DEVICE_FAMILY: 1
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         SUPPORTS_MACCATALYST: false
         ENABLE_PREVIEWS: true
