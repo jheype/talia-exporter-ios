@@ -73,6 +73,7 @@ struct SettingsView: View {
                 Label("Capture enabled", systemImage: "dot.radiowaves.left.and.right")
             }
             .tint(Color.taliaBlue)
+            .disabled(appModel.isWorking)
 
             LabeledContent {
                 Text("Text only")

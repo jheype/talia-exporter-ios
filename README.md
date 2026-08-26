@@ -1,79 +1,125 @@
-# Talia Exporter
+# PR-2 — Exporter capture start/resume recovery
 
-Private iOS control application and server-side WhatsApp capture service for Talia.
+This package is intentionally separate from the UK Chats image-intelligence
+correction package. It fixes the Lucas Renshaw account symptoms:
 
-## Repository layout
+- `Unable to start capture — Check your internet connection and try again.`
+- capture remaining `Paused` after selecting a group;
+- `Unable to resume capture — Check the supplied values and try again.`
 
-```text
-TaliaExporter/       Native SwiftUI application
-ExporterBackend/     Go API and long-running WhatsApp session workers
-docs/                Architecture and v14 integration boundary
+## Root cause
+
+The group-selection request performed an unbounded promotion/deletion pass over
+the entire pre-selection WhatsApp history before returning. A large initial
+account backlog could outlive the iOS or ingress timeout. The next resume request
+then found no committed selected group and returned the generic invalid-input
+error.
+
+## What changes
+
+### Exporter backend
+
+- Group selection and first capture activation remain atomic, but the control
+  transaction no longer processes the whole message backlog.
+- Only groups affected by the selection are locked; hundreds of unrelated
+  discovered groups no longer add lock calls to the request.
+- Durable `pending` rows are reconciled by the owning WhatsApp session worker in
+  bounded pages of 250.
+- A pass promotes selected messages, queues their intelligence work, discards
+  unselected rows and cleans unselected quarantine rows without exceeding the
+  page limit for message mutations.
+- History starts only after the pending backlog is drained. The worker yields
+  after 20 pages so live traffic and other sessions retain capacity.
+- Restart recovery requires no extra in-memory state or migration: remaining
+  `pending` rows are the durable queue.
+- Image/text pairing runs after the final promotion page, so a page boundary
+  cannot separate an image from its following advert.
+- Resume with no selected groups now returns
+  `WHATSAPP.NO_SELECTED_GROUPS`; a stale group list returns
+  `WHATSAPP.GROUP_SELECTION_STALE`.
+- Rejected control requests are logged with HTTP status and stable error code.
+
+### Talia Exporter iOS
+
+- A timeout or interrupted response is treated as ambiguous, not automatically
+  described as a lack of internet.
+- After an ambiguous start/pause/resume response, the app reads the authoritative
+  session state. If the mutation committed, the UI proceeds without asking the
+  user to repeat it.
+- Resume preflights server group selection. With no selected group, the app
+  opens the Groups tab and explains exactly what is required.
+- A stale group list is refreshed before asking the user to choose again.
+- The capture toggle is disabled while a control mutation is in flight.
+
+## Branch order
+
+This is a stacked PR-2. Create its branch from the branch containing the
+image-intelligence PR that was supplied immediately before this package. The
+backend reconciliation uses that PR's intelligence columns/jobs and conservative
+media-pairing schema. Once PR-1 is merged, retarget PR-2 to `main`.
+
+Do not copy files from this package into the PR-1 branch and commit them there;
+that would mix the two review scopes.
+
+The iOS files assume the earlier account/session-isolation client patch is
+already present (`TaliaExporter-account-isolation-fixed-v1`).
+
+## Apply
+
+The `talia-v14/` and `TaliaExporter/` folders preserve repository-relative paths.
+Copy each tree over the matching project only on the PR-2 branch.
+
+No database migration or new environment variable is required.
+
+## Verification
+
+Backend:
+
+```bash
+cd services/exporter
+gofmt -w \
+  internal/domain/models.go \
+  internal/httpapi/respond.go \
+  internal/httpapi/capture_errors_test.go \
+  internal/store/repository.go \
+  internal/store/sessions.go \
+  internal/store/groups.go \
+  internal/store/media.go \
+  internal/store/postgres_integration_test.go \
+  internal/whatsapp/manager.go \
+  internal/whatsapp/selection_reconciliation_test.go \
+  contracts/exporter_api_contract_test.go
+go test ./...
 ```
 
-## iOS application
+Run PostgreSQL integration coverage as usual with `TEST_DATABASE_URL` configured.
 
-The app targets iOS 17 and later. It uses the existing v14 authentication endpoints, requests phone-number pairing, discovers groups, stores a minimal encrypted dashboard cache and controls capture through the Exporter API.
+iOS:
 
-Open `TaliaExporter.xcodeproj`, select an iPhone simulator and press `Command + R`.
+1. Add `TaliaExporterTests/CaptureControlRecoveryTests.swift` to the unit-test
+   target, not the application target.
+2. Run the existing Xcode test scheme:
 
-The default API URL is:
-
-```text
-https://api.talia.co.uk/api/v1/
+```bash
+xcodebuild \
+  -scheme TaliaExporter \
+  -destination 'platform=iOS Simulator,name=iPhone 16' \
+  clean test
 ```
 
-For a Debug run, set `TALIA_API_BASE_URL` in the Xcode scheme environment to point to another deployment. The URL must include `/api/v1/`.
+## Deployment and acceptance
 
-Before device distribution, configure the Apple team and enable these capabilities for the App ID and provisioning profile:
+Deploy the backend before distributing the iOS build.
 
-- Background Modes: Background fetch and Remote notifications
-- Push Notifications
+1. Sign in as Lucas Renshaw and confirm his WhatsApp remains linked.
+2. Select `Testing ingestion` and start capture.
+3. Confirm the screen becomes `LIVE` without an internet or supplied-values
+   alert.
+4. Pause and resume capture once.
+5. Send a new text in that group and confirm it appears in UK Chats.
+6. While the initial backlog drains, confirm logs contain
+   `reconciled pending WhatsApp selection batch` and eventually show
+   `remaining=false`.
+7. Confirm the Exporter pod does not restart and new live messages continue to
+   arrive while old bootstrap rows are reconciled.
 
-The checked-in `Info.plist` declares the background refresh identifier and required modes. The checked-in entitlements select the APNs development environment for Debug builds and production for Release builds.
-
-## Exporter service
-
-The service is in [ExporterBackend](ExporterBackend). It owns linked WhatsApp sessions and remains active independently of the iPhone application. It provides:
-
-- v14-backed authentication without a duplicate user store;
-- phone-number pairing;
-- group discovery and transactional selection;
-- real-time and resumable available-history capture for selected group conversations;
-- text-only persistence (images, image captions and media metadata are discarded);
-- edit and revoke handling against the original WhatsApp message identifier;
-- deduplication using original WhatsApp message identifiers;
-- PostgreSQL persistence and restart recovery;
-- stable cursor APIs for messages and operational events;
-- a v14 staging page where a person selects captured text and explicitly confirms ingestion through the existing upload pipeline.
-
-Run its checks with Go 1.25 or later:
-
-```sh
-cd ExporterBackend
-make check
-```
-
-## Source architecture
-
-- `App/` — dependency composition, root model and navigation state.
-- `Domain/` — API/domain entities with no feature ownership.
-- `Infrastructure/Networking/` — typed HTTP client and Exporter API boundary.
-- `Infrastructure/Persistence/` — Keychain-backed encrypted cache.
-- `Infrastructure/Background/` — iOS background refresh coordination.
-- `Infrastructure/Notifications/` — notification permission and APNs registration boundary.
-- `Features/` — independent SwiftUI feature views.
-- `Preview/` — preview-only fixtures.
-- `DesignSystem/` — Talia tokens and reusable native components.
-
-The complete service design is documented in [Architecture](docs/ARCHITECTURE.md). The manual v14 bridge is documented in [v14 integration](docs/V14_INTEGRATION.md).
-
-## Xcode project generation
-
-The checked-in project already contains every source. `project.yml` is the reproducible XcodeGen definition:
-
-```sh
-brew install xcodegen
-xcodegen generate
-```
-
-Keep production credentials, Apple signing material and local `.env` files out of the repository.
