@@ -55,8 +55,8 @@ extension AppModel {
         isWorking = true
         defer { isWorking = false }
 
+        let selected = groups.filter(\.isSelected).map(\.id)
         do {
-            let selected = groups.filter(\.isSelected).map(\.id)
             // The backend atomically enables capture with the first non-empty
             // selection, then starts history only after that transaction commits.
             // A second capture request recreated the exact window in which early
@@ -70,15 +70,39 @@ extension AppModel {
                     message: "Exporter did not enable capture with the selected groups. Update the backend before using this app build."
                 )
             }
-            session = startedSession
-            route = .main
-            selectedTab = .home
-            pairingCode = nil
-            pairingExpiresAt = nil
-            await refreshDashboard(showErrors: false)
+            await finishConnection(with: startedSession)
         } catch {
+            if let recovered = await recoverCaptureMutation(
+                after: error,
+                expectedEnabled: true,
+                expectedGroupJIDs: Set(selected)
+            ) {
+                await finishConnection(with: recovered)
+                return
+            }
+            if let apiError = error as? APIError,
+               apiError.code == "WHATSAPP.GROUP_SELECTION_STALE" {
+                if let serverGroups = try? await api.groups() {
+                    groups = serverGroups
+                }
+                alert = AppAlert(
+                    title: "Group list changed",
+                    message: "Choose the group again from the refreshed list, then start capture."
+                )
+                return
+            }
             await handle(error, title: "Unable to start capture")
         }
+    }
+
+    private func finishConnection(with startedSession: ExporterSession) async {
+        session = startedSession
+        route = .main
+        selectedTab = .home
+        pairingCode = nil
+        pairingExpiresAt = nil
+        await persistDashboard()
+        await refreshDashboard(showErrors: false)
     }
 
     func resetConnectionFlow() {

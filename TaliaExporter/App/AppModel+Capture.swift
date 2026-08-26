@@ -162,7 +162,27 @@ extension AppModel {
     }
 
     func setCaptureEnabled(_ enabled: Bool) async {
-        guard session?.captureEnabled != enabled else { return }
+        guard session?.captureEnabled != enabled, !isWorking else { return }
+        isWorking = true
+        defer { isWorking = false }
+
+        if enabled, selectedGroupCount == 0 {
+            do {
+                groups = try await api.groups()
+            } catch {
+                await handle(error, title: "Unable to check selected groups")
+                return
+            }
+            guard selectedGroupCount > 0 else {
+                selectedTab = .groups
+                alert = AppAlert(
+                    title: "Choose a group first",
+                    message: "Select at least one WhatsApp group, then resume capture."
+                )
+                return
+            }
+        }
+
         stateReadRevision &+= 1
         do {
             let updated = try await api.setCaptureEnabled(enabled)
@@ -170,8 +190,51 @@ extension AppModel {
             session = try validatedSession(updated)
             await persistDashboard()
         } catch {
+            if let recovered = await recoverCaptureMutation(
+                after: error,
+                expectedEnabled: enabled,
+                expectedGroupJIDs: []
+            ) {
+                stateReadRevision &+= 1
+                session = recovered
+                await persistDashboard()
+                return
+            }
+            if let apiError = error as? APIError,
+               apiError.code == "WHATSAPP.NO_SELECTED_GROUPS" {
+                if let serverGroups = try? await api.groups() {
+                    groups = serverGroups
+                }
+                selectedTab = .groups
+                alert = AppAlert(
+                    title: "Choose a group first",
+                    message: "Select at least one WhatsApp group, then resume capture."
+                )
+                return
+            }
             await handle(error, title: enabled ? "Unable to resume capture" : "Unable to pause capture")
         }
+    }
+
+    func recoverCaptureMutation(
+        after error: Error,
+        expectedEnabled: Bool,
+        expectedGroupJIDs: Set<String>
+    ) async -> ExporterSession? {
+        guard let apiError = error as? APIError,
+              apiError.isAmbiguousMutationFailure,
+              let refreshed = try? await api.session(),
+              refreshed.captureEnabled == expectedEnabled,
+              let ownedSession = try? validatedSession(refreshed)
+        else { return nil }
+
+        if !expectedGroupJIDs.isEmpty {
+            guard let serverGroups = try? await api.groups() else { return nil }
+            let selected = Set(serverGroups.lazy.filter(\.isSelected).map(\.id))
+            guard selected == expectedGroupJIDs else { return nil }
+            groups = serverGroups
+        }
+        return ownedSession
     }
 
     func setIncludeMedia(_ enabled: Bool) async {

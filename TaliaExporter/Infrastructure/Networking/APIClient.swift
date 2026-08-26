@@ -14,6 +14,14 @@ struct APIError: LocalizedError, Equatable, Sendable {
 
     var errorDescription: String? { message }
 
+    var isAmbiguousMutationFailure: Bool {
+        if statusCode == nil, code.hasPrefix("NETWORK.") {
+            return true
+        }
+        guard let statusCode else { return false }
+        return [408, 500, 502, 503, 504].contains(statusCode)
+    }
+
     static func transport(_ error: Error) -> APIError {
         APIError(
             statusCode: nil,
@@ -26,8 +34,10 @@ struct APIError: LocalizedError, Equatable, Sendable {
 private extension URLError {
     var userFacingMessage: String {
         switch code {
-        case .notConnectedToInternet, .networkConnectionLost:
+        case .notConnectedToInternet:
             "Check your internet connection and try again."
+        case .networkConnectionLost:
+            "The connection ended before Talia confirmed the change. The app will check the saved state before asking you to retry."
         case .timedOut:
             "The request timed out. Please try again."
         case .cannotConnectToHost, .cannotFindHost, .dnsLookupFailed:
