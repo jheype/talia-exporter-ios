@@ -107,6 +107,8 @@ actor APIClient {
     }
 
     func clearAuthenticationCookies() {
+        refreshTask?.cancel()
+        refreshTask = nil
         guard let storage = session.configuration.httpCookieStorage else { return }
         for cookie in storage.cookies(for: baseURL) ?? [] {
             storage.deleteCookie(cookie)
@@ -288,7 +290,7 @@ actor APIClient {
     private static func makeSession() -> URLSession {
         let configuration = URLSessionConfiguration.default
         configuration.httpShouldSetCookies = true
-        configuration.httpCookieAcceptPolicy = .always
+        configuration.httpCookieAcceptPolicy = .onlyFromMainDocumentDomain
         configuration.httpCookieStorage = .shared
         configuration.waitsForConnectivity = true
         configuration.requestCachePolicy = .reloadIgnoringLocalCacheData

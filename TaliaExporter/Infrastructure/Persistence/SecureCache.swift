@@ -9,14 +9,15 @@ struct CachedDashboard: Codable, Sendable {
 }
 
 protocol DashboardCaching: Sendable {
-    func load() async -> CachedDashboard?
-    func save(_ dashboard: CachedDashboard) async
-    func clear() async
+    func load(for userID: UUID) async -> CachedDashboard?
+    func save(_ dashboard: CachedDashboard, for userID: UUID) async
+    func clear(for userID: UUID) async
 }
 
 actor SecureDashboardCache: DashboardCaching {
-    private let fileURL: URL
-    private let keyStore: KeyStore
+    private let directoryURL: URL
+    private let legacyFileURL: URL
+    private let service = "com.talia.exporter"
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
 
@@ -28,14 +29,57 @@ actor SecureDashboardCache: DashboardCaching {
             withIntermediateDirectories: true,
             attributes: [.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication]
         )
-        fileURL = directory.appending(path: "dashboard.cache")
-        keyStore = KeyStore(service: "com.talia.exporter", account: "dashboard-cache-key")
+        directoryURL = directory
+        legacyFileURL = directory.appending(path: "dashboard.cache")
 
         decoder.dateDecodingStrategy = .iso8601
         encoder.dateEncodingStrategy = .iso8601
     }
 
-    func load() async -> CachedDashboard? {
+    func load(for userID: UUID) async -> CachedDashboard? {
+        let scopedStore = keyStore(for: userID)
+        if let cached = decode(fileURL: fileURL(for: userID), keyStore: scopedStore) {
+            guard cached.session.userID == userID else {
+                await clear(for: userID)
+                return nil
+            }
+            return cached
+        }
+
+        // One-time migration from builds that used one global cache. The
+        // session owner is checked before any cached groups are exposed.
+        let legacyStore = KeyStore(service: service, account: "dashboard-cache-key")
+        guard let legacy = decode(fileURL: legacyFileURL, keyStore: legacyStore),
+              legacy.session.userID == userID else {
+            return nil
+        }
+        await save(legacy, for: userID)
+        try? FileManager.default.removeItem(at: legacyFileURL)
+        try? legacyStore.deleteKey()
+        return legacy
+    }
+
+    func save(_ dashboard: CachedDashboard, for userID: UUID) async {
+        guard dashboard.session.userID == userID else { return }
+        let keyStore = keyStore(for: userID)
+        guard let encoded = try? encoder.encode(dashboard),
+              let keyData = try? keyStore.loadOrCreateKey(),
+              let sealedBox = try? AES.GCM.seal(encoded, using: SymmetricKey(data: keyData)),
+              let combined = sealedBox.combined else {
+            return
+        }
+        try? combined.write(
+            to: fileURL(for: userID),
+            options: [.atomic, .completeFileProtection]
+        )
+    }
+
+    func clear(for userID: UUID) async {
+        try? FileManager.default.removeItem(at: fileURL(for: userID))
+        try? keyStore(for: userID).deleteKey()
+    }
+
+    private func decode(fileURL: URL, keyStore: KeyStore) -> CachedDashboard? {
         guard let encrypted = try? Data(contentsOf: fileURL),
               let keyData = try? keyStore.loadOrCreateKey(),
               let sealedBox = try? AES.GCM.SealedBox(combined: encrypted),
@@ -45,28 +89,28 @@ actor SecureDashboardCache: DashboardCaching {
         return try? decoder.decode(CachedDashboard.self, from: decrypted)
     }
 
-    func save(_ dashboard: CachedDashboard) async {
-        guard let encoded = try? encoder.encode(dashboard),
-              let keyData = try? keyStore.loadOrCreateKey(),
-              let sealedBox = try? AES.GCM.seal(encoded, using: SymmetricKey(data: keyData)),
-              let combined = sealedBox.combined else {
-            return
-        }
-        try? combined.write(to: fileURL, options: [.atomic, .completeFileProtection])
+    private func fileURL(for userID: UUID) -> URL {
+        directoryURL.appending(path: "dashboard-\(cacheScope(for: userID)).cache")
     }
 
-    func clear() async {
-        try? FileManager.default.removeItem(at: fileURL)
-        try? keyStore.deleteKey()
+    private func keyStore(for userID: UUID) -> KeyStore {
+        KeyStore(service: service, account: "dashboard-cache-key-\(cacheScope(for: userID))")
+    }
+
+    private func cacheScope(for userID: UUID) -> String {
+        userID.uuidString.lowercased()
     }
 }
 
 actor InMemoryDashboardCache: DashboardCaching {
-    private var value: CachedDashboard?
+    private var values: [UUID: CachedDashboard] = [:]
 
-    func load() async -> CachedDashboard? { value }
-    func save(_ dashboard: CachedDashboard) async { value = dashboard }
-    func clear() async { value = nil }
+    func load(for userID: UUID) async -> CachedDashboard? { values[userID] }
+    func save(_ dashboard: CachedDashboard, for userID: UUID) async {
+        guard dashboard.session.userID == userID else { return }
+        values[userID] = dashboard
+    }
+    func clear(for userID: UUID) async { values[userID] = nil }
 }
 
 private struct KeyStore: Sendable {

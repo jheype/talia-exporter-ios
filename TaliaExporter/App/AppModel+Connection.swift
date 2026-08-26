@@ -36,7 +36,7 @@ extension AppModel {
                     message: "The service returned an invalid pairing code."
                 )
             }
-            session = response.session
+            session = try validatedSession(response.session)
             pairingCode = pairingCharacters
             pairingExpiresAt = response.expiresAt
             connectionStage = .pairing
@@ -61,7 +61,8 @@ extension AppModel {
             // selection, then starts history only after that transaction commits.
             // A second capture request recreated the exact window in which early
             // history pages could be acknowledged but discarded.
-            let startedSession = try await api.saveSelection(groupJIDs: selected)
+            let responseSession = try await api.saveSelection(groupJIDs: selected)
+            let startedSession = try validatedSession(responseSession)
             guard startedSession.captureEnabled else {
                 throw APIError(
                     statusCode: nil,
@@ -111,7 +112,7 @@ extension AppModel {
     private func pollPairingStatus(showErrors: Bool) async {
         do {
             guard let currentSession = try await api.session() else { return }
-            session = currentSession
+            session = try validatedSession(currentSession)
             if currentSession.isLinked {
                 groups = try await api.groups()
                 connectionStage = .groups

@@ -4,6 +4,7 @@ protocol ExporterServing: Sendable {
     func currentUser() async throws -> TaliaUser
     func signIn(email: String, password: String) async throws -> TaliaUser
     func signOut() async throws
+    func clearLocalAuthentication() async
     func dashboard() async throws -> DashboardSnapshot
     func session() async throws -> ExporterSession?
     func requestPairingCode(phoneNumber: String) async throws -> PairingCodeResponse
@@ -48,6 +49,10 @@ actor ExporterAPI: ExporterServing {
     }
 
     func signIn(email: String, password: String) async throws -> TaliaUser {
+        // v14 authenticates native clients with httpOnly cookies. A failed or
+        // incomplete account switch must never send the previous account's
+        // cookie with the next login request.
+        await client.clearAuthenticationCookies()
         let response: LoginResponse = try await client.send(
             .post,
             path: "auth/login",
@@ -68,6 +73,10 @@ actor ExporterAPI: ExporterServing {
             await client.clearAuthenticationCookies()
             throw error
         }
+        await client.clearAuthenticationCookies()
+    }
+
+    func clearLocalAuthentication() async {
         await client.clearAuthenticationCookies()
     }
 
@@ -170,6 +179,7 @@ actor PreviewExporterAPI: ExporterServing {
     func currentUser() async throws -> TaliaUser { PreviewData.user }
     func signIn(email: String, password: String) async throws -> TaliaUser { PreviewData.user }
     func signOut() async throws {}
+    func clearLocalAuthentication() async {}
 
     func dashboard() async throws -> DashboardSnapshot {
         DashboardSnapshot(

@@ -39,6 +39,7 @@ final class AppModel: ObservableObject {
     var latestMessageChanges: [UUID: MessageChangeRecord] = [:]
 
     static let interruptionAlertsKey = "talia.exporter.interruption-alerts"
+    static let accountScopeMismatchCode = "CLIENT.ACCOUNT_SCOPE_MISMATCH"
 
     private let backgroundRefresh: BackgroundRefreshCoordinator
     private var didBootstrap = false
@@ -93,19 +94,24 @@ final class AppModel: ObservableObject {
         didBootstrap = true
 
         do {
-            user = try await api.currentUser()
-            await restoreCache()
+            let authenticatedUser = try await api.currentUser()
+            user = authenticatedUser
+            await restoreCache(for: authenticatedUser.id)
 
             if let currentSession = try await api.session(), currentSession.isLinked {
-                session = currentSession
+                session = try validatedSession(currentSession)
                 route = .main
                 await refreshDashboard(showErrors: false)
             } else {
+                await clearAccountOwnedState(for: authenticatedUser.id)
                 route = .connection
                 connectionStage = .intro
             }
         } catch let error as APIError where error.statusCode == 401 {
+            await api.clearLocalAuthentication()
             await resetAuthenticatedState()
+        } catch let error as APIError where error.code == Self.accountScopeMismatchCode {
+            await handle(error, title: "Account data mismatch")
         } catch {
             route = .signedOut
             present(error, title: "Unable to connect")
@@ -124,7 +130,7 @@ final class AppModel: ObservableObject {
         let selectionWasStable = selectionTask == nil
         do {
             let snapshot = try await api.dashboard()
-            apply(
+            try apply(
                 snapshot,
                 requestedStateReadRevision: requestedStateReadRevision,
                 requestedSelectionRevision: requestedSelectionRevision,
@@ -134,6 +140,9 @@ final class AppModel: ObservableObject {
             await persistDashboard()
             return true
         } catch {
+            if isAccountScopeMismatch(error) {
+                await handle(error, title: "Account data mismatch")
+            }
             return false
         }
     }
@@ -143,7 +152,8 @@ final class AppModel: ObservableObject {
         requestedStateReadRevision: UInt64,
         requestedSelectionRevision: UInt64,
         selectionWasStable: Bool
-    ) {
+    ) throws {
+        let ownedSession = try validatedSession(snapshot.session)
         // A GET that started before or during an optimistic selection edit may
         // complete after the PUT. Only a request made from the same stable
         // selection generation may replace selection-derived session/group
@@ -153,7 +163,7 @@ final class AppModel: ObservableObject {
            selectionTask == nil,
            requestedStateReadRevision == stateReadRevision,
            requestedSelectionRevision == selectionRevision {
-            session = snapshot.session
+            session = ownedSession
             groups = snapshot.groups
         }
         if requestedStateReadRevision == stateReadRevision {
@@ -213,28 +223,66 @@ final class AppModel: ObservableObject {
         latestMessageChanges = retained
     }
 
-    func restoreCache() async {
-        guard let cached = await cache.load() else { return }
+    func restoreCache(for userID: UUID) async {
+        guard let cached = await cache.load(for: userID) else { return }
+        guard cached.session.userID == userID else {
+            await cache.clear(for: userID)
+            return
+        }
         session = cached.session
         groups = cached.groups
         events = cached.events
     }
 
     func persistDashboard() async {
-        guard let session else { return }
-        await cache.save(CachedDashboard(session: session, groups: groups, events: events))
+        guard let user, let session, session.userID == user.id else { return }
+        await cache.save(
+            CachedDashboard(session: session, groups: groups, events: events),
+            for: user.id
+        )
     }
 
     func resetAuthenticatedState() async {
+        let authenticatedUserID = user?.id
+        pushNotifications.unregisterForRemoteNotifications()
+        UserDefaults.standard.set(false, forKey: Self.interruptionAlertsKey)
+        clearAccountOwnedRuntimeState()
+        user = nil
+        route = .signedOut
+        if let authenticatedUserID {
+            await cache.clear(for: authenticatedUserID)
+        }
+    }
+
+    func clearAccountOwnedState(for userID: UUID?) async {
+        clearAccountOwnedRuntimeState()
+        if let userID {
+            await cache.clear(for: userID)
+        }
+    }
+
+    func validatedSession(_ candidate: ExporterSession) throws -> ExporterSession {
+        guard let user, candidate.userID == user.id else {
+            throw APIError(
+                statusCode: nil,
+                code: Self.accountScopeMismatchCode,
+                message: "Talia returned WhatsApp data owned by a different account. Sign in again after the server update is deployed."
+            )
+        }
+        return candidate
+    }
+
+    func isAccountScopeMismatch(_ error: Error) -> Bool {
+        (error as? APIError)?.code == Self.accountScopeMismatchCode
+    }
+
+    private func clearAccountOwnedRuntimeState() {
         pairingTask?.cancel()
         selectionTask?.cancel()
         selectionTask = nil
         selectionTaskID = nil
         selectionRevision &+= 1
         stateReadRevision &+= 1
-        pushNotifications.unregisterForRemoteNotifications()
-        UserDefaults.standard.set(false, forKey: Self.interruptionAlertsKey)
-        user = nil
         session = nil
         groups = []
         events = []
@@ -247,8 +295,6 @@ final class AppModel: ObservableObject {
         pairingCode = nil
         pairingExpiresAt = nil
         historyRetryingGroupIDs = []
-        route = .signedOut
-        await cache.clear()
     }
 
     func present(_ error: Error, title: String) {
@@ -257,8 +303,18 @@ final class AppModel: ObservableObject {
     }
 
     func handle(_ error: Error, title: String) async {
+        if isAccountScopeMismatch(error) {
+            await api.clearLocalAuthentication()
+            await resetAuthenticatedState()
+            alert = AppAlert(
+                title: "Account data blocked",
+                message: "The app received a WhatsApp session belonging to another Talia account. No groups were shown. Sign in again after the account-isolation backend update is deployed."
+            )
+            return
+        }
         if let apiError = error as? APIError,
            (apiError.statusCode == 401 || apiError.code == "AUTH.REFRESH_FAILED") {
+            await api.clearLocalAuthentication()
             await resetAuthenticatedState()
             alert = AppAlert(
                 title: "Session expired",

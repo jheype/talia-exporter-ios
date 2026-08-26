@@ -12,7 +12,7 @@ extension AppModel {
 
         do {
             let snapshot = try await api.dashboard()
-            apply(
+            try apply(
                 snapshot,
                 requestedStateReadRevision: requestedStateReadRevision,
                 requestedSelectionRevision: requestedSelectionRevision,
@@ -167,7 +167,7 @@ extension AppModel {
         do {
             let updated = try await api.setCaptureEnabled(enabled)
             stateReadRevision &+= 1
-            session = updated
+            session = try validatedSession(updated)
             await persistDashboard()
         } catch {
             await handle(error, title: enabled ? "Unable to resume capture" : "Unable to pause capture")
@@ -180,7 +180,7 @@ extension AppModel {
         do {
             let updated = try await api.setPreferences(CapturePreferences(includeMedia: enabled))
             stateReadRevision &+= 1
-            session = updated
+            session = try validatedSession(updated)
             await persistDashboard()
         } catch {
             await handle(error, title: "Unable to update preferences")
@@ -208,7 +208,9 @@ extension AppModel {
             groups = []
             events = []
             messages = []
-            await cache.clear()
+            if let user {
+                await cache.clear(for: user.id)
+            }
             resetConnectionFlow()
             route = .connection
         } catch {
@@ -257,7 +259,7 @@ extension AppModel {
             let refreshedSession = try await api.saveSelection(groupJIDs: groupJIDs)
             guard !Task.isCancelled, revision == selectionRevision else { return }
             stateReadRevision &+= 1
-            session = refreshedSession
+            session = try validatedSession(refreshedSession)
             await persistDashboard()
         } catch {
             guard !Task.isCancelled, revision == selectionRevision else { return }
