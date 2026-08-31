@@ -10,6 +10,7 @@ protocol ExporterServing: Sendable {
     func requestPairingCode(phoneNumber: String) async throws -> PairingCodeResponse
     func groups() async throws -> [ExportGroup]
     func retryHistorySync(groupJIDs: [String]) async throws -> [ExportGroup]
+    func setGroupRouting(_ request: GroupRoutingRequest) async throws -> GroupRoutingSetting
     func saveSelection(groupJIDs: [String]) async throws -> ExporterSession
     func setCaptureEnabled(_ enabled: Bool) async throws -> ExporterSession
     func setPreferences(_ preferences: CapturePreferences) async throws -> ExporterSession
@@ -18,6 +19,7 @@ protocol ExporterServing: Sendable {
     func events(limit: Int) async throws -> [CaptureEvent]
     func registerDevice(token: String) async throws
     func unregisterDevices() async throws
+    func widgetSnapshot(preferences: WidgetPreferences) async throws -> ExporterWidgetSnapshot
 }
 
 actor ExporterAPI: ExporterServing {
@@ -112,6 +114,14 @@ actor ExporterAPI: ExporterServing {
         )
     }
 
+    func setGroupRouting(_ request: GroupRoutingRequest) async throws -> GroupRoutingSetting {
+        try await client.send(
+            .put,
+            path: "exporter/groups/routing",
+            body: request
+        )
+    }
+
     func saveSelection(groupJIDs: [String]) async throws -> ExporterSession {
         try await client.send(
             .put,
@@ -170,6 +180,28 @@ actor ExporterAPI: ExporterServing {
     func unregisterDevices() async throws {
         try await client.sendWithoutResponse(.delete, path: "exporter/devices")
     }
+
+    func widgetSnapshot(preferences: WidgetPreferences) async throws -> ExporterWidgetSnapshot {
+        try await client.send(
+            .get,
+            path: "exporter/widgets/snapshot",
+            queryItems: preferences.queryItems
+        )
+    }
+}
+
+extension ExporterServing {
+    func setGroupRouting(_ request: GroupRoutingRequest) async throws -> GroupRoutingSetting {
+        throw APIError(
+            statusCode: nil,
+            code: "CLIENT.ROUTING_UNAVAILABLE",
+            message: "Group routing is unavailable in this environment."
+        )
+    }
+
+    func widgetSnapshot(preferences: WidgetPreferences) async throws -> ExporterWidgetSnapshot {
+        .empty
+    }
 }
 
 actor PreviewExporterAPI: ExporterServing {
@@ -210,6 +242,11 @@ actor PreviewExporterAPI: ExporterServing {
                 name: group.name,
                 participantCount: group.participantCount,
                 isSelected: group.isSelected,
+                function: group.function,
+                functionRevision: group.functionRevision,
+                botFeedbackEnabled: group.botFeedbackEnabled,
+                botRemindersEnabled: group.botRemindersEnabled,
+                botDestinationID: group.botDestinationID,
                 lastMessageAt: group.lastMessageAt,
                 historySyncState: .queued,
                 historyTextMessageCount: group.historyTextMessageCount,
@@ -223,6 +260,26 @@ actor PreviewExporterAPI: ExporterServing {
             )
         }
         return currentGroups
+    }
+
+    func setGroupRouting(_ request: GroupRoutingRequest) async throws -> GroupRoutingSetting {
+        guard let index = currentGroups.firstIndex(where: { $0.id == request.groupJID }) else {
+            throw APIError(statusCode: 404, code: "EXPORTER.NOT_FOUND", message: "Group not found.")
+        }
+        currentGroups[index].function = request.function
+        currentGroups[index].functionRevision = request.expectedRevision + 1
+        currentGroups[index].botFeedbackEnabled = request.botFeedbackEnabled
+        currentGroups[index].botRemindersEnabled = request.botRemindersEnabled
+        currentGroups[index].botDestinationID = request.botDestinationID
+        return GroupRoutingSetting(
+            groupJID: request.groupJID,
+            function: request.function,
+            revision: request.expectedRevision + 1,
+            botFeedbackEnabled: request.botFeedbackEnabled,
+            botRemindersEnabled: request.botRemindersEnabled,
+            botDestinationID: request.botDestinationID,
+            updatedAt: Date()
+        )
     }
 
     func saveSelection(groupJIDs: [String]) async throws -> ExporterSession {
@@ -251,4 +308,7 @@ actor PreviewExporterAPI: ExporterServing {
     func events(limit: Int) async throws -> [CaptureEvent] { Array(PreviewData.events.prefix(limit)) }
     func registerDevice(token: String) async throws {}
     func unregisterDevices() async throws {}
+    func widgetSnapshot(preferences: WidgetPreferences) async throws -> ExporterWidgetSnapshot {
+        .preview
+    }
 }

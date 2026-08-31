@@ -37,7 +37,39 @@
 		A1000000000000000000001E /* TaliaExporter/App/AppModel+Connection.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000001E /* TaliaExporter/App/AppModel+Connection.swift */; };
 		A1000000000000000000001F /* TaliaExporter/App/AppModel+Capture.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000001F /* TaliaExporter/App/AppModel+Capture.swift */; };
 		A10000000000000000000020 /* TaliaExporter/App/AppModel+Notifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000020 /* TaliaExporter/App/AppModel+Notifications.swift */; };
+		B10000000000000000000001 /* WidgetSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000001 /* WidgetSupport.swift */; };
+		B10000000000000000000002 /* AppModel+Widgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000002 /* AppModel+Widgets.swift */; };
+		B10000000000000000000003 /* WidgetSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000003 /* WidgetSettingsView.swift */; };
+		B10000000000000000000004 /* WidgetSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000001 /* WidgetSupport.swift */; };
+		B10000000000000000000005 /* TaliaExporterWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000004 /* TaliaExporterWidgets.swift */; };
+		B10000000000000000000006 /* TaskProgressWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000005 /* TaskProgressWidget.swift */; };
+		B10000000000000000000007 /* CapturedMessagesWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000006 /* CapturedMessagesWidget.swift */; };
+		B10000000000000000000008 /* TaliaExporterWidget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = B20000000000000000000009 /* TaliaExporterWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		B90000000000000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A70000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B50000000000000000000001;
+			remoteInfo = TaliaExporterWidget;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		B30000000000000000000004 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				B10000000000000000000008 /* TaliaExporterWidget.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		A20000000000000000000001 /* TaliaExporter/TaliaExporterApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaliaExporter/TaliaExporterApp.swift; sourceTree = SOURCE_ROOT; };
@@ -73,10 +105,26 @@
 		A2000000000000000000001F /* TaliaExporter/App/AppModel+Capture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TaliaExporter/App/AppModel+Capture.swift"; sourceTree = SOURCE_ROOT; };
 		A20000000000000000000020 /* TaliaExporter/App/AppModel+Notifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TaliaExporter/App/AppModel+Notifications.swift"; sourceTree = SOURCE_ROOT; };
 		A20000000000000000000021 /* TaliaExporter/Resources/TaliaExporter.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TaliaExporter/Resources/TaliaExporter.entitlements; sourceTree = SOURCE_ROOT; };
+		B20000000000000000000001 /* WidgetSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaliaExporter/Domain/WidgetSupport.swift; sourceTree = SOURCE_ROOT; };
+		B20000000000000000000002 /* AppModel+Widgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TaliaExporter/App/AppModel+Widgets.swift"; sourceTree = SOURCE_ROOT; };
+		B20000000000000000000003 /* WidgetSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaliaExporter/Features/Settings/WidgetSettingsView.swift; sourceTree = SOURCE_ROOT; };
+		B20000000000000000000004 /* TaliaExporterWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaliaExporterWidget/TaliaExporterWidgets.swift; sourceTree = SOURCE_ROOT; };
+		B20000000000000000000005 /* TaskProgressWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaliaExporterWidget/TaskProgressWidget.swift; sourceTree = SOURCE_ROOT; };
+		B20000000000000000000006 /* CapturedMessagesWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaliaExporterWidget/CapturedMessagesWidget.swift; sourceTree = SOURCE_ROOT; };
+		B20000000000000000000007 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = TaliaExporterWidget/Info.plist; sourceTree = SOURCE_ROOT; };
+		B20000000000000000000008 /* TaliaExporterWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TaliaExporterWidget/TaliaExporterWidget.entitlements; sourceTree = SOURCE_ROOT; };
+		B20000000000000000000009 /* TaliaExporterWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = TaliaExporterWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		A30000000000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B30000000000000000000002 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -90,6 +138,7 @@
 			isa = PBXGroup;
 			children = (
 				A40000000000000000000002 /* TaliaExporter */,
+				B40000000000000000000001 /* TaliaExporterWidget */,
 				A40000000000000000000003 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -129,14 +178,30 @@
 				A2000000000000000000000D /* TaliaExporter/Resources/Assets.xcassets */,
 				A20000000000000000000015 /* TaliaExporter/Resources/Info.plist */,
 				A20000000000000000000021 /* TaliaExporter/Resources/TaliaExporter.entitlements */,
+				B20000000000000000000002 /* AppModel+Widgets.swift */,
+				B20000000000000000000001 /* WidgetSupport.swift */,
+				B20000000000000000000003 /* WidgetSettingsView.swift */,
 			);
 			name = TaliaExporter;
+			sourceTree = "<group>";
+		};
+		B40000000000000000000001 /* TaliaExporterWidget */ = {
+			isa = PBXGroup;
+			children = (
+				B20000000000000000000004 /* TaliaExporterWidgets.swift */,
+				B20000000000000000000005 /* TaskProgressWidget.swift */,
+				B20000000000000000000006 /* CapturedMessagesWidget.swift */,
+				B20000000000000000000007 /* Info.plist */,
+				B20000000000000000000008 /* TaliaExporterWidget.entitlements */,
+			);
+			name = TaliaExporterWidget;
 			sourceTree = "<group>";
 		};
 		A40000000000000000000003 /* Products */ = {
 			isa = PBXGroup;
 			children = (
 				A2000000000000000000000E /* TaliaExporter.app */,
+				B20000000000000000000009 /* TaliaExporterWidget.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -151,15 +216,34 @@
 				A30000000000000000000002 /* Sources */,
 				A30000000000000000000001 /* Frameworks */,
 				A30000000000000000000003 /* Resources */,
+				B30000000000000000000004 /* Embed App Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				B90000000000000000000002 /* PBXTargetDependency */,
 			);
 			name = TaliaExporter;
 			productName = TaliaExporter;
 			productReference = A2000000000000000000000E /* TaliaExporter.app */;
 			productType = "com.apple.product-type.application";
+		};
+		B50000000000000000000001 /* TaliaExporterWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B60000000000000000000001 /* Build configuration list for PBXNativeTarget "TaliaExporterWidget" */;
+			buildPhases = (
+				B30000000000000000000001 /* Sources */,
+				B30000000000000000000002 /* Frameworks */,
+				B30000000000000000000003 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TaliaExporterWidget;
+			productName = TaliaExporterWidget;
+			productReference = B20000000000000000000009 /* TaliaExporterWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -182,6 +266,9 @@
 							};
 						};
 					};
+					B50000000000000000000001 = {
+						CreatedOnToolsVersion = 16.0;
+					};
 				};
 			};
 			buildConfigurationList = A60000000000000000000001 /* Build configuration list for PBXProject "TaliaExporter" */;
@@ -198,6 +285,7 @@
 			projectRoot = "";
 			targets = (
 				A50000000000000000000001 /* TaliaExporter */,
+				B50000000000000000000001 /* TaliaExporterWidget */,
 			);
 		};
 /* End PBXProject section */
@@ -208,6 +296,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				A1000000000000000000000D /* TaliaExporter/Resources/Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B30000000000000000000003 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -247,10 +342,32 @@
 				A1000000000000000000001A /* TaliaExporter/App/AppState.swift in Sources */,
 				A1000000000000000000001B /* TaliaExporter/Preview/PreviewData.swift in Sources */,
 				A1000000000000000000001C /* TaliaExporter/Infrastructure/Notifications/PushNotificationCoordinator.swift in Sources */,
+				B10000000000000000000002 /* AppModel+Widgets.swift in Sources */,
+				B10000000000000000000001 /* WidgetSupport.swift in Sources */,
+				B10000000000000000000003 /* WidgetSettingsView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B30000000000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B10000000000000000000004 /* WidgetSupport.swift in Sources */,
+				B10000000000000000000005 /* TaliaExporterWidgets.swift in Sources */,
+				B10000000000000000000006 /* TaskProgressWidget.swift in Sources */,
+				B10000000000000000000007 /* CapturedMessagesWidget.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		B90000000000000000000002 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B50000000000000000000001 /* TaliaExporterWidget */;
+			targetProxy = B90000000000000000000001 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		A80000000000000000000001 /* Debug */ = {
@@ -358,6 +475,54 @@
 			};
 			name = Release;
 		};
+		B80000000000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = TaliaExporterWidget/TaliaExporterWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TaliaExporterWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.talia.exporter.widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		B80000000000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = TaliaExporterWidget/TaliaExporterWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TaliaExporterWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.talia.exporter.widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -375,6 +540,15 @@
 			buildConfigurations = (
 				A80000000000000000000003 /* Debug */,
 				A80000000000000000000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B60000000000000000000001 /* Build configuration list for PBXNativeTarget "TaliaExporterWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B80000000000000000000001 /* Debug */,
+				B80000000000000000000002 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

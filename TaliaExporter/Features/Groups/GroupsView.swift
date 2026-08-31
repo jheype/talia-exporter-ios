@@ -9,6 +9,7 @@ struct GroupsView: View {
         return appModel.groups.filter {
             $0.name.localizedCaseInsensitiveContains(searchText)
                 || $0.category.localizedCaseInsensitiveContains(searchText)
+                || $0.effectiveFunction.title.localizedCaseInsensitiveContains(searchText)
         }
     }
 
@@ -28,6 +29,8 @@ struct GroupsView: View {
                     }
                 } header: {
                     Text("Available groups")
+                } footer: {
+                    Text("Select a group to capture it, then choose whether its live messages feed UK Chats, Tasks or the operations log.")
                 }
             }
             .listStyle(.insetGrouped)
@@ -89,8 +92,9 @@ private struct GroupSelectionRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Button(action: onToggle) {
-                HStack(spacing: 12) {
+            HStack(spacing: 8) {
+                Button(action: onToggle) {
+                    HStack(spacing: 12) {
                     GroupAvatar(initials: group.initials)
 
                     VStack(alignment: .leading, spacing: 3) {
@@ -105,6 +109,10 @@ private struct GroupSelectionRow: View {
                         }
                         .font(.caption)
                         .foregroundStyle(.secondary)
+
+                        Label(group.effectiveFunction.shortTitle, systemImage: group.effectiveFunction.systemImage)
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(functionColour)
                     }
 
                     Spacer()
@@ -113,12 +121,25 @@ private struct GroupSelectionRow: View {
                         .font(.title3)
                         .foregroundStyle(group.isSelected ? Color.taliaBlue : Color.secondary.opacity(0.45))
                         .contentTransition(.symbolEffect(.replace))
+                    }
+                    .contentShape(Rectangle())
                 }
-                .contentShape(Rectangle())
+                .buttonStyle(.plain)
+                .accessibilityLabel("\(group.name), \(group.isSelected ? "selected" : "not selected")")
+                .accessibilityHint("Double tap to toggle capture for this group")
+
+                NavigationLink {
+                    GroupRoutingView(groupID: group.id)
+                } label: {
+                    Image(systemName: "slider.horizontal.3")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(Color.taliaBlue)
+                        .frame(width: 36, height: 36)
+                        .background(Color.taliaBlue.opacity(0.1), in: Circle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Configure \(group.name)")
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel("\(group.name), \(group.isSelected ? "selected" : "not selected")")
-            .accessibilityHint("Double tap to toggle capture for this group")
 
             if group.isSelected {
                 GroupHistoryProgress(
@@ -130,6 +151,134 @@ private struct GroupSelectionRow: View {
             }
         }
         .padding(.vertical, 5)
+    }
+
+    private var functionColour: Color {
+        switch group.effectiveFunction {
+        case .exporterMentions: .taliaBlue
+        case .tasks: .taliaLive
+        case .logs: .orange
+        }
+    }
+}
+
+private struct GroupRoutingView: View {
+    @EnvironmentObject private var appModel: AppModel
+    @Environment(\.dismiss) private var dismiss
+    let groupID: String
+
+    @State private var function: GroupFunction = .exporterMentions
+    @State private var botFeedbackEnabled = false
+    @State private var botRemindersEnabled = false
+    @State private var botDestinationID = ""
+    @State private var expectedRevision: Int64 = 1
+    @State private var didLoad = false
+
+    private var group: ExportGroup? {
+        appModel.groups.first(where: { $0.id == groupID })
+    }
+
+    private var isSaving: Bool {
+        appModel.routingSavingGroupIDs.contains(groupID)
+    }
+
+    var body: some View {
+        Form {
+            Section {
+                Picker("Group function", selection: $function) {
+                    ForEach(GroupFunction.allCases) { option in
+                        Label(option.title, systemImage: option.systemImage)
+                            .tag(option)
+                    }
+                }
+                .pickerStyle(.inline)
+
+                Label(function.detail, systemImage: "info.circle")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            } header: {
+                Text("Message routing")
+            } footer: {
+                Text("The function is account-scoped. Changing it affects new live messages only; retained history never executes task or log commands.")
+            }
+
+            if function != .exporterMentions {
+                Section {
+                    Toggle("Queue WhatsApp acknowledgements", isOn: $botFeedbackEnabled)
+                        .tint(Color.taliaBlue)
+
+                    if function == .tasks {
+                        Toggle("Queue inactive-task reminders", isOn: $botRemindersEnabled)
+                            .tint(Color.taliaBlue)
+                    }
+
+                    TextField("Meta group destination ID (optional)", text: $botDestinationID)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                } header: {
+                    Text("WhatsApp bot readiness")
+                } footer: {
+                    Text("Replies are stored safely now. Delivery starts only after an eligible official Meta Groups API number and destination are configured; the app does not use unofficial WhatsApp automation.")
+                }
+            }
+
+            Section("Capture") {
+                LabeledContent("Selected", value: group?.isSelected == true ? "Yes" : "No")
+                LabeledContent("Live capture", value: appModel.captureEnabled ? "Enabled" : "Paused")
+                LabeledContent("Configuration", value: "Revision \(group?.effectiveFunctionRevision ?? 1)")
+            }
+        }
+        .navigationTitle(group?.name ?? "Group function")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Save") {
+                    Task {
+                        let saved = await appModel.saveGroupRouting(
+                            groupID: groupID,
+                            function: function,
+                            botFeedbackEnabled: botFeedbackEnabled,
+                            botRemindersEnabled: botRemindersEnabled,
+                            botDestinationID: botDestinationID,
+                            expectedRevision: expectedRevision
+                        )
+                        if saved {
+                            dismiss()
+                        } else if let latestRevision = group?.effectiveFunctionRevision {
+                            expectedRevision = latestRevision
+                        }
+                    }
+                }
+                .disabled(group == nil || isSaving)
+            }
+        }
+        .overlay {
+            if isSaving {
+                ProgressView("Saving function…")
+                    .padding(18)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+            }
+        }
+        .onChange(of: function) { _, newValue in
+            if newValue == .exporterMentions {
+                botFeedbackEnabled = false
+                botRemindersEnabled = false
+                botDestinationID = ""
+            } else if newValue == .logs {
+                botRemindersEnabled = false
+            }
+        }
+        .onAppear(perform: loadCurrentValues)
+    }
+
+    private func loadCurrentValues() {
+        guard !didLoad, let group else { return }
+        didLoad = true
+        function = group.effectiveFunction
+        botFeedbackEnabled = group.effectiveBotFeedbackEnabled
+        botRemindersEnabled = group.effectiveBotRemindersEnabled
+        botDestinationID = group.botDestinationID ?? ""
+        expectedRevision = group.effectiveFunctionRevision
     }
 }
 

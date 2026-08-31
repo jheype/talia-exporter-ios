@@ -20,6 +20,7 @@ extension AppModel {
             )
             _ = await refreshMessageChanges(showErrors: false)
             await persistDashboard()
+            await refreshWidgetSnapshot(showErrors: false)
         } catch {
             if showErrors {
                 await handle(error, title: "Refresh failed")
@@ -267,13 +268,7 @@ extension AppModel {
 
         do {
             try await api.unlinkSession()
-            session = nil
-            groups = []
-            events = []
-            messages = []
-            if let user {
-                await cache.clear(for: user.id)
-            }
+            await clearAccountOwnedState(for: user?.id)
             resetConnectionFlow()
             route = .connection
         } catch {

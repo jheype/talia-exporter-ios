@@ -11,6 +11,7 @@ struct SettingsView: View {
             Form {
                 accountSection
                 captureSection
+                widgetsSection
                 appearanceSection
                 aboutSection
             }
@@ -120,6 +121,23 @@ struct SettingsView: View {
                 }
             }
             .padding(.vertical, 6)
+        }
+    }
+
+    private var widgetsSection: some View {
+        Section("Widgets") {
+            NavigationLink {
+                WidgetSettingsView()
+            } label: {
+                Label("Configure iOS widgets", systemImage: "rectangle.3.group")
+            }
+
+            LabeledContent {
+                Text(appModel.widgetLastRefreshedAt?.relativeDescription ?? "Not refreshed")
+                    .foregroundStyle(.secondary)
+            } label: {
+                Label("Task and message snapshot", systemImage: "checkmark.rectangle.stack")
+            }
         }
     }
 
