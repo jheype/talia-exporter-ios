@@ -37,12 +37,34 @@ targets:
           APS_ENVIRONMENT: development
         Release:
           APS_ENVIRONMENT: production
+    dependencies:
+      - target: TaliaExporterWidget
+        embed: true
+
+  TaliaExporterWidget:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: TaliaExporterWidget
+      - path: TaliaExporter/Domain/WidgetSupport.swift
+    settings:
+      base:
+        CODE_SIGN_ENTITLEMENTS: TaliaExporterWidget/TaliaExporterWidget.entitlements
+        PRODUCT_BUNDLE_IDENTIFIER: com.talia.exporter.widgets
+        PRODUCT_NAME: TaliaExporterWidget
+        GENERATE_INFOPLIST_FILE: false
+        INFOPLIST_FILE: TaliaExporterWidget/Info.plist
+        SKIP_INSTALL: true
+        TARGETED_DEVICE_FAMILY: 1
+        SUPPORTS_MACCATALYST: false
+        APPLICATION_EXTENSION_API_ONLY: true
 
 schemes:
   TaliaExporter:
     build:
       targets:
         TaliaExporter: all
+        TaliaExporterWidget: all
     run:
       config: Debug
     archive:

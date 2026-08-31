@@ -1,5 +1,48 @@
 import Foundation
 
+enum GroupFunction: String, Codable, CaseIterable, Identifiable, Hashable, Sendable {
+    case exporterMentions = "exporter_mentions"
+    case tasks
+    case logs
+
+    var id: Self { self }
+
+    var title: String {
+        switch self {
+        case .exporterMentions: "Exporter mentions"
+        case .tasks: "Task group"
+        case .logs: "Log group"
+        }
+    }
+
+    var shortTitle: String {
+        switch self {
+        case .exporterMentions: "Mentions"
+        case .tasks: "Tasks"
+        case .logs: "Logs"
+        }
+    }
+
+    var detail: String {
+        switch self {
+        case .exporterMentions:
+            "Send captured market mentions to UK Chats."
+        case .tasks:
+            "Turn explicit Do, Done, Progress and task-list commands into v14 cards."
+        case .logs:
+            "Keep every text message in the v14 operations log."
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .exporterMentions: "message.badge.waveform"
+        case .tasks: "checklist"
+        case .logs: "doc.text.magnifyingglass"
+        }
+    }
+}
+
 enum GroupHistorySyncState: String, Codable, Hashable, Sendable {
     case idle
     case queued
@@ -47,6 +90,11 @@ struct ExportGroup: Codable, Identifiable, Hashable, Sendable {
     let name: String
     let participantCount: Int
     var isSelected: Bool
+    var function: GroupFunction?
+    var functionRevision: Int64?
+    var botFeedbackEnabled: Bool?
+    var botRemindersEnabled: Bool?
+    var botDestinationID: String?
     let lastMessageAt: Date?
     let historySyncState: GroupHistorySyncState?
     let historyTextMessageCount: Int64?
@@ -63,6 +111,11 @@ struct ExportGroup: Codable, Identifiable, Hashable, Sendable {
         case name
         case participantCount = "participant_count"
         case isSelected = "is_selected"
+        case function
+        case functionRevision = "function_revision"
+        case botFeedbackEnabled = "bot_feedback_enabled"
+        case botRemindersEnabled = "bot_reminders_enabled"
+        case botDestinationID = "bot_destination_id"
         case lastMessageAt = "last_message_at"
         case historySyncState = "history_sync_state"
         case historyTextMessageCount = "history_text_message_count"
@@ -80,6 +133,11 @@ struct ExportGroup: Codable, Identifiable, Hashable, Sendable {
         name: String,
         participantCount: Int,
         isSelected: Bool,
+        function: GroupFunction? = nil,
+        functionRevision: Int64? = nil,
+        botFeedbackEnabled: Bool? = nil,
+        botRemindersEnabled: Bool? = nil,
+        botDestinationID: String? = nil,
         lastMessageAt: Date?,
         historySyncState: GroupHistorySyncState? = nil,
         historyTextMessageCount: Int64? = nil,
@@ -95,6 +153,11 @@ struct ExportGroup: Codable, Identifiable, Hashable, Sendable {
         self.name = name
         self.participantCount = participantCount
         self.isSelected = isSelected
+        self.function = function
+        self.functionRevision = functionRevision
+        self.botFeedbackEnabled = botFeedbackEnabled
+        self.botRemindersEnabled = botRemindersEnabled
+        self.botDestinationID = botDestinationID
         self.lastMessageAt = lastMessageAt
         self.historySyncState = historySyncState
         self.historyTextMessageCount = historyTextMessageCount
@@ -130,9 +193,52 @@ struct ExportGroup: Codable, Identifiable, Hashable, Sendable {
         historySyncState ?? (isSelected ? .queued : .idle)
     }
 
+    var effectiveFunction: GroupFunction { function ?? .exporterMentions }
+    var effectiveFunctionRevision: Int64 { functionRevision ?? 1 }
+    var effectiveBotFeedbackEnabled: Bool { botFeedbackEnabled ?? false }
+    var effectiveBotRemindersEnabled: Bool { botRemindersEnabled ?? false }
+
     var capturedTextDescription: String {
         let count = historyTextMessageCount ?? 0
         return "\(count.formatted()) text \(count == 1 ? "message" : "messages")"
+    }
+}
+
+struct GroupRoutingRequest: Codable, Sendable {
+    let groupJID: String
+    let function: GroupFunction
+    let botFeedbackEnabled: Bool
+    let botRemindersEnabled: Bool
+    let botDestinationID: String?
+    let expectedRevision: Int64
+
+    enum CodingKeys: String, CodingKey {
+        case groupJID = "group_jid"
+        case function
+        case botFeedbackEnabled = "bot_feedback_enabled"
+        case botRemindersEnabled = "bot_reminders_enabled"
+        case botDestinationID = "bot_destination_id"
+        case expectedRevision = "expected_revision"
+    }
+}
+
+struct GroupRoutingSetting: Codable, Sendable {
+    let groupJID: String
+    let function: GroupFunction
+    let revision: Int64
+    let botFeedbackEnabled: Bool
+    let botRemindersEnabled: Bool
+    let botDestinationID: String?
+    let updatedAt: Date
+
+    enum CodingKeys: String, CodingKey {
+        case groupJID = "group_jid"
+        case function
+        case revision
+        case botFeedbackEnabled = "bot_feedback_enabled"
+        case botRemindersEnabled = "bot_reminders_enabled"
+        case botDestinationID = "bot_destination_id"
+        case updatedAt = "updated_at"
     }
 }
 

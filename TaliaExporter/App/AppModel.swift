@@ -14,6 +14,9 @@ final class AppModel: ObservableObject {
     @Published var pairingCode: String?
     @Published var pairingExpiresAt: Date?
     @Published var historyRetryingGroupIDs: Set<String> = []
+    @Published var routingSavingGroupIDs: Set<String> = []
+    @Published var widgetPreferences: WidgetPreferences
+    @Published var widgetLastRefreshedAt: Date?
     @Published var isWorking = false
     @Published var alert: AppAlert?
     @Published var appearance: AppearanceMode {
@@ -37,6 +40,8 @@ final class AppModel: ObservableObject {
     var messageCatchupTarget: MessageChangeWatermark?
     var messageCatchupHead: MessageChangeWatermark?
     var latestMessageChanges: [UUID: MessageChangeRecord] = [:]
+    var widgetRefreshGeneration: UInt64 = 0
+    var accountScopeGeneration: UInt64 = 0
 
     static let interruptionAlertsKey = "talia.exporter.interruption-alerts"
     static let accountScopeMismatchCode = "CLIENT.ACCOUNT_SCOPE_MISMATCH"
@@ -53,6 +58,8 @@ final class AppModel: ObservableObject {
 
         let savedValue = UserDefaults.standard.string(forKey: Self.appearanceKey)
         appearance = AppearanceMode(rawValue: savedValue ?? "system") ?? .system
+        widgetPreferences = WidgetSharedStore.loadPreferences()
+        widgetLastRefreshedAt = WidgetSharedStore.loadEnvelope()?.savedAt
 
         backgroundRefresh.setHandler { [weak self] in
             guard let self else { return false }
@@ -96,6 +103,12 @@ final class AppModel: ObservableObject {
         do {
             let authenticatedUser = try await api.currentUser()
             user = authenticatedUser
+            if let envelope = WidgetSharedStore.loadEnvelope(),
+               envelope.ownerUserID != authenticatedUser.id {
+                WidgetSharedStore.clearAccountData()
+                widgetPreferences = .default
+                widgetLastRefreshedAt = nil
+            }
             await restoreCache(for: authenticatedUser.id)
 
             if let currentSession = try await api.session(), currentSession.isLinked {
@@ -138,6 +151,7 @@ final class AppModel: ObservableObject {
             )
             _ = await refreshMessageChanges(showErrors: false, pageBudget: 2)
             await persistDashboard()
+            await refreshWidgetSnapshot(showErrors: false)
             return true
         } catch {
             if isAccountScopeMismatch(error) {
@@ -277,6 +291,7 @@ final class AppModel: ObservableObject {
     }
 
     private func clearAccountOwnedRuntimeState() {
+        accountScopeGeneration &+= 1
         pairingTask?.cancel()
         selectionTask?.cancel()
         selectionTask = nil
@@ -295,6 +310,11 @@ final class AppModel: ObservableObject {
         pairingCode = nil
         pairingExpiresAt = nil
         historyRetryingGroupIDs = []
+        routingSavingGroupIDs = []
+        widgetRefreshGeneration &+= 1
+        WidgetSharedStore.clearAccountData()
+        widgetPreferences = .default
+        widgetLastRefreshedAt = nil
     }
 
     func present(_ error: Error, title: String) {
