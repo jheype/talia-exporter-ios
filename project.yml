@@ -9,7 +9,7 @@ options:
 settings:
   base:
     SWIFT_VERSION: 5.0
-    CURRENT_PROJECT_VERSION: 2
+    CURRENT_PROJECT_VERSION: 3
     MARKETING_VERSION: 0.1.0
 
 targets:
@@ -50,6 +50,7 @@ targets:
     settings:
       base:
         CODE_SIGN_ENTITLEMENTS: TaliaExporterWidget/TaliaExporterWidget.entitlements
+        DEVELOPMENT_TEAM: S3SCDDP668
         PRODUCT_BUNDLE_IDENTIFIER: com.talia.exporter.widgets
         PRODUCT_NAME: TaliaExporterWidget
         GENERATE_INFOPLIST_FILE: false
