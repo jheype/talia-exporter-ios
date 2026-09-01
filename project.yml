@@ -60,6 +60,20 @@ targets:
         SUPPORTS_MACCATALYST: false
         APPLICATION_EXTENSION_API_ONLY: true
 
+  TaliaExporterTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: TaliaExporterTests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.talia.exporter.tests
+        GENERATE_INFOPLIST_FILE: true
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Talia Exporter.app/Talia Exporter"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+    dependencies:
+      - target: TaliaExporter
+
 schemes:
   TaliaExporter:
     build:
@@ -70,3 +84,7 @@ schemes:
       config: Debug
     archive:
       config: Release
+    test:
+      config: Debug
+      targets:
+        - TaliaExporterTests

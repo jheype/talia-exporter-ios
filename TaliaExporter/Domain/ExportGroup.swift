@@ -28,7 +28,7 @@ enum GroupFunction: String, Codable, CaseIterable, Identifiable, Hashable, Senda
         case .exporterMentions:
             "Send captured market mentions to UK Chats."
         case .tasks:
-            "Turn explicit Do, Done, Progress and task-list commands into v14 cards."
+            "Create Tasks and Ideas in v14, attach ordinary group messages and track checklist progress."
         case .logs:
             "Keep every text message in the v14 operations log."
         }

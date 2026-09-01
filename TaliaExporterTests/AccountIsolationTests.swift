@@ -4,6 +4,42 @@ import XCTest
 
 @MainActor
 final class AccountIsolationTests: XCTestCase {
+    func testLegacyWidgetPreferencesKeepExistingChoicesAndDefaultCoveragePeriod() throws {
+        let data = Data(#"{"taskScope":"blocked","assignee":"João","project":"UK Chats","priority":"high","taskGroupJID":"tasks@g.us","messageGroupJID":"logs@g.us","includeLogs":false,"showTaskTitles":false,"showMessageText":true}"#.utf8)
+
+        let preferences = try JSONDecoder().decode(WidgetPreferences.self, from: data)
+
+        XCTAssertEqual(preferences.taskScope, .blocked)
+        XCTAssertEqual(preferences.project, "UK Chats")
+        XCTAssertFalse(preferences.includeLogs)
+        XCTAssertFalse(preferences.showTaskTitles)
+        XCTAssertTrue(preferences.showMessageText)
+        XCTAssertEqual(preferences.ukChatsPeriod, .last24Hours)
+    }
+
+    func testLegacyWidgetSnapshotRemainsReadableWithoutCoveragePayload() throws {
+        let data = Data(#"{"generated_at":"2026-09-01T12:00:00Z","summary":{"total_open":0,"todo":0,"in_progress":0,"blocked":0,"due_today":0,"overdue":0,"completed_7d":0,"completion_rate_7d":0},"tasks":[],"messages":[]}"#.utf8)
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+
+        let snapshot = try decoder.decode(ExporterWidgetSnapshot.self, from: data)
+
+        XCTAssertNil(snapshot.ukChatsCoverage)
+    }
+
+    func testWidgetQueryIncludesSelectedUKChatsPeriod() {
+        var preferences = WidgetPreferences.default
+        preferences.ukChatsPeriod = .last30Days
+
+        let values = Dictionary(
+            uniqueKeysWithValues: preferences.queryItems.compactMap { item in
+                item.value.map { (item.name, $0) }
+            }
+        )
+
+        XCTAssertEqual(values["uk_chats_period"], "30d")
+    }
+
     func testSignInClearsPreviousAccountRuntimeState() async {
         let joao = Self.user("11111111-1111-1111-1111-111111111111", email: "joao@talia.co.uk")
         let lucas = Self.user("22222222-2222-2222-2222-222222222222", email: "lucas@talia.co.uk")

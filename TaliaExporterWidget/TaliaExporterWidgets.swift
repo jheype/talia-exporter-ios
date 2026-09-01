@@ -42,5 +42,6 @@ struct TaliaExporterWidgetBundle: WidgetBundle {
     var body: some Widget {
         TaliaTaskProgressWidget()
         TaliaCapturedMessagesWidget()
+        TaliaUKChatsCoverageWidget()
     }
 }
