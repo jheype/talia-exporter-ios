@@ -18,6 +18,22 @@ enum WidgetTaskScope: String, Codable, CaseIterable, Identifiable, Sendable {
     }
 }
 
+enum WidgetUKChatsPeriod: String, Codable, CaseIterable, Identifiable, Sendable {
+    case last24Hours = "24h"
+    case last7Days = "7d"
+    case last30Days = "30d"
+
+    var id: Self { self }
+
+    var title: String {
+        switch self {
+        case .last24Hours: "Last 24 hours"
+        case .last7Days: "Last 7 days"
+        case .last30Days: "Last 30 days"
+        }
+    }
+}
+
 struct WidgetPreferences: Codable, Equatable, Sendable {
     var taskScope: WidgetTaskScope = .open
     var assignee = ""
@@ -28,8 +44,41 @@ struct WidgetPreferences: Codable, Equatable, Sendable {
     var includeLogs = true
     var showTaskTitles = true
     var showMessageText = false
+    var ukChatsPeriod: WidgetUKChatsPeriod = .last24Hours
 
     static let `default` = WidgetPreferences()
+
+    init() {}
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        taskScope = try container.decodeIfPresent(WidgetTaskScope.self, forKey: .taskScope) ?? .open
+        assignee = try container.decodeIfPresent(String.self, forKey: .assignee) ?? ""
+        project = try container.decodeIfPresent(String.self, forKey: .project) ?? ""
+        priority = try container.decodeIfPresent(String.self, forKey: .priority) ?? "all"
+        taskGroupJID = try container.decodeIfPresent(String.self, forKey: .taskGroupJID) ?? ""
+        messageGroupJID = try container.decodeIfPresent(String.self, forKey: .messageGroupJID) ?? ""
+        includeLogs = try container.decodeIfPresent(Bool.self, forKey: .includeLogs) ?? true
+        showTaskTitles = try container.decodeIfPresent(Bool.self, forKey: .showTaskTitles) ?? true
+        showMessageText = try container.decodeIfPresent(Bool.self, forKey: .showMessageText) ?? false
+        ukChatsPeriod = try container.decodeIfPresent(
+            WidgetUKChatsPeriod.self,
+            forKey: .ukChatsPeriod
+        ) ?? .last24Hours
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case taskScope
+        case assignee
+        case project
+        case priority
+        case taskGroupJID
+        case messageGroupJID
+        case includeLogs
+        case showTaskTitles
+        case showMessageText
+        case ukChatsPeriod
+    }
 
     func normalisedForStorage() -> WidgetPreferences {
         var result = self
@@ -81,6 +130,7 @@ struct WidgetPreferences: Codable, Equatable, Sendable {
             items.append(URLQueryItem(name: "message_group_jid", value: messageGroupJID))
         }
         items.append(URLQueryItem(name: "include_logs", value: String(includeLogs)))
+        items.append(URLQueryItem(name: "uk_chats_period", value: ukChatsPeriod.rawValue))
         return items
     }
 }
@@ -155,24 +205,41 @@ struct ExporterWidgetMessage: Codable, Equatable, Identifiable, Sendable {
     }
 }
 
+struct ExporterWidgetUKChatsCoverage: Codable, Equatable, Sendable {
+    let period: WidgetUKChatsPeriod
+    let captured: Int64
+    let activeGroups: Int
+    let discarded: Int64
+
+    enum CodingKeys: String, CodingKey {
+        case period
+        case captured
+        case activeGroups = "active_groups"
+        case discarded
+    }
+}
+
 struct ExporterWidgetSnapshot: Codable, Equatable, Sendable {
     let generatedAt: Date
     let summary: ExporterWidgetSummary
     let tasks: [ExporterWidgetTask]
     let messages: [ExporterWidgetMessage]
+    let ukChatsCoverage: ExporterWidgetUKChatsCoverage?
 
     enum CodingKeys: String, CodingKey {
         case generatedAt = "generated_at"
         case summary
         case tasks
         case messages
+        case ukChatsCoverage = "uk_chats_coverage"
     }
 
     static let empty = ExporterWidgetSnapshot(
         generatedAt: .distantPast,
         summary: .empty,
         tasks: [],
-        messages: []
+        messages: [],
+        ukChatsCoverage: nil
     )
 
     static let preview = ExporterWidgetSnapshot(
@@ -215,7 +282,13 @@ struct ExporterWidgetSnapshot: Codable, Equatable, Sendable {
                 body: "Frontend pagination started",
                 timestamp: Date().addingTimeInterval(-420)
             )
-        ]
+        ],
+        ukChatsCoverage: ExporterWidgetUKChatsCoverage(
+            period: .last24Hours,
+            captured: 1_284,
+            activeGroups: 18,
+            discarded: 47
+        )
     )
 
     func sanitised(using preferences: WidgetPreferences) -> ExporterWidgetSnapshot {
@@ -243,7 +316,8 @@ struct ExporterWidgetSnapshot: Codable, Equatable, Sendable {
                         : "Open Talia Exporter to view this message.",
                     timestamp: message.timestamp
                 )
-            }
+            },
+            ukChatsCoverage: ukChatsCoverage
         )
     }
 }
@@ -261,14 +335,14 @@ enum WidgetSharedStore {
 
     static func loadPreferences() -> WidgetPreferences {
         guard let data = defaults?.data(forKey: preferencesKey),
-              let preferences = try? decoder.decode(WidgetPreferences.self, from: data) else {
+              let preferences = try? makeDecoder().decode(WidgetPreferences.self, from: data) else {
             return .default
         }
         return preferences.normalisedForStorage()
     }
 
     static func savePreferences(_ preferences: WidgetPreferences) {
-        guard let data = try? encoder.encode(preferences.normalisedForStorage()) else { return }
+        guard let data = try? makeEncoder().encode(preferences.normalisedForStorage()) else { return }
         defaults?.set(data, forKey: preferencesKey)
     }
 
@@ -279,7 +353,7 @@ enum WidgetSharedStore {
     static func loadEnvelope() -> ExporterWidgetEnvelope? {
         guard let url = snapshotURL,
               let data = try? Data(contentsOf: url) else { return nil }
-        return try? decoder.decode(ExporterWidgetEnvelope.self, from: data)
+        return try? makeDecoder().decode(ExporterWidgetEnvelope.self, from: data)
     }
 
     static func save(
@@ -295,7 +369,7 @@ enum WidgetSharedStore {
             savedAt: Date(),
             snapshot: snapshot.sanitised(using: preferences)
         )
-        let data = try encoder.encode(envelope)
+        let data = try makeEncoder().encode(envelope)
         try data.write(
             to: url,
             options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication]
@@ -319,17 +393,17 @@ enum WidgetSharedStore {
             .appending(path: snapshotFilename)
     }
 
-    private static let encoder: JSONEncoder = {
+    private static func makeEncoder() -> JSONEncoder {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         return encoder
-    }()
+    }
 
-    private static let decoder: JSONDecoder = {
+    private static func makeDecoder() -> JSONDecoder {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         return decoder
-    }()
+    }
 
     private enum WidgetStoreError: Error {
         case appGroupUnavailable

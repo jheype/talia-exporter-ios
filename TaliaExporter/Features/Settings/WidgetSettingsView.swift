@@ -71,6 +71,18 @@ struct WidgetSettingsView: View {
                 Text("Only live messages captured after a group is configured are shown.")
             }
 
+            Section {
+                Picker("Reporting period", selection: $draft.ukChatsPeriod) {
+                    ForEach(WidgetUKChatsPeriod.allCases) { period in
+                        Text(period.title).tag(period)
+                    }
+                }
+            } header: {
+                Text("UK Chats coverage widget")
+            } footer: {
+                Text("Shows captured messages, currently active UK Chats groups and discarded messages for the selected rolling period.")
+            }
+
             Section("Privacy") {
                 Toggle("Show task titles", isOn: $draft.showTaskTitles)
                     .tint(Color.taliaBlue)
@@ -103,7 +115,7 @@ struct WidgetSettingsView: View {
             }
 
             Section {
-                Label("Add either Talia Tasks or Talia Messages from the iOS widget gallery after saving.", systemImage: "rectangle.3.group")
+                Label("Add Talia Tasks, Talia Messages or UK Chats Coverage from the iOS widget gallery after saving.", systemImage: "rectangle.3.group")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
