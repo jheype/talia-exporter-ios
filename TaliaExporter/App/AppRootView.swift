@@ -76,7 +76,7 @@ private struct LaunchView: View {
     }
 }
 
-private struct MainTabView: View {
+struct MainTabView: View {
     @EnvironmentObject private var appModel: AppModel
 
     var body: some View {

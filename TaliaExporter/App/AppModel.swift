@@ -1,5 +1,8 @@
 import Foundation
 import SwiftUI
+#if canImport(WidgetKit)
+import WidgetKit
+#endif
 
 @MainActor
 final class AppModel: ObservableObject {
@@ -328,6 +331,9 @@ final class AppModel: ObservableObject {
         widgetLastRefreshedAt = nil
         widgetSnapshot = nil
         workspace.setOwner(nil)
+        #if canImport(WidgetKit)
+        WidgetCenter.shared.reloadAllTimelines()
+        #endif
     }
 
     func present(_ error: Error, title: String) {

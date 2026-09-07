@@ -182,3 +182,55 @@ private extension URLRequest {
     }
 }
 
+
+@MainActor
+final class ApprovedLayoutTests: XCTestCase {
+    func testFiveTabsRenderInLightAndDarkWithoutNetwork() async throws {
+        var dependencies = AppDependencies.preview
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [WorkspaceStubProtocol.self]
+        config.httpCookieStorage = nil
+        dependencies.workspaceAPI = WorkspaceAPI(client: APIClient(
+            baseURL: URL(string: "https://layout.test/api/v1/")!, session: URLSession(configuration: config)))
+        WorkspaceStubProtocol.install { request in
+            if request.url?.path.hasSuffix("assignees") == true { return (200, #"{"items":["Jamie"]}"#, 0) }
+            return (200, WorkspaceContractTests.page, 0)
+        }
+        defer { WorkspaceStubProtocol.install(nil) }
+        let model = AppModel(dependencies: dependencies)
+        model.user = PreviewData.user
+        model.session = PreviewData.session
+        model.groups = PreviewData.groups
+        model.messages = PreviewData.messages
+        model.events = PreviewData.events
+        model.widgetSnapshot = .preview
+        model.route = .main
+        await model.workspace.loadTasks()
+        let bounds = CGRect(x: 0, y: 0, width: 393, height: 852)
+        let window = UIWindow(frame: bounds)
+        defer { window.isHidden = true; window.rootViewController = nil }
+        for (style, scheme) in [(UIUserInterfaceStyle.dark, ColorScheme.dark), (.light, .light)] {
+            for (name, tab) in [("Home", MainTab.home), ("Groups", .groups), ("Tasks", .tasks), ("Activity", .activity), ("Settings", .settings)] {
+                model.selectedTab = tab
+                let view = MainTabView().environmentObject(model).environmentObject(model.workspace)
+                    .environment(\.locale, Locale(identifier: "en_GB")).preferredColorScheme(scheme)
+                let host = UIHostingController(rootView: view)
+                host.overrideUserInterfaceStyle = style
+                window.rootViewController = host
+                window.makeKeyAndVisible()
+                host.view.frame = bounds
+                host.view.setNeedsLayout()
+                host.view.layoutIfNeeded()
+                try await Task.sleep(for: .milliseconds(400))
+                XCTAssertFalse(host.view.subviews.isEmpty, "\(name) should have a rendered view tree")
+                let renderer = UIGraphicsImageRenderer(bounds: bounds)
+                let image = renderer.image { _ in host.view.drawHierarchy(in: bounds, afterScreenUpdates: true) }
+                let attachment = XCTAttachment(image: image)
+                attachment.name = "\(name)-\(scheme == .dark ? "dark" : "light")"
+                attachment.lifetime = .keepAlways
+                add(attachment)
+            }
+        }
+    }
+}
+

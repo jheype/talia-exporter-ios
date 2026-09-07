@@ -272,7 +272,9 @@ final class WorkspaceStore: ObservableObject {
         } catch {
             guard scope == generation, ownerID != nil else { return false }
             if let taskID = detail?.id { await openTask(taskID) }
+            guard scope == generation, ownerID != nil else { return false }
             if let boardID = canvas?.board.id { await loadCanvas(boardID) }
+            guard scope == generation, ownerID != nil else { return false }
             await report(error)
             return false
         }
@@ -477,13 +479,17 @@ final class WorkspaceStore: ObservableObject {
         if saved { await loadCanvas(boardID); await loadBoards() }
     }
 
-    func colourNode(_ node: WorkNode, colour: String, boardID: UUID) async {
+    @discardableResult
+    func configureNode(_ node: WorkNode, colour: String, x: Int, y: Int, width: Int, height: Int, boardID: UUID) async -> Bool {
         let saved = await mutate({ api in
             try await api.write(.patch, path: "exporter/idea-nodes/\(node.id)", body: [
-                "expected_version": .integer(node.version), "border_colour": .string(colour)
+                "expected_version": .integer(node.version), "border_colour": .string(colour),
+                "x": .integer(Int64(x)), "y": .integer(Int64(y)),
+                "width": .integer(Int64(width)), "height": .integer(Int64(height))
             ], response: WorkNode.self)
         }, apply: { _ in })
         if saved { await loadCanvas(boardID) }
+        return saved
     }
 
     func connect(_ from: WorkNode, _ to: WorkNode, boardID: UUID) async {

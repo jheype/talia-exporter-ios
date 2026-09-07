@@ -286,6 +286,10 @@ private struct IdeaEditor: View {
     @State private var photos: [Data] = []
     @State private var loadingPhotos = false
     @State private var saving = false
+    @State private var nodeX = 0
+    @State private var nodeY = 0
+    @State private var nodeWidth = 240
+    @State private var nodeHeight = 220
     private let colours = ["#A8A8A8", "#D1B28A", "#76A88B", "#8C9CB8", "#B18D9F"]
     private var latestNode: WorkNode? { store.canvas?.nodes.first { $0.id == node?.id } ?? node }
     private var valid: Bool { title.trimmingCharacters(in: .whitespacesAndNewlines).count >= 3 && title.count <= 200 && detail.count <= 4000 && (!imageOnly || !photos.isEmpty) }
@@ -297,6 +301,14 @@ private struct IdeaEditor: View {
                     Section("Idea") {
                         TextField("Title", text: $title)
                         TextField("Description", text: $detail, axis: .vertical).lineLimit(3...8)
+                    }
+                }
+                if node != nil {
+                    Section("Position and size") {
+                        Stepper("Horizontal: \(nodeX)", value: $nodeX, in: 0...12000, step: 20)
+                        Stepper("Vertical: \(nodeY)", value: $nodeY, in: 0...12000, step: 20)
+                        Stepper("Width: \(nodeWidth)", value: $nodeWidth, in: 160...1200, step: 20)
+                        Stepper("Height: \(nodeHeight)", value: $nodeHeight, in: 100...1200, step: 20)
                     }
                 }
                 Section("Border") {
@@ -349,6 +361,8 @@ private struct IdeaEditor: View {
             title = node?.idea?.title ?? (imageOnly ? "Image reference" : "")
             detail = node?.idea?.description ?? ""
             colour = node?.borderColour ?? "#A8A8A8"
+            nodeX = node?.x ?? 0; nodeY = node?.y ?? 0
+            nodeWidth = node?.width ?? 240; nodeHeight = node?.height ?? 220
         }
         .task(id: selection) {
             guard !selection.isEmpty else { return }
@@ -376,8 +390,9 @@ private struct IdeaEditor: View {
                 guard await store.editIdea(idea, title: title, description: detail, boardID: board.id) else { return }
                 if !photos.isEmpty { await store.uploadImages(photos, to: idea, boardID: board.id) }
             }
-            if colour != current.borderColour {
-                await store.colourNode(latestNode ?? current, colour: colour, boardID: board.id)
+            if colour != current.borderColour || nodeX != current.x || nodeY != current.y || nodeWidth != current.width || nodeHeight != current.height {
+                guard await store.configureNode(node ?? current, colour: colour, x: nodeX, y: nodeY,
+                    width: nodeWidth, height: nodeHeight, boardID: board.id) else { return }
             }
             if store.errorMessage == nil { dismiss() }
         } else if await store.addIdea(board: board, title: title, description: detail,

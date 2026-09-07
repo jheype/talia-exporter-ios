@@ -19,7 +19,7 @@ actor WorkspaceAPI {
         return result.items
     }
 
-    func logs(severity: String, search: String, cursor: String?) async throws -> CursorPage<WorkLog> {
+    func logs(severity: String, search: String, cursor: String?) async throws -> WorkCursorPage<WorkLog> {
         var query = [URLQueryItem(name: "limit", value: "50")]
         if !severity.isEmpty { query.append(.init(name: "severity", value: severity)) }
         if !search.isEmpty { query.append(.init(name: "search", value: search)) }

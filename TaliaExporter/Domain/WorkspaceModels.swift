@@ -252,3 +252,12 @@ struct WorkFilters: Hashable, Sendable {
         return query
     }
 }
+
+struct WorkCursorPage<Item: Decodable & Sendable>: Decodable, Sendable {
+    private let decodedItems: [Item]?
+    var items: [Item] { decodedItems ?? [] }
+    let nextCursor: String?
+    enum CodingKeys: String, CodingKey {
+        case decodedItems = "items", nextCursor = "next_cursor"
+    }
+}
