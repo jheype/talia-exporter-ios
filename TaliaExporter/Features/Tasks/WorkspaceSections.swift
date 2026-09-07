@@ -183,4 +183,3 @@ struct PersonalNotesView: View {
         }
     }
 }
-

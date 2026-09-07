@@ -106,4 +106,3 @@ extension String {
         split(separator: " ").prefix(2).compactMap(\.first).map(String.init).joined().uppercased()
     }
 }
-

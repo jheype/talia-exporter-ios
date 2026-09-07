@@ -386,4 +386,3 @@ private struct IdeaEditor: View {
         }
     }
 }
-

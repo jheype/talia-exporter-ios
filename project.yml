@@ -25,6 +25,7 @@ targets:
         CODE_SIGN_STYLE: Automatic
         PRODUCT_BUNDLE_IDENTIFIER: com.talia.exporter
         PRODUCT_NAME: Talia Exporter
+        PRODUCT_MODULE_NAME: TaliaExporter
         GENERATE_INFOPLIST_FILE: false
         INFOPLIST_FILE: TaliaExporter/Resources/Info.plist
         TARGETED_DEVICE_FAMILY: 1

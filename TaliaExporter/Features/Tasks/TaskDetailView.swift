@@ -84,6 +84,7 @@ struct TaskDetailView: View {
                     Menu {
                         ForEach(WorkStatus.allCases) { status in
                             Button(status.title) { Task { await store.updateTask(task, fields: ["status": .string(status.rawValue)]) } }
+                        }
                     } label: { Label(task.status.title, systemImage: "chevron.down") }
                     .buttonStyle(TaliaSecondaryButtonStyle()).disabled(store.isMutating)
                     WorkPriorityLabel(priority: task.priority)
@@ -173,7 +174,7 @@ struct TaskDetailView: View {
             Button("Add note") {
                 Task { if await store.addTaskNote(newNote, to: task) { newNote = "" } }
             }.buttonStyle(TaliaPrimaryButtonStyle())
-                .disabled(store.isMutating || newNote.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || newNote.count > 4000)
+                .disabled(store.isMutating || newNote.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || newNote.unicodeScalars.count > 1000)
         }
     }
 
@@ -246,4 +247,3 @@ private struct EditTaskView: View {
         if await store.updateTask(task, fields: fields) { dismiss() }
     }
 }
-

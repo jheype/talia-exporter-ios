@@ -46,6 +46,7 @@ final class WorkspaceStore: ObservableObject {
     private var generation: UInt64 = 0
     private var reads: [String: UUID] = [:]
     private var mutationID: UUID?
+    private var cancelMutation: (() -> Void)?
     private var hasLoadedTasks = false
 
     init(api: WorkspaceAPI?) { self.api = api }
@@ -53,6 +54,8 @@ final class WorkspaceStore: ObservableObject {
     func setOwner(_ id: UUID?) {
         guard ownerID != id else { return }
         generation &+= 1
+        cancelMutation?()
+        cancelMutation = nil
         ownerID = id
         reads = [:]
         loading = []
@@ -239,7 +242,7 @@ final class WorkspaceStore: ObservableObject {
     /// after sign-out. Non-idempotent POSTs are never automatically replayed.
     @discardableResult
     private func mutate<Result: Sendable>(
-        _ operation: (WorkspaceAPI) async throws -> Result,
+        _ operation: @escaping (WorkspaceAPI) async throws -> Result,
         apply: (Result) -> Void
     ) async -> Bool {
         guard let api, ownerID != nil, !isMutating else { return false }
@@ -251,11 +254,14 @@ final class WorkspaceStore: ObservableObject {
         defer {
             if scope == generation, mutationID == id {
                 mutationID = nil
+                cancelMutation = nil
                 isMutating = false
             }
         }
         do {
-            let value = try await operation(api)
+            let work = Task { try await operation(api) }
+            cancelMutation = { work.cancel() }
+            let value = try await withTaskCancellationHandler(operation: { try await work.value }, onCancel: { work.cancel() })
             guard scope == generation, ownerID != nil else { return false }
             apply(value)
             Task { [weak self] in
@@ -325,7 +331,7 @@ final class WorkspaceStore: ObservableObject {
     @discardableResult
     func addTaskNote(_ body: String, to task: WorkTask) async -> Bool {
         let text = body.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty, text.count <= 4000 else { return false }
+        guard !text.isEmpty, text.unicodeScalars.count <= 1000, !text.contains("\0") else { return false }
         return await mutate({ api in
             try await api.write(.post, path: "exporter/tasks/\(task.id)/notes", body: [
                 "body": .string(text)

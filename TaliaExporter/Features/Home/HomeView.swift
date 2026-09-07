@@ -147,4 +147,3 @@ struct ActivityRow: View {
         }.padding(.vertical, 10)
     }
 }
-
