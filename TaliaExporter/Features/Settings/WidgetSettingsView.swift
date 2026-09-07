@@ -64,7 +64,7 @@ struct WidgetSettingsView: View {
                 }
 
                 Toggle("Include log-group messages", isOn: $draft.includeLogs)
-                    .tint(Color.taliaBlue)
+                    .tint(Color.taliaAccent)
             } header: {
                 Text("Messages widget")
             } footer: {
@@ -85,13 +85,13 @@ struct WidgetSettingsView: View {
 
             Section("Privacy") {
                 Toggle("Show task titles", isOn: $draft.showTaskTitles)
-                    .tint(Color.taliaBlue)
+                    .tint(Color.taliaAccent)
 
                 Toggle("Show message text", isOn: $draft.showMessageText)
-                    .tint(Color.taliaBlue)
+                    .tint(Color.taliaAccent)
 
                 Label(
-                    "Widget data is written atomically to the encrypted-device app group and removed when the Talia account changes or signs out.",
+                    "Choose what appears on your Home Screen. Saved widget content is cleared when you sign out or change accounts.",
                     systemImage: "lock.shield"
                 )
                 .font(.footnote)
@@ -120,6 +120,7 @@ struct WidgetSettingsView: View {
                     .foregroundStyle(.secondary)
             }
         }
+        .taliaSurface()
         .navigationTitle("Widgets")
         .navigationBarTitleDisplayMode(.inline)
         .overlay {

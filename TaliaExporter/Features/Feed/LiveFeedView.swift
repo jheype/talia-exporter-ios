@@ -59,7 +59,7 @@ private struct MessageRow: View {
             HStack {
                 Text(message.groupName)
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color.taliaBlue)
+                    .foregroundStyle(Color.taliaAccent)
 
                 Spacer()
 
@@ -85,10 +85,10 @@ private struct MessageRow: View {
             if message.containsPrice {
                 Label("Price detected", systemImage: "sterlingsign.circle.fill")
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color.taliaNavy)
+                    .foregroundStyle(Color.taliaAccent)
                     .padding(.horizontal, 9)
                     .padding(.vertical, 5)
-                    .background(Color.taliaBlue.opacity(0.10))
+                    .background(Color.taliaAccent.opacity(0.10))
                     .clipShape(Capsule())
             }
         }

@@ -3,559 +3,884 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 77;
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A10000000000000000000001 /* TaliaExporter/TaliaExporterApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000001 /* TaliaExporter/TaliaExporterApp.swift */; };
-		A10000000000000000000002 /* TaliaExporter/Domain/Identity.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002 /* TaliaExporter/Domain/Identity.swift */; };
-		A10000000000000000000003 /* TaliaExporter/App/AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000003 /* TaliaExporter/App/AppModel.swift */; };
-		A10000000000000000000004 /* TaliaExporter/App/AppRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000004 /* TaliaExporter/App/AppRootView.swift */; };
-		A10000000000000000000005 /* TaliaExporter/DesignSystem/TaliaTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000005 /* TaliaExporter/DesignSystem/TaliaTheme.swift */; };
-		A10000000000000000000006 /* TaliaExporter/DesignSystem/TaliaComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000006 /* TaliaExporter/DesignSystem/TaliaComponents.swift */; };
-		A10000000000000000000007 /* TaliaExporter/Features/Home/HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000007 /* TaliaExporter/Features/Home/HomeView.swift */; };
-		A10000000000000000000008 /* TaliaExporter/Features/Groups/GroupsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000008 /* TaliaExporter/Features/Groups/GroupsView.swift */; };
-		A10000000000000000000009 /* TaliaExporter/Features/Activity/ActivityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000009 /* TaliaExporter/Features/Activity/ActivityView.swift */; };
-		A1000000000000000000000A /* TaliaExporter/Features/Feed/LiveFeedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000A /* TaliaExporter/Features/Feed/LiveFeedView.swift */; };
-		A1000000000000000000000B /* TaliaExporter/Features/Settings/SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000B /* TaliaExporter/Features/Settings/SettingsView.swift */; };
-		A1000000000000000000000C /* TaliaExporter/Features/Connection/ConnectionFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000C /* TaliaExporter/Features/Connection/ConnectionFlowView.swift */; };
-		A1000000000000000000000D /* TaliaExporter/Resources/Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000D /* TaliaExporter/Resources/Assets.xcassets */; };
-		A1000000000000000000000F /* TaliaExporter/App/AppDependencies.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000F /* TaliaExporter/App/AppDependencies.swift */; };
-		A10000000000000000000010 /* TaliaExporter/Features/Authentication/SignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000010 /* TaliaExporter/Features/Authentication/SignInView.swift */; };
-		A10000000000000000000011 /* TaliaExporter/Infrastructure/Networking/APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000011 /* TaliaExporter/Infrastructure/Networking/APIClient.swift */; };
-		A10000000000000000000012 /* TaliaExporter/Infrastructure/Networking/ExporterAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000012 /* TaliaExporter/Infrastructure/Networking/ExporterAPI.swift */; };
-		A10000000000000000000013 /* TaliaExporter/Infrastructure/Persistence/SecureCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000013 /* TaliaExporter/Infrastructure/Persistence/SecureCache.swift */; };
-		A10000000000000000000014 /* TaliaExporter/Infrastructure/Background/BackgroundRefreshCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000014 /* TaliaExporter/Infrastructure/Background/BackgroundRefreshCoordinator.swift */; };
-		A10000000000000000000016 /* TaliaExporter/Domain/ExporterSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000016 /* TaliaExporter/Domain/ExporterSession.swift */; };
-		A10000000000000000000017 /* TaliaExporter/Domain/ExportGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000017 /* TaliaExporter/Domain/ExportGroup.swift */; };
-		A10000000000000000000018 /* TaliaExporter/Domain/Capture.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000018 /* TaliaExporter/Domain/Capture.swift */; };
-		A10000000000000000000019 /* TaliaExporter/Domain/Date+Display.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000019 /* TaliaExporter/Domain/Date+Display.swift */; };
-		A1000000000000000000001A /* TaliaExporter/App/AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000001A /* TaliaExporter/App/AppState.swift */; };
-		A1000000000000000000001B /* TaliaExporter/Preview/PreviewData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000001B /* TaliaExporter/Preview/PreviewData.swift */; };
-		A1000000000000000000001C /* TaliaExporter/Infrastructure/Notifications/PushNotificationCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000001C /* TaliaExporter/Infrastructure/Notifications/PushNotificationCoordinator.swift */; };
-		A1000000000000000000001D /* TaliaExporter/App/AppModel+Authentication.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000001D /* TaliaExporter/App/AppModel+Authentication.swift */; };
-		A1000000000000000000001E /* TaliaExporter/App/AppModel+Connection.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000001E /* TaliaExporter/App/AppModel+Connection.swift */; };
-		A1000000000000000000001F /* TaliaExporter/App/AppModel+Capture.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000001F /* TaliaExporter/App/AppModel+Capture.swift */; };
-		A10000000000000000000020 /* TaliaExporter/App/AppModel+Notifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000020 /* TaliaExporter/App/AppModel+Notifications.swift */; };
-		B10000000000000000000001 /* WidgetSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000001 /* WidgetSupport.swift */; };
-		B10000000000000000000002 /* AppModel+Widgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000002 /* AppModel+Widgets.swift */; };
-		B10000000000000000000003 /* WidgetSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000003 /* WidgetSettingsView.swift */; };
-		B10000000000000000000004 /* WidgetSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000001 /* WidgetSupport.swift */; };
-		B10000000000000000000005 /* TaliaExporterWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000004 /* TaliaExporterWidgets.swift */; };
-		B10000000000000000000006 /* TaskProgressWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000005 /* TaskProgressWidget.swift */; };
-		B10000000000000000000007 /* CapturedMessagesWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000006 /* CapturedMessagesWidget.swift */; };
-		B10000000000000000000008 /* TaliaExporterWidget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = B20000000000000000000009 /* TaliaExporterWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		09C7E999498963054B33B8A4 /* IdeasView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA753C67F5C8EA3C6ED9C4B5 /* IdeasView.swift */; };
+		0A5EC1DD9E85F206E0C92813 /* AppDependencies.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4EC79468D89962EA7EA6009 /* AppDependencies.swift */; };
+		163C25B46051AD6EFF18476E /* WorkspaceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD559450F73588F41B4D4C4C /* WorkspaceStore.swift */; };
+		1B35D323F02BD385C4D328E9 /* WidgetSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = B271DF63811D0B4877BE2E7E /* WidgetSupport.swift */; };
+		1DC15A52C6E6F0A038E6AAC7 /* Identity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79B6E513D2FAC1DB1BE9D9DC /* Identity.swift */; };
+		202D399DFCE86EAD063A63D4 /* AppModel+Connection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 787290B449A484698611D89E /* AppModel+Connection.swift */; };
+		227A76595E5FCD100F5BE01F /* ActivityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E21D3580AA0961D0FAF6582A /* ActivityView.swift */; };
+		239428422091F6C5660CC5F0 /* Date+Display.swift in Sources */ = {isa = PBXBuildFile; fileRef = 794B3FAE9E3AEE9FFE8F63A7 /* Date+Display.swift */; };
+		2A3F0DFB92C0FD27843431E3 /* APIClientAuthenticationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AC18663E1C15CB63DFC0B91 /* APIClientAuthenticationTests.swift */; };
+		2F0082E719CEC86524838655 /* TaliaExporterWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 721BA6239135073E3BA082DA /* TaliaExporterWidgets.swift */; };
+		2F96F2C31AD18D38FE6ADC20 /* LiveFeedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4D0B214CCF151DC7FD29E11 /* LiveFeedView.swift */; };
+		311C51B0A5C24BC2266839C6 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5224105539FD2CF7E82FE274 /* AppState.swift */; };
+		3AF1E6132A7D8DB733DAD6DB /* TaliaComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA5481771802BF213BD624FA /* TaliaComponents.swift */; };
+		44C6AC84787210E5DDD978E4 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44677CC66D9E1E891C9A2915 /* APIClient.swift */; };
+		4F6954104DA461530EC5D856 /* WorkspaceSections.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67AC9E470055BD801BD1B0EA /* WorkspaceSections.swift */; };
+		534ADE9180AA183D529A9F27 /* ExporterAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C968771D5590D2B4F164673 /* ExporterAPI.swift */; };
+		59F227443D87B48A517C7367 /* SecureCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 881E565D34CDC11E44380481 /* SecureCache.swift */; };
+		5DA482667424FD2E12739547 /* WorkspaceModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DF12DCBC30A768A655CB62F /* WorkspaceModels.swift */; };
+		638E4C098C8789CEAEC53606 /* TasksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6366F930F0066355EB49ADBF /* TasksView.swift */; };
+		6927B3803100B8F956B0CE53 /* TaskDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AB08045F88D8A5899AE2EAB /* TaskDetailView.swift */; };
+		69A645AAB10C074146D52C56 /* CaptureControlRecoveryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24F73CE6745ADBE6BEB294B7 /* CaptureControlRecoveryTests.swift */; };
+		704F0696A11E2E2C35701BBB /* AppModel+Notifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C87E67640450B78F0C7D033 /* AppModel+Notifications.swift */; };
+		7521E3C9F14D79E2665AEBFF /* AppModel+Authentication.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2AF2E91CEAE30FF2086D3FA /* AppModel+Authentication.swift */; };
+		768E34E63B31B621C3C8AFE5 /* BackgroundRefreshCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F15412B9B425EC8B58825E3E /* BackgroundRefreshCoordinator.swift */; };
+		7E0A41BDCB0F711DD34EA0B6 /* AppModel+Capture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CFB257215C321ACFF9346FE /* AppModel+Capture.swift */; };
+		92A925C2BEA1B46551A2D4F8 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54DA5399B3AFA791CFBB3743 /* HomeView.swift */; };
+		99BDE739E7B3E4B8F145D0AE /* TaliaExporterWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C1BB30CF94DA6F2E9E38F6E1 /* TaliaExporterWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		9B118DC79557F3E72838AD16 /* ExporterSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = E46BF450F2A975946CE24D5F /* ExporterSession.swift */; };
+		9B4C1650A2106FCB8D05409A /* GroupsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 995F6A37CE9553259CBB60B4 /* GroupsView.swift */; };
+		A518394F4123F2CD038CCE64 /* TaliaTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 667994583DC2F0AE020D9ED9 /* TaliaTheme.swift */; };
+		A7ADD9D5DF60F32DFAB1473E /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6117F0CE8D3E2BEED7EBE4E3 /* SettingsView.swift */; };
+		A9A1DFF1E1D3AA927167A988 /* WorkspaceContractTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0B63149E0833C221BE9A216 /* WorkspaceContractTests.swift */; };
+		A9D7C07AB4BFAB82FEB62E98 /* AppModel+Widgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 630B996A7D28F67FD1295EE9 /* AppModel+Widgets.swift */; };
+		A9F0CF3EEB9F14896A585024 /* TaskProgressWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9DE0B72669929C6C78534B3 /* TaskProgressWidget.swift */; };
+		AA7892722AE7502312531DED /* WorkspaceMediaView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9216FFE0758FCB55B00C9E6 /* WorkspaceMediaView.swift */; };
+		BB578BB55E57C8E64BD968B1 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91A03AA3FD83DF1D9A23CC78 /* AppModel.swift */; };
+		C8D6D6C072A7DF4E6725DBED /* ExportGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = F63B655B552E0C1C7B9531DA /* ExportGroup.swift */; };
+		CCC3CBCA31FE58FB2D545A10 /* AccountIsolationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EA4F2E41504F188DB9057B0 /* AccountIsolationTests.swift */; };
+		CCF8717C5307521B39CCAF77 /* PreviewData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B473803B9BFA3B3880F235 /* PreviewData.swift */; };
+		D28472CA055C8AE9472A5BEA /* AppRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEC22F64829B15FCE774C193 /* AppRootView.swift */; };
+		D2F5815D54F57FCA4E43CD35 /* WorkspaceAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A18FBC228DE9700A7D95FCD /* WorkspaceAPI.swift */; };
+		D605AD69F46C38D3BC8C71B6 /* Capture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CFFFB56F7CFE8F3B582D288 /* Capture.swift */; };
+		DBBDFDC0823E211E7770164D /* PushNotificationCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D34F7C6FE41989269EB6A0B7 /* PushNotificationCoordinator.swift */; };
+		E41386AA9850DF500D10B59B /* TaliaExporterApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18751A21E859D9996F1AAD5B /* TaliaExporterApp.swift */; };
+		E47CD5ED88673DB0DE4CB4EA /* WidgetSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5FAE3A458DCC46DEAFC7C5E /* WidgetSettingsView.swift */; };
+		ED66712C3DFB32F7CD520129 /* WidgetSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = B271DF63811D0B4877BE2E7E /* WidgetSupport.swift */; };
+		EE077E70F41BBE797560B5B1 /* SignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5272FB4B23229A5F8A5A7861 /* SignInView.swift */; };
+		F645CFFDA48EE067D344082A /* ConnectionFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D2B047E8B7DC802321C9F3 /* ConnectionFlowView.swift */; };
+		F93431EBBCD0FECEFB776683 /* CapturedMessagesWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA091E043AD3BCAB427F15A6 /* CapturedMessagesWidget.swift */; };
+		FC0CA08BBC3715D32E7EF2AC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1771CDEC3A4AA39495EC9CD2 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		B90000000000000000000001 /* PBXContainerItemProxy */ = {
+		AFBAF17AD274E4C33FFA9D49 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = A70000000000000000000001 /* Project object */;
+			containerPortal = 77EF50D03082C6CCE0A32BB8 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = B50000000000000000000001;
+			remoteGlobalIDString = D4B2A04C25FB765E3B49D36D;
+			remoteInfo = TaliaExporter;
+		};
+		C9555107F1E61FB2608D4928 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 77EF50D03082C6CCE0A32BB8 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 1FC44012ACF8207F7EAC4BBC;
 			remoteInfo = TaliaExporterWidget;
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		B30000000000000000000004 /* Embed App Extensions */ = {
+		3F3781A561A85EF71387621F /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				B10000000000000000000008 /* TaliaExporterWidget.appex in Embed App Extensions */,
+				99BDE739E7B3E4B8F145D0AE /* TaliaExporterWidget.appex in Embed Foundation Extensions */,
 			);
-			name = "Embed App Extensions";
+			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		A20000000000000000000001 /* TaliaExporter/TaliaExporterApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaliaExporter/TaliaExporterApp.swift; sourceTree = SOURCE_ROOT; };
-		A20000000000000000000002 /* TaliaExporter/Domain/Identity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaliaExporter/Domain/Identity.swift; sourceTree = SOURCE_ROOT; };
-		A20000000000000000000003 /* TaliaExporter/App/AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaliaExporter/App/AppModel.swift; sourceTree = SOURCE_ROOT; };
-		A20000000000000000000004 /* TaliaExporter/App/AppRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaliaExporter/App/AppRootView.swift; sourceTree = SOURCE_ROOT; };
-		A20000000000000000000005 /* TaliaExporter/DesignSystem/TaliaTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaliaExporter/DesignSystem/TaliaTheme.swift; sourceTree = SOURCE_ROOT; };
-		A20000000000000000000006 /* TaliaExporter/DesignSystem/TaliaComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaliaExporter/DesignSystem/TaliaComponents.swift; sourceTree = SOURCE_ROOT; };
-		A20000000000000000000007 /* TaliaExporter/Features/Home/HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaliaExporter/Features/Home/HomeView.swift; sourceTree = SOURCE_ROOT; };
-		A20000000000000000000008 /* TaliaExporter/Features/Groups/GroupsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaliaExporter/Features/Groups/GroupsView.swift; sourceTree = SOURCE_ROOT; };
-		A20000000000000000000009 /* TaliaExporter/Features/Activity/ActivityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaliaExporter/Features/Activity/ActivityView.swift; sourceTree = SOURCE_ROOT; };
-		A2000000000000000000000A /* TaliaExporter/Features/Feed/LiveFeedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaliaExporter/Features/Feed/LiveFeedView.swift; sourceTree = SOURCE_ROOT; };
-		A2000000000000000000000B /* TaliaExporter/Features/Settings/SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaliaExporter/Features/Settings/SettingsView.swift; sourceTree = SOURCE_ROOT; };
-		A2000000000000000000000C /* TaliaExporter/Features/Connection/ConnectionFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaliaExporter/Features/Connection/ConnectionFlowView.swift; sourceTree = SOURCE_ROOT; };
-		A2000000000000000000000D /* TaliaExporter/Resources/Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = TaliaExporter/Resources/Assets.xcassets; sourceTree = SOURCE_ROOT; };
-		A2000000000000000000000E /* TaliaExporter.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TaliaExporter.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		A2000000000000000000000F /* TaliaExporter/App/AppDependencies.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaliaExporter/App/AppDependencies.swift; sourceTree = SOURCE_ROOT; };
-		A20000000000000000000010 /* TaliaExporter/Features/Authentication/SignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaliaExporter/Features/Authentication/SignInView.swift; sourceTree = SOURCE_ROOT; };
-		A20000000000000000000011 /* TaliaExporter/Infrastructure/Networking/APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaliaExporter/Infrastructure/Networking/APIClient.swift; sourceTree = SOURCE_ROOT; };
-		A20000000000000000000012 /* TaliaExporter/Infrastructure/Networking/ExporterAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaliaExporter/Infrastructure/Networking/ExporterAPI.swift; sourceTree = SOURCE_ROOT; };
-		A20000000000000000000013 /* TaliaExporter/Infrastructure/Persistence/SecureCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaliaExporter/Infrastructure/Persistence/SecureCache.swift; sourceTree = SOURCE_ROOT; };
-		A20000000000000000000014 /* TaliaExporter/Infrastructure/Background/BackgroundRefreshCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaliaExporter/Infrastructure/Background/BackgroundRefreshCoordinator.swift; sourceTree = SOURCE_ROOT; };
-		A20000000000000000000015 /* TaliaExporter/Resources/Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = TaliaExporter/Resources/Info.plist; sourceTree = SOURCE_ROOT; };
-		A20000000000000000000016 /* TaliaExporter/Domain/ExporterSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaliaExporter/Domain/ExporterSession.swift; sourceTree = SOURCE_ROOT; };
-		A20000000000000000000017 /* TaliaExporter/Domain/ExportGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaliaExporter/Domain/ExportGroup.swift; sourceTree = SOURCE_ROOT; };
-		A20000000000000000000018 /* TaliaExporter/Domain/Capture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaliaExporter/Domain/Capture.swift; sourceTree = SOURCE_ROOT; };
-		A20000000000000000000019 /* TaliaExporter/Domain/Date+Display.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TaliaExporter/Domain/Date+Display.swift"; sourceTree = SOURCE_ROOT; };
-		A2000000000000000000001A /* TaliaExporter/App/AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaliaExporter/App/AppState.swift; sourceTree = SOURCE_ROOT; };
-		A2000000000000000000001B /* TaliaExporter/Preview/PreviewData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaliaExporter/Preview/PreviewData.swift; sourceTree = SOURCE_ROOT; };
-		A2000000000000000000001C /* TaliaExporter/Infrastructure/Notifications/PushNotificationCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaliaExporter/Infrastructure/Notifications/PushNotificationCoordinator.swift; sourceTree = SOURCE_ROOT; };
-		A2000000000000000000001D /* TaliaExporter/App/AppModel+Authentication.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TaliaExporter/App/AppModel+Authentication.swift"; sourceTree = SOURCE_ROOT; };
-		A2000000000000000000001E /* TaliaExporter/App/AppModel+Connection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TaliaExporter/App/AppModel+Connection.swift"; sourceTree = SOURCE_ROOT; };
-		A2000000000000000000001F /* TaliaExporter/App/AppModel+Capture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TaliaExporter/App/AppModel+Capture.swift"; sourceTree = SOURCE_ROOT; };
-		A20000000000000000000020 /* TaliaExporter/App/AppModel+Notifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TaliaExporter/App/AppModel+Notifications.swift"; sourceTree = SOURCE_ROOT; };
-		A20000000000000000000021 /* TaliaExporter/Resources/TaliaExporter.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TaliaExporter/Resources/TaliaExporter.entitlements; sourceTree = SOURCE_ROOT; };
-		B20000000000000000000001 /* WidgetSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaliaExporter/Domain/WidgetSupport.swift; sourceTree = SOURCE_ROOT; };
-		B20000000000000000000002 /* AppModel+Widgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TaliaExporter/App/AppModel+Widgets.swift"; sourceTree = SOURCE_ROOT; };
-		B20000000000000000000003 /* WidgetSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaliaExporter/Features/Settings/WidgetSettingsView.swift; sourceTree = SOURCE_ROOT; };
-		B20000000000000000000004 /* TaliaExporterWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaliaExporterWidget/TaliaExporterWidgets.swift; sourceTree = SOURCE_ROOT; };
-		B20000000000000000000005 /* TaskProgressWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaliaExporterWidget/TaskProgressWidget.swift; sourceTree = SOURCE_ROOT; };
-		B20000000000000000000006 /* CapturedMessagesWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaliaExporterWidget/CapturedMessagesWidget.swift; sourceTree = SOURCE_ROOT; };
-		B20000000000000000000007 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = TaliaExporterWidget/Info.plist; sourceTree = SOURCE_ROOT; };
-		B20000000000000000000008 /* TaliaExporterWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TaliaExporterWidget/TaliaExporterWidget.entitlements; sourceTree = SOURCE_ROOT; };
-		B20000000000000000000009 /* TaliaExporterWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = TaliaExporterWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		1771CDEC3A4AA39495EC9CD2 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		18751A21E859D9996F1AAD5B /* TaliaExporterApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaliaExporterApp.swift; sourceTree = "<group>"; };
+		24F73CE6745ADBE6BEB294B7 /* CaptureControlRecoveryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureControlRecoveryTests.swift; sourceTree = "<group>"; };
+		3A18FBC228DE9700A7D95FCD /* WorkspaceAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceAPI.swift; sourceTree = "<group>"; };
+		3AC18663E1C15CB63DFC0B91 /* APIClientAuthenticationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClientAuthenticationTests.swift; sourceTree = "<group>"; };
+		44677CC66D9E1E891C9A2915 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
+		516A8961122F1512953770C2 /* TaliaExporterWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TaliaExporterWidget.entitlements; sourceTree = "<group>"; };
+		5224105539FD2CF7E82FE274 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		5272FB4B23229A5F8A5A7861 /* SignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInView.swift; sourceTree = "<group>"; };
+		54DA5399B3AFA791CFBB3743 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		5CFFFB56F7CFE8F3B582D288 /* Capture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Capture.swift; sourceTree = "<group>"; };
+		5DF12DCBC30A768A655CB62F /* WorkspaceModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceModels.swift; sourceTree = "<group>"; };
+		6117F0CE8D3E2BEED7EBE4E3 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		6246A8B4C4DB5A8E42A55A70 /* TaliaExporter.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TaliaExporter.entitlements; sourceTree = "<group>"; };
+		630B996A7D28F67FD1295EE9 /* AppModel+Widgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppModel+Widgets.swift"; sourceTree = "<group>"; };
+		6366F930F0066355EB49ADBF /* TasksView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TasksView.swift; sourceTree = "<group>"; };
+		667994583DC2F0AE020D9ED9 /* TaliaTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaliaTheme.swift; sourceTree = "<group>"; };
+		67AC9E470055BD801BD1B0EA /* WorkspaceSections.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceSections.swift; sourceTree = "<group>"; };
+		721BA6239135073E3BA082DA /* TaliaExporterWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaliaExporterWidgets.swift; sourceTree = "<group>"; };
+		787290B449A484698611D89E /* AppModel+Connection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppModel+Connection.swift"; sourceTree = "<group>"; };
+		794B3FAE9E3AEE9FFE8F63A7 /* Date+Display.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Date+Display.swift"; sourceTree = "<group>"; };
+		79B6E513D2FAC1DB1BE9D9DC /* Identity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Identity.swift; sourceTree = "<group>"; };
+		881E565D34CDC11E44380481 /* SecureCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureCache.swift; sourceTree = "<group>"; };
+		8CFB257215C321ACFF9346FE /* AppModel+Capture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppModel+Capture.swift"; sourceTree = "<group>"; };
+		8EA4F2E41504F188DB9057B0 /* AccountIsolationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountIsolationTests.swift; sourceTree = "<group>"; };
+		91A03AA3FD83DF1D9A23CC78 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		995F6A37CE9553259CBB60B4 /* GroupsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupsView.swift; sourceTree = "<group>"; };
+		9AB08045F88D8A5899AE2EAB /* TaskDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskDetailView.swift; sourceTree = "<group>"; };
+		9C87E67640450B78F0C7D033 /* AppModel+Notifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppModel+Notifications.swift"; sourceTree = "<group>"; };
+		9C968771D5590D2B4F164673 /* ExporterAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExporterAPI.swift; sourceTree = "<group>"; };
+		A1B473803B9BFA3B3880F235 /* PreviewData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewData.swift; sourceTree = "<group>"; };
+		A5FAE3A458DCC46DEAFC7C5E /* WidgetSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSettingsView.swift; sourceTree = "<group>"; };
+		A7A5C00210B058D3599E5C44 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		AA5481771802BF213BD624FA /* TaliaComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaliaComponents.swift; sourceTree = "<group>"; };
+		B271DF63811D0B4877BE2E7E /* WidgetSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSupport.swift; sourceTree = "<group>"; };
+		B2AF2E91CEAE30FF2086D3FA /* AppModel+Authentication.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppModel+Authentication.swift"; sourceTree = "<group>"; };
+		B4D0B214CCF151DC7FD29E11 /* LiveFeedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveFeedView.swift; sourceTree = "<group>"; };
+		B9DE0B72669929C6C78534B3 /* TaskProgressWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskProgressWidget.swift; sourceTree = "<group>"; };
+		BD559450F73588F41B4D4C4C /* WorkspaceStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceStore.swift; sourceTree = "<group>"; };
+		BEFCE69069CE815CFCF2EE41 /* TaliaExporterTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = TaliaExporterTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		C1BB30CF94DA6F2E9E38F6E1 /* TaliaExporterWidget.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = TaliaExporterWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		C1D2B047E8B7DC802321C9F3 /* ConnectionFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionFlowView.swift; sourceTree = "<group>"; };
+		C4EC79468D89962EA7EA6009 /* AppDependencies.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDependencies.swift; sourceTree = "<group>"; };
+		C8DEEBC37316863B313DDA99 /* TaliaExporter.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = TaliaExporter.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		CA753C67F5C8EA3C6ED9C4B5 /* IdeasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdeasView.swift; sourceTree = "<group>"; };
+		D0B63149E0833C221BE9A216 /* WorkspaceContractTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceContractTests.swift; sourceTree = "<group>"; };
+		D34F7C6FE41989269EB6A0B7 /* PushNotificationCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationCoordinator.swift; sourceTree = "<group>"; };
+		DEC22F64829B15FCE774C193 /* AppRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRootView.swift; sourceTree = "<group>"; };
+		E21D3580AA0961D0FAF6582A /* ActivityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityView.swift; sourceTree = "<group>"; };
+		E46BF450F2A975946CE24D5F /* ExporterSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExporterSession.swift; sourceTree = "<group>"; };
+		EA091E043AD3BCAB427F15A6 /* CapturedMessagesWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapturedMessagesWidget.swift; sourceTree = "<group>"; };
+		F15412B9B425EC8B58825E3E /* BackgroundRefreshCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundRefreshCoordinator.swift; sourceTree = "<group>"; };
+		F63B655B552E0C1C7B9531DA /* ExportGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportGroup.swift; sourceTree = "<group>"; };
+		F9216FFE0758FCB55B00C9E6 /* WorkspaceMediaView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceMediaView.swift; sourceTree = "<group>"; };
+		FCD308144059181AF4099385 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
-/* Begin PBXFrameworksBuildPhase section */
-		A30000000000000000000001 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		B30000000000000000000002 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXFrameworksBuildPhase section */
-
 /* Begin PBXGroup section */
-		A40000000000000000000001 = {
+		0381D5A0B44B8EC7AE67794E /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				A40000000000000000000002 /* TaliaExporter */,
-				B40000000000000000000001 /* TaliaExporterWidget */,
-				A40000000000000000000003 /* Products */,
-			);
-			sourceTree = "<group>";
-		};
-		A40000000000000000000002 /* TaliaExporter */ = {
-			isa = PBXGroup;
-			children = (
-				A20000000000000000000001 /* TaliaExporter/TaliaExporterApp.swift */,
-				A2000000000000000000000F /* TaliaExporter/App/AppDependencies.swift */,
-				A20000000000000000000003 /* TaliaExporter/App/AppModel.swift */,
-				A2000000000000000000001D /* TaliaExporter/App/AppModel+Authentication.swift */,
-				A2000000000000000000001E /* TaliaExporter/App/AppModel+Connection.swift */,
-				A2000000000000000000001F /* TaliaExporter/App/AppModel+Capture.swift */,
-				A20000000000000000000020 /* TaliaExporter/App/AppModel+Notifications.swift */,
-				A20000000000000000000004 /* TaliaExporter/App/AppRootView.swift */,
-				A20000000000000000000002 /* TaliaExporter/Domain/Identity.swift */,
-				A20000000000000000000016 /* TaliaExporter/Domain/ExporterSession.swift */,
-				A20000000000000000000017 /* TaliaExporter/Domain/ExportGroup.swift */,
-				A20000000000000000000018 /* TaliaExporter/Domain/Capture.swift */,
-				A20000000000000000000019 /* TaliaExporter/Domain/Date+Display.swift */,
-				A2000000000000000000001A /* TaliaExporter/App/AppState.swift */,
-				A2000000000000000000001B /* TaliaExporter/Preview/PreviewData.swift */,
-				A20000000000000000000010 /* TaliaExporter/Features/Authentication/SignInView.swift */,
-				A20000000000000000000011 /* TaliaExporter/Infrastructure/Networking/APIClient.swift */,
-				A20000000000000000000012 /* TaliaExporter/Infrastructure/Networking/ExporterAPI.swift */,
-				A20000000000000000000013 /* TaliaExporter/Infrastructure/Persistence/SecureCache.swift */,
-				A20000000000000000000014 /* TaliaExporter/Infrastructure/Background/BackgroundRefreshCoordinator.swift */,
-				A2000000000000000000001C /* TaliaExporter/Infrastructure/Notifications/PushNotificationCoordinator.swift */,
-				A20000000000000000000005 /* TaliaExporter/DesignSystem/TaliaTheme.swift */,
-				A20000000000000000000006 /* TaliaExporter/DesignSystem/TaliaComponents.swift */,
-				A20000000000000000000007 /* TaliaExporter/Features/Home/HomeView.swift */,
-				A20000000000000000000008 /* TaliaExporter/Features/Groups/GroupsView.swift */,
-				A20000000000000000000009 /* TaliaExporter/Features/Activity/ActivityView.swift */,
-				A2000000000000000000000A /* TaliaExporter/Features/Feed/LiveFeedView.swift */,
-				A2000000000000000000000B /* TaliaExporter/Features/Settings/SettingsView.swift */,
-				A2000000000000000000000C /* TaliaExporter/Features/Connection/ConnectionFlowView.swift */,
-				A2000000000000000000000D /* TaliaExporter/Resources/Assets.xcassets */,
-				A20000000000000000000015 /* TaliaExporter/Resources/Info.plist */,
-				A20000000000000000000021 /* TaliaExporter/Resources/TaliaExporter.entitlements */,
-				B20000000000000000000002 /* AppModel+Widgets.swift */,
-				B20000000000000000000001 /* WidgetSupport.swift */,
-				B20000000000000000000003 /* WidgetSettingsView.swift */,
-			);
-			name = TaliaExporter;
-			sourceTree = "<group>";
-		};
-		B40000000000000000000001 /* TaliaExporterWidget */ = {
-			isa = PBXGroup;
-			children = (
-				B20000000000000000000004 /* TaliaExporterWidgets.swift */,
-				B20000000000000000000005 /* TaskProgressWidget.swift */,
-				B20000000000000000000006 /* CapturedMessagesWidget.swift */,
-				B20000000000000000000007 /* Info.plist */,
-				B20000000000000000000008 /* TaliaExporterWidget.entitlements */,
-			);
-			name = TaliaExporterWidget;
-			sourceTree = "<group>";
-		};
-		A40000000000000000000003 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				A2000000000000000000000E /* TaliaExporter.app */,
-				B20000000000000000000009 /* TaliaExporterWidget.appex */,
+				C8DEEBC37316863B313DDA99 /* TaliaExporter.app */,
+				BEFCE69069CE815CFCF2EE41 /* TaliaExporterTests.xctest */,
+				C1BB30CF94DA6F2E9E38F6E1 /* TaliaExporterWidget.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		09ED0940B3B43D5BF43BBC8D /* Authentication */ = {
+			isa = PBXGroup;
+			children = (
+				5272FB4B23229A5F8A5A7861 /* SignInView.swift */,
+			);
+			path = Authentication;
+			sourceTree = "<group>";
+		};
+		1188C7FA45C3DF83A84E2228 /* Background */ = {
+			isa = PBXGroup;
+			children = (
+				F15412B9B425EC8B58825E3E /* BackgroundRefreshCoordinator.swift */,
+			);
+			path = Background;
+			sourceTree = "<group>";
+		};
+		2D9B3D4B1582AA5FFA43E47B /* Domain */ = {
+			isa = PBXGroup;
+			children = (
+				5CFFFB56F7CFE8F3B582D288 /* Capture.swift */,
+				794B3FAE9E3AEE9FFE8F63A7 /* Date+Display.swift */,
+				E46BF450F2A975946CE24D5F /* ExporterSession.swift */,
+				F63B655B552E0C1C7B9531DA /* ExportGroup.swift */,
+				79B6E513D2FAC1DB1BE9D9DC /* Identity.swift */,
+				B271DF63811D0B4877BE2E7E /* WidgetSupport.swift */,
+				5DF12DCBC30A768A655CB62F /* WorkspaceModels.swift */,
+			);
+			path = Domain;
+			sourceTree = "<group>";
+		};
+		304EF524C59C7F2397466FE9 /* Networking */ = {
+			isa = PBXGroup;
+			children = (
+				44677CC66D9E1E891C9A2915 /* APIClient.swift */,
+				9C968771D5590D2B4F164673 /* ExporterAPI.swift */,
+				3A18FBC228DE9700A7D95FCD /* WorkspaceAPI.swift */,
+			);
+			path = Networking;
+			sourceTree = "<group>";
+		};
+		40BCB0E746D3F3993D276D1A = {
+			isa = PBXGroup;
+			children = (
+				6C28EDFDEC34C61C1CB931F3 /* TaliaExporter */,
+				4CD49567B615DB03D17E1508 /* TaliaExporterTests */,
+				5A808B3E61A83C066ECB9D90 /* TaliaExporterWidget */,
+				0381D5A0B44B8EC7AE67794E /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		4B0CA0AD756EFA66D13031AE /* Infrastructure */ = {
+			isa = PBXGroup;
+			children = (
+				1188C7FA45C3DF83A84E2228 /* Background */,
+				304EF524C59C7F2397466FE9 /* Networking */,
+				C5E40F32CCB4EA3E536FFE81 /* Notifications */,
+				4FD2959A4018F3394C40F471 /* Persistence */,
+			);
+			path = Infrastructure;
+			sourceTree = "<group>";
+		};
+		4CD49567B615DB03D17E1508 /* TaliaExporterTests */ = {
+			isa = PBXGroup;
+			children = (
+				8EA4F2E41504F188DB9057B0 /* AccountIsolationTests.swift */,
+				3AC18663E1C15CB63DFC0B91 /* APIClientAuthenticationTests.swift */,
+				24F73CE6745ADBE6BEB294B7 /* CaptureControlRecoveryTests.swift */,
+				D0B63149E0833C221BE9A216 /* WorkspaceContractTests.swift */,
+			);
+			path = TaliaExporterTests;
+			sourceTree = "<group>";
+		};
+		4FD2959A4018F3394C40F471 /* Persistence */ = {
+			isa = PBXGroup;
+			children = (
+				881E565D34CDC11E44380481 /* SecureCache.swift */,
+			);
+			path = Persistence;
+			sourceTree = "<group>";
+		};
+		595C43D791B1DA114D31BAB6 /* DesignSystem */ = {
+			isa = PBXGroup;
+			children = (
+				AA5481771802BF213BD624FA /* TaliaComponents.swift */,
+				667994583DC2F0AE020D9ED9 /* TaliaTheme.swift */,
+			);
+			path = DesignSystem;
+			sourceTree = "<group>";
+		};
+		5A808B3E61A83C066ECB9D90 /* TaliaExporterWidget */ = {
+			isa = PBXGroup;
+			children = (
+				EA091E043AD3BCAB427F15A6 /* CapturedMessagesWidget.swift */,
+				FCD308144059181AF4099385 /* Info.plist */,
+				516A8961122F1512953770C2 /* TaliaExporterWidget.entitlements */,
+				721BA6239135073E3BA082DA /* TaliaExporterWidgets.swift */,
+				B9DE0B72669929C6C78534B3 /* TaskProgressWidget.swift */,
+			);
+			path = TaliaExporterWidget;
+			sourceTree = "<group>";
+		};
+		61BD90D12D399D5BDCDEB0DE /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				1771CDEC3A4AA39495EC9CD2 /* Assets.xcassets */,
+				A7A5C00210B058D3599E5C44 /* Info.plist */,
+				6246A8B4C4DB5A8E42A55A70 /* TaliaExporter.entitlements */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		6C28EDFDEC34C61C1CB931F3 /* TaliaExporter */ = {
+			isa = PBXGroup;
+			children = (
+				18751A21E859D9996F1AAD5B /* TaliaExporterApp.swift */,
+				FFC7DF6A7C895B5CD04E52D1 /* App */,
+				595C43D791B1DA114D31BAB6 /* DesignSystem */,
+				2D9B3D4B1582AA5FFA43E47B /* Domain */,
+				B9995824FACEB829A13D2C57 /* Features */,
+				4B0CA0AD756EFA66D13031AE /* Infrastructure */,
+				8B22F4365EF4ED42262A5514 /* Preview */,
+				61BD90D12D399D5BDCDEB0DE /* Resources */,
+			);
+			path = TaliaExporter;
+			sourceTree = "<group>";
+		};
+		8B22F4365EF4ED42262A5514 /* Preview */ = {
+			isa = PBXGroup;
+			children = (
+				A1B473803B9BFA3B3880F235 /* PreviewData.swift */,
+			);
+			path = Preview;
+			sourceTree = "<group>";
+		};
+		8D00A439F8C305093BF2DCCF /* Activity */ = {
+			isa = PBXGroup;
+			children = (
+				E21D3580AA0961D0FAF6582A /* ActivityView.swift */,
+			);
+			path = Activity;
+			sourceTree = "<group>";
+		};
+		AAF1DCE8ECE39EB15DEF016A /* Connection */ = {
+			isa = PBXGroup;
+			children = (
+				C1D2B047E8B7DC802321C9F3 /* ConnectionFlowView.swift */,
+			);
+			path = Connection;
+			sourceTree = "<group>";
+		};
+		B217AB7EEF63C786F5711A1E /* Groups */ = {
+			isa = PBXGroup;
+			children = (
+				995F6A37CE9553259CBB60B4 /* GroupsView.swift */,
+			);
+			path = Groups;
+			sourceTree = "<group>";
+		};
+		B3FFD86C9C4047FDCE334183 /* Tasks */ = {
+			isa = PBXGroup;
+			children = (
+				CA753C67F5C8EA3C6ED9C4B5 /* IdeasView.swift */,
+				9AB08045F88D8A5899AE2EAB /* TaskDetailView.swift */,
+				6366F930F0066355EB49ADBF /* TasksView.swift */,
+				F9216FFE0758FCB55B00C9E6 /* WorkspaceMediaView.swift */,
+				67AC9E470055BD801BD1B0EA /* WorkspaceSections.swift */,
+				BD559450F73588F41B4D4C4C /* WorkspaceStore.swift */,
+			);
+			path = Tasks;
+			sourceTree = "<group>";
+		};
+		B7FE6CEC2028702B1EA2BDBD /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				6117F0CE8D3E2BEED7EBE4E3 /* SettingsView.swift */,
+				A5FAE3A458DCC46DEAFC7C5E /* WidgetSettingsView.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		B9995824FACEB829A13D2C57 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				8D00A439F8C305093BF2DCCF /* Activity */,
+				09ED0940B3B43D5BF43BBC8D /* Authentication */,
+				AAF1DCE8ECE39EB15DEF016A /* Connection */,
+				E7C183814FB0359BA78C2C24 /* Feed */,
+				B217AB7EEF63C786F5711A1E /* Groups */,
+				F4BFBAE98EB564F3E43BEB0C /* Home */,
+				B7FE6CEC2028702B1EA2BDBD /* Settings */,
+				B3FFD86C9C4047FDCE334183 /* Tasks */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		C5E40F32CCB4EA3E536FFE81 /* Notifications */ = {
+			isa = PBXGroup;
+			children = (
+				D34F7C6FE41989269EB6A0B7 /* PushNotificationCoordinator.swift */,
+			);
+			path = Notifications;
+			sourceTree = "<group>";
+		};
+		E7C183814FB0359BA78C2C24 /* Feed */ = {
+			isa = PBXGroup;
+			children = (
+				B4D0B214CCF151DC7FD29E11 /* LiveFeedView.swift */,
+			);
+			path = Feed;
+			sourceTree = "<group>";
+		};
+		F4BFBAE98EB564F3E43BEB0C /* Home */ = {
+			isa = PBXGroup;
+			children = (
+				54DA5399B3AFA791CFBB3743 /* HomeView.swift */,
+			);
+			path = Home;
+			sourceTree = "<group>";
+		};
+		FFC7DF6A7C895B5CD04E52D1 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				C4EC79468D89962EA7EA6009 /* AppDependencies.swift */,
+				91A03AA3FD83DF1D9A23CC78 /* AppModel.swift */,
+				B2AF2E91CEAE30FF2086D3FA /* AppModel+Authentication.swift */,
+				8CFB257215C321ACFF9346FE /* AppModel+Capture.swift */,
+				787290B449A484698611D89E /* AppModel+Connection.swift */,
+				9C87E67640450B78F0C7D033 /* AppModel+Notifications.swift */,
+				630B996A7D28F67FD1295EE9 /* AppModel+Widgets.swift */,
+				DEC22F64829B15FCE774C193 /* AppRootView.swift */,
+				5224105539FD2CF7E82FE274 /* AppState.swift */,
+			);
+			path = App;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		A50000000000000000000001 /* TaliaExporter */ = {
+		1FC44012ACF8207F7EAC4BBC /* TaliaExporterWidget */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = A60000000000000000000002 /* Build configuration list for PBXNativeTarget "TaliaExporter" */;
+			buildConfigurationList = 881A6EF38F4EDEFF5EA86E8C /* Build configuration list for PBXNativeTarget "TaliaExporterWidget" */;
 			buildPhases = (
-				A30000000000000000000002 /* Sources */,
-				A30000000000000000000001 /* Frameworks */,
-				A30000000000000000000003 /* Resources */,
-				B30000000000000000000004 /* Embed App Extensions */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				B90000000000000000000002 /* PBXTargetDependency */,
-			);
-			name = TaliaExporter;
-			productName = TaliaExporter;
-			productReference = A2000000000000000000000E /* TaliaExporter.app */;
-			productType = "com.apple.product-type.application";
-		};
-		B50000000000000000000001 /* TaliaExporterWidget */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = B60000000000000000000001 /* Build configuration list for PBXNativeTarget "TaliaExporterWidget" */;
-			buildPhases = (
-				B30000000000000000000001 /* Sources */,
-				B30000000000000000000002 /* Frameworks */,
-				B30000000000000000000003 /* Resources */,
+				E63F5A26A681170D644B78FE /* Sources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
 			name = TaliaExporterWidget;
+			packageProductDependencies = (
+			);
 			productName = TaliaExporterWidget;
-			productReference = B20000000000000000000009 /* TaliaExporterWidget.appex */;
+			productReference = C1BB30CF94DA6F2E9E38F6E1 /* TaliaExporterWidget.appex */;
 			productType = "com.apple.product-type.app-extension";
+		};
+		C7B824EA3C24528C989A6F6A /* TaliaExporterTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 41E2C6756E40ED414D50BC6C /* Build configuration list for PBXNativeTarget "TaliaExporterTests" */;
+			buildPhases = (
+				A27D680D0E9CF3A6D5AD1992 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				2C07E0FEDA0C4A3D0F7BB829 /* PBXTargetDependency */,
+			);
+			name = TaliaExporterTests;
+			packageProductDependencies = (
+			);
+			productName = TaliaExporterTests;
+			productReference = BEFCE69069CE815CFCF2EE41 /* TaliaExporterTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		D4B2A04C25FB765E3B49D36D /* TaliaExporter */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2A8DBF155A2B9E1810C87F6C /* Build configuration list for PBXNativeTarget "TaliaExporter" */;
+			buildPhases = (
+				78AFAD55A68A82970CA969C4 /* Sources */,
+				0458337F9FAFEF522A98D2AE /* Resources */,
+				3F3781A561A85EF71387621F /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				8C1AC38055F6631DA045A509 /* PBXTargetDependency */,
+			);
+			name = TaliaExporter;
+			packageProductDependencies = (
+			);
+			productName = TaliaExporter;
+			productReference = C8DEEBC37316863B313DDA99 /* TaliaExporter.app */;
+			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		A70000000000000000000001 /* Project object */ = {
+		77EF50D03082C6CCE0A32BB8 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1600;
-				LastUpgradeCheck = 1600;
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
 				TargetAttributes = {
-					A50000000000000000000001 = {
-						CreatedOnToolsVersion = 16.0;
-						SystemCapabilities = {
-							com.apple.BackgroundModes = {
-								enabled = 1;
-							};
-							com.apple.Push = {
-								enabled = 1;
-							};
-						};
+					1FC44012ACF8207F7EAC4BBC = {
+						DevelopmentTeam = S3SCDDP668;
 					};
-					B50000000000000000000001 = {
-						CreatedOnToolsVersion = 16.0;
+					D4B2A04C25FB765E3B49D36D = {
+						DevelopmentTeam = S3SCDDP668;
+						ProvisioningStyle = Automatic;
 					};
 				};
 			};
-			buildConfigurationList = A60000000000000000000001 /* Build configuration list for PBXProject "TaliaExporter" */;
-			compatibilityVersion = "Xcode 14.0";
+			buildConfigurationList = 2A9431AB6DB2061E3165B4D6 /* Build configuration list for PBXProject "TaliaExporter" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
-				en,
 				Base,
+				en,
 			);
-			mainGroup = A40000000000000000000001;
-			productRefGroup = A40000000000000000000003 /* Products */;
+			mainGroup = 40BCB0E746D3F3993D276D1A;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 0381D5A0B44B8EC7AE67794E /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				A50000000000000000000001 /* TaliaExporter */,
-				B50000000000000000000001 /* TaliaExporterWidget */,
+				D4B2A04C25FB765E3B49D36D /* TaliaExporter */,
+				1FC44012ACF8207F7EAC4BBC /* TaliaExporterWidget */,
+				C7B824EA3C24528C989A6F6A /* TaliaExporterTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		A30000000000000000000003 /* Resources */ = {
+		0458337F9FAFEF522A98D2AE /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A1000000000000000000000D /* TaliaExporter/Resources/Assets.xcassets in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		B30000000000000000000003 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
+				FC0CA08BBC3715D32E7EF2AC /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		A30000000000000000000002 /* Sources */ = {
+		78AFAD55A68A82970CA969C4 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A10000000000000000000001 /* TaliaExporter/TaliaExporterApp.swift in Sources */,
-				A10000000000000000000002 /* TaliaExporter/Domain/Identity.swift in Sources */,
-				A10000000000000000000003 /* TaliaExporter/App/AppModel.swift in Sources */,
-				A1000000000000000000001D /* TaliaExporter/App/AppModel+Authentication.swift in Sources */,
-				A1000000000000000000001E /* TaliaExporter/App/AppModel+Connection.swift in Sources */,
-				A1000000000000000000001F /* TaliaExporter/App/AppModel+Capture.swift in Sources */,
-				A10000000000000000000020 /* TaliaExporter/App/AppModel+Notifications.swift in Sources */,
-				A10000000000000000000004 /* TaliaExporter/App/AppRootView.swift in Sources */,
-				A10000000000000000000005 /* TaliaExporter/DesignSystem/TaliaTheme.swift in Sources */,
-				A10000000000000000000006 /* TaliaExporter/DesignSystem/TaliaComponents.swift in Sources */,
-				A10000000000000000000007 /* TaliaExporter/Features/Home/HomeView.swift in Sources */,
-				A10000000000000000000008 /* TaliaExporter/Features/Groups/GroupsView.swift in Sources */,
-				A10000000000000000000009 /* TaliaExporter/Features/Activity/ActivityView.swift in Sources */,
-				A1000000000000000000000A /* TaliaExporter/Features/Feed/LiveFeedView.swift in Sources */,
-				A1000000000000000000000B /* TaliaExporter/Features/Settings/SettingsView.swift in Sources */,
-				A1000000000000000000000C /* TaliaExporter/Features/Connection/ConnectionFlowView.swift in Sources */,
-				A1000000000000000000000F /* TaliaExporter/App/AppDependencies.swift in Sources */,
-				A10000000000000000000010 /* TaliaExporter/Features/Authentication/SignInView.swift in Sources */,
-				A10000000000000000000011 /* TaliaExporter/Infrastructure/Networking/APIClient.swift in Sources */,
-				A10000000000000000000012 /* TaliaExporter/Infrastructure/Networking/ExporterAPI.swift in Sources */,
-				A10000000000000000000013 /* TaliaExporter/Infrastructure/Persistence/SecureCache.swift in Sources */,
-				A10000000000000000000014 /* TaliaExporter/Infrastructure/Background/BackgroundRefreshCoordinator.swift in Sources */,
-				A10000000000000000000016 /* TaliaExporter/Domain/ExporterSession.swift in Sources */,
-				A10000000000000000000017 /* TaliaExporter/Domain/ExportGroup.swift in Sources */,
-				A10000000000000000000018 /* TaliaExporter/Domain/Capture.swift in Sources */,
-				A10000000000000000000019 /* TaliaExporter/Domain/Date+Display.swift in Sources */,
-				A1000000000000000000001A /* TaliaExporter/App/AppState.swift in Sources */,
-				A1000000000000000000001B /* TaliaExporter/Preview/PreviewData.swift in Sources */,
-				A1000000000000000000001C /* TaliaExporter/Infrastructure/Notifications/PushNotificationCoordinator.swift in Sources */,
-				B10000000000000000000002 /* AppModel+Widgets.swift in Sources */,
-				B10000000000000000000001 /* WidgetSupport.swift in Sources */,
-				B10000000000000000000003 /* WidgetSettingsView.swift in Sources */,
+				44C6AC84787210E5DDD978E4 /* APIClient.swift in Sources */,
+				227A76595E5FCD100F5BE01F /* ActivityView.swift in Sources */,
+				0A5EC1DD9E85F206E0C92813 /* AppDependencies.swift in Sources */,
+				7521E3C9F14D79E2665AEBFF /* AppModel+Authentication.swift in Sources */,
+				7E0A41BDCB0F711DD34EA0B6 /* AppModel+Capture.swift in Sources */,
+				202D399DFCE86EAD063A63D4 /* AppModel+Connection.swift in Sources */,
+				704F0696A11E2E2C35701BBB /* AppModel+Notifications.swift in Sources */,
+				A9D7C07AB4BFAB82FEB62E98 /* AppModel+Widgets.swift in Sources */,
+				BB578BB55E57C8E64BD968B1 /* AppModel.swift in Sources */,
+				D28472CA055C8AE9472A5BEA /* AppRootView.swift in Sources */,
+				311C51B0A5C24BC2266839C6 /* AppState.swift in Sources */,
+				768E34E63B31B621C3C8AFE5 /* BackgroundRefreshCoordinator.swift in Sources */,
+				D605AD69F46C38D3BC8C71B6 /* Capture.swift in Sources */,
+				F645CFFDA48EE067D344082A /* ConnectionFlowView.swift in Sources */,
+				239428422091F6C5660CC5F0 /* Date+Display.swift in Sources */,
+				C8D6D6C072A7DF4E6725DBED /* ExportGroup.swift in Sources */,
+				534ADE9180AA183D529A9F27 /* ExporterAPI.swift in Sources */,
+				9B118DC79557F3E72838AD16 /* ExporterSession.swift in Sources */,
+				9B4C1650A2106FCB8D05409A /* GroupsView.swift in Sources */,
+				92A925C2BEA1B46551A2D4F8 /* HomeView.swift in Sources */,
+				09C7E999498963054B33B8A4 /* IdeasView.swift in Sources */,
+				1DC15A52C6E6F0A038E6AAC7 /* Identity.swift in Sources */,
+				2F96F2C31AD18D38FE6ADC20 /* LiveFeedView.swift in Sources */,
+				CCF8717C5307521B39CCAF77 /* PreviewData.swift in Sources */,
+				DBBDFDC0823E211E7770164D /* PushNotificationCoordinator.swift in Sources */,
+				59F227443D87B48A517C7367 /* SecureCache.swift in Sources */,
+				A7ADD9D5DF60F32DFAB1473E /* SettingsView.swift in Sources */,
+				EE077E70F41BBE797560B5B1 /* SignInView.swift in Sources */,
+				3AF1E6132A7D8DB733DAD6DB /* TaliaComponents.swift in Sources */,
+				E41386AA9850DF500D10B59B /* TaliaExporterApp.swift in Sources */,
+				A518394F4123F2CD038CCE64 /* TaliaTheme.swift in Sources */,
+				6927B3803100B8F956B0CE53 /* TaskDetailView.swift in Sources */,
+				638E4C098C8789CEAEC53606 /* TasksView.swift in Sources */,
+				E47CD5ED88673DB0DE4CB4EA /* WidgetSettingsView.swift in Sources */,
+				ED66712C3DFB32F7CD520129 /* WidgetSupport.swift in Sources */,
+				D2F5815D54F57FCA4E43CD35 /* WorkspaceAPI.swift in Sources */,
+				AA7892722AE7502312531DED /* WorkspaceMediaView.swift in Sources */,
+				5DA482667424FD2E12739547 /* WorkspaceModels.swift in Sources */,
+				4F6954104DA461530EC5D856 /* WorkspaceSections.swift in Sources */,
+				163C25B46051AD6EFF18476E /* WorkspaceStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		B30000000000000000000001 /* Sources */ = {
+		A27D680D0E9CF3A6D5AD1992 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B10000000000000000000004 /* WidgetSupport.swift in Sources */,
-				B10000000000000000000005 /* TaliaExporterWidgets.swift in Sources */,
-				B10000000000000000000006 /* TaskProgressWidget.swift in Sources */,
-				B10000000000000000000007 /* CapturedMessagesWidget.swift in Sources */,
+				2A3F0DFB92C0FD27843431E3 /* APIClientAuthenticationTests.swift in Sources */,
+				CCC3CBCA31FE58FB2D545A10 /* AccountIsolationTests.swift in Sources */,
+				69A645AAB10C074146D52C56 /* CaptureControlRecoveryTests.swift in Sources */,
+				A9A1DFF1E1D3AA927167A988 /* WorkspaceContractTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E63F5A26A681170D644B78FE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F93431EBBCD0FECEFB776683 /* CapturedMessagesWidget.swift in Sources */,
+				2F0082E719CEC86524838655 /* TaliaExporterWidgets.swift in Sources */,
+				A9F0CF3EEB9F14896A585024 /* TaskProgressWidget.swift in Sources */,
+				1B35D323F02BD385C4D328E9 /* WidgetSupport.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		B90000000000000000000002 /* PBXTargetDependency */ = {
+		2C07E0FEDA0C4A3D0F7BB829 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = B50000000000000000000001 /* TaliaExporterWidget */;
-			targetProxy = B90000000000000000000001 /* PBXContainerItemProxy */;
+			target = D4B2A04C25FB765E3B49D36D /* TaliaExporter */;
+			targetProxy = AFBAF17AD274E4C33FFA9D49 /* PBXContainerItemProxy */;
+		};
+		8C1AC38055F6631DA045A509 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 1FC44012ACF8207F7EAC4BBC /* TaliaExporterWidget */;
+			targetProxy = C9555107F1E61FB2608D4928 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		A80000000000000000000001 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_ENABLE_MODULES = YES;
-				CLANG_ENABLE_OBJC_ARC = YES;
-				COPY_PHASE_STRIP = NO;
-				DEBUG_INFORMATION_FORMAT = dwarf;
-				ENABLE_TESTABILITY = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu17;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				ONLY_ACTIVE_ARCH = YES;
-				SDKROOT = iphoneos;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-			};
-			name = Debug;
-		};
-		A80000000000000000000002 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_ENABLE_MODULES = YES;
-				CLANG_ENABLE_OBJC_ARC = YES;
-				COPY_PHASE_STRIP = NO;
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				GCC_C_LANGUAGE_STANDARD = gnu17;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				SDKROOT = iphoneos;
-				SWIFT_COMPILATION_MODE = wholemodule;
-				VALIDATE_PRODUCT = YES;
-			};
-			name = Release;
-		};
-		A80000000000000000000003 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				APS_ENVIRONMENT = development;
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = TaliaExporter/Resources/TaliaExporter.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
-				DEVELOPMENT_ASSET_PATHS = "";
-				DEVELOPMENT_TEAM = S3SCDDP668;
-				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = TaliaExporter/Resources/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Talia Exporter";
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.business";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.talia.exporter;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
-			};
-			name = Debug;
-		};
-		A80000000000000000000004 /* Release */ = {
+		0FE7694DCC29BAA480923E95 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				APS_ENVIRONMENT = production;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = TaliaExporter/Resources/TaliaExporter.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
-				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = S3SCDDP668;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = TaliaExporter/Resources/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Talia Exporter";
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.business";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.talia.exporter;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				PRODUCT_MODULE_NAME = TaliaExporter;
+				PRODUCT_NAME = "Talia Exporter";
+				SDKROOT = iphoneos;
 				SUPPORTS_MACCATALYST = NO;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
-		B80000000000000000000001 /* Debug */ = {
+		3BE69D471019D1F60A895255 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.talia.exporter.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Talia Exporter.app/Talia Exporter";
+			};
+			name = Release;
+		};
+		45FBD2C6CA14C96EA4CEE01C /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = TaliaExporterWidget/TaliaExporterWidget.entitlements;
-				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = S3SCDDP668;
-				CURRENT_PROJECT_VERSION = 3;
-				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = TaliaExporterWidget/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
-				MARKETING_VERSION = 0.1.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.talia.exporter.widgets;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = TaliaExporterWidget;
+				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
-		B80000000000000000000002 /* Release */ = {
+		750D7D8D23B391CA93FE2816 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 4;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 0.2.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		9640901F86D5F7BBFAC31833 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 4;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 0.2.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		C15A0F4D4FC8345E8882B20B /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = TaliaExporterWidget/TaliaExporterWidget.entitlements;
-				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = S3SCDDP668;
-				CURRENT_PROJECT_VERSION = 3;
-				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = TaliaExporterWidget/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
-				MARKETING_VERSION = 0.1.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.talia.exporter.widgets;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = TaliaExporterWidget;
+				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
+		E0EF630C37484EFB5288DF69 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APS_ENVIRONMENT = development;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = TaliaExporter/Resources/TaliaExporter.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = S3SCDDP668;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TaliaExporter/Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.talia.exporter;
+				PRODUCT_MODULE_NAME = TaliaExporter;
+				PRODUCT_NAME = "Talia Exporter";
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		ECF14434D5EF4A697F01953D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.talia.exporter.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Talia Exporter.app/Talia Exporter";
+			};
+			name = Debug;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		A60000000000000000000001 /* Build configuration list for PBXProject "TaliaExporter" */ = {
+		2A8DBF155A2B9E1810C87F6C /* Build configuration list for PBXNativeTarget "TaliaExporter" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				A80000000000000000000001 /* Debug */,
-				A80000000000000000000002 /* Release */,
+				E0EF630C37484EFB5288DF69 /* Debug */,
+				0FE7694DCC29BAA480923E95 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
-		A60000000000000000000002 /* Build configuration list for PBXNativeTarget "TaliaExporter" */ = {
+		2A9431AB6DB2061E3165B4D6 /* Build configuration list for PBXProject "TaliaExporter" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				A80000000000000000000003 /* Debug */,
-				A80000000000000000000004 /* Release */,
+				9640901F86D5F7BBFAC31833 /* Debug */,
+				750D7D8D23B391CA93FE2816 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
-		B60000000000000000000001 /* Build configuration list for PBXNativeTarget "TaliaExporterWidget" */ = {
+		41E2C6756E40ED414D50BC6C /* Build configuration list for PBXNativeTarget "TaliaExporterTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				B80000000000000000000001 /* Debug */,
-				B80000000000000000000002 /* Release */,
+				ECF14434D5EF4A697F01953D /* Debug */,
+				3BE69D471019D1F60A895255 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
+		};
+		881A6EF38F4EDEFF5EA86E8C /* Build configuration list for PBXNativeTarget "TaliaExporterWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				45FBD2C6CA14C96EA4CEE01C /* Debug */,
+				C15A0F4D4FC8345E8882B20B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
 	};
-	rootObject = A70000000000000000000001 /* Project object */;
+	rootObject = 77EF50D03082C6CCE0A32BB8 /* Project object */;
 }

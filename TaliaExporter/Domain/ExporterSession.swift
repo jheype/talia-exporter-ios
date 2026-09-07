@@ -93,4 +93,3 @@ struct DeviceRegistration: Encodable, Sendable {
     let token: String
     let platform = "ios"
 }
-

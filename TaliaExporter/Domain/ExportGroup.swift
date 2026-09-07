@@ -4,22 +4,25 @@ enum GroupFunction: String, Codable, CaseIterable, Identifiable, Hashable, Senda
     case exporterMentions = "exporter_mentions"
     case tasks
     case logs
+    case personalNotes = "personal_notes"
 
     var id: Self { self }
 
     var title: String {
         switch self {
-        case .exporterMentions: "Exporter mentions"
+        case .exporterMentions: "UK Chats"
         case .tasks: "Task group"
         case .logs: "Log group"
+        case .personalNotes: "Personal notes"
         }
     }
 
     var shortTitle: String {
         switch self {
-        case .exporterMentions: "Mentions"
+        case .exporterMentions: "UK Chats"
         case .tasks: "Tasks"
         case .logs: "Logs"
+        case .personalNotes: "Personal notes"
         }
     }
 
@@ -31,6 +34,8 @@ enum GroupFunction: String, Codable, CaseIterable, Identifiable, Hashable, Senda
             "Create Tasks and Ideas in v14, attach ordinary group messages and track checklist progress."
         case .logs:
             "Keep every text message in the v14 operations log."
+        case .personalNotes:
+            "Keep notes private to your Talia account."
         }
     }
 
@@ -39,6 +44,7 @@ enum GroupFunction: String, Codable, CaseIterable, Identifiable, Hashable, Senda
         case .exporterMentions: "message.badge.waveform"
         case .tasks: "checklist"
         case .logs: "doc.text.magnifyingglass"
+        case .personalNotes: "lock"
         }
     }
 }

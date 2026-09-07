@@ -27,14 +27,16 @@ struct SignInView: View {
                     Image(systemName: "person.badge.key.fill")
                         .font(.system(size: 48, weight: .medium))
                         .symbolRenderingMode(.hierarchical)
-                        .foregroundStyle(Color.taliaBlue)
-                        .padding(.top, 72)
+                        .foregroundStyle(Color.taliaAccent)
+                        .padding(.top, 48)
 
                     Text("Sign in to Talia")
-                        .font(.system(size: 38, weight: .bold, design: .rounded))
+                        .font(.system(size: 38, weight: .bold, design: .default))
                         .tracking(-1.1)
                         .padding(.top, 26)
 
+                    Text("Your groups, tasks and ideas. Together.")
+                        .font(.subheadline).foregroundStyle(.secondary).padding(.top, 12)
                     VStack(spacing: 14) {
                         TextField("Email", text: $email)
                             .textContentType(.username)
@@ -59,7 +61,7 @@ struct SignInView: View {
                         Group {
                             if appModel.isWorking {
                                 ProgressView()
-                                    .tint(.white)
+                                    .tint(Color.taliaOnAccent)
                             } else {
                                 Text("Sign in")
                             }

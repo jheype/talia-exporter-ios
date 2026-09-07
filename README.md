@@ -1,125 +1,53 @@
-# PR-2 — Exporter capture start/resume recovery
+# Talia Exporter iOS 0.2
 
-This package is intentionally separate from the UK Chats image-intelligence
-correction package. It fixes the Lucas Renshaw account symptoms:
+Native SwiftUI Exporter with the approved graphite and warm-white design, five tabs, and the v14 Tasks workspace. Minimum iOS 17. No web view or second login.
 
-- `Unable to start capture — Check your internet connection and try again.`
-- capture remaining `Paused` after selecting a group;
-- `Unable to resume capture — Check the supplied values and try again.`
+## Included
 
-## Root cause
+- Home: capture state, pause/resume, group selection, task overview and latest messages.
+- Groups: search, selected/all views, routing to UK Chats, Tasks, operations logs or personal notes; history progress and retry in group settings.
+- Tasks: status board, search, assignee/priority/date/project filters, cursor pagination, task creation and details, checklist, assignment, due dates, progress, messages, notes and attributed history.
+- Ideas: shared boards and General, creation, editing, image upload, move/resize/colour controls, zoom, connections, image nodes and removal.
+- Inbox: attach unassigned messages to a task in the same group.
+- Operations log: severity/search filters and cursor pagination.
+- My Notes: private creation, editing, completion and deletion.
+- Activity: capture timeline, date/type/search filters and live feed.
+- Settings: account, capture, interruption alerts, system/light/dark appearance and widget preferences.
+- Widgets: Tasks (small/medium/large), Messages (medium/large), UK Chats coverage (small/medium), app links and immediate privacy masking.
 
-The group-selection request performed an unbounded promotion/deletion pass over
-the entire pre-selection WhatsApp history before returning. A large initial
-account backlog could outlive the iOS or ingress timeout. The next resume request
-then found no committed selected group and returned the generic invalid-input
-error.
+## Open and run
 
-## What changes
+1. Open `TaliaExporter.xcodeproj` in Xcode 16.4 or newer.
+2. Select the **TaliaExporter** scheme and an iPhone simulator; run.
+3. For a physical iPhone, select your signing team for the app and widget targets. Both targets use `group.com.talia.exporter.shared`; enable that App Group for both identifiers in your Apple developer account.
+4. Sign in with your existing Talia account. WhatsApp pairing remains optional for using the shared Tasks workspace and private notes.
 
-### Exporter backend
+The default API is `https://api.talia.co.uk/api/v1/`, configured in `TaliaExporter/Resources/Info.plist`. The existing cookie session and token refresh are shared across capture and workspace APIs. This is source code, not a signed IPA or TestFlight release.
 
-- Group selection and first capture activation remain atomic, but the control
-  transaction no longer processes the whole message backlog.
-- Only groups affected by the selection are locked; hundreds of unrelated
-  discovered groups no longer add lock calls to the request.
-- Durable `pending` rows are reconciled by the owning WhatsApp session worker in
-  bounded pages of 250.
-- A pass promotes selected messages, queues their intelligence work, discards
-  unselected rows and cleans unselected quarantine rows without exceeding the
-  page limit for message mutations.
-- History starts only after the pending backlog is drained. The worker yields
-  after 20 pages so live traffic and other sessions retain capacity.
-- Restart recovery requires no extra in-memory state or migration: remaining
-  `pending` rows are the durable queue.
-- Image/text pairing runs after the final promotion page, so a page boundary
-  cannot separate an image from its following advert.
-- Resume with no selected groups now returns
-  `WHATSAPP.NO_SELECTED_GROUPS`; a stale group list returns
-  `WHATSAPP.GROUP_SELECTION_STALE`.
-- Rejected control requests are logged with HTTP status and stable error code.
-
-### Talia Exporter iOS
-
-- A timeout or interrupted response is treated as ambiguous, not automatically
-  described as a lack of internet.
-- After an ambiguous start/pause/resume response, the app reads the authoritative
-  session state. If the mutation committed, the UI proceeds without asking the
-  user to repeat it.
-- Resume preflights server group selection. With no selected group, the app
-  opens the Groups tab and explains exactly what is required.
-- A stale group list is refreshed before asking the user to choose again.
-- The capture toggle is disabled while a control mutation is in flight.
-
-## Branch order
-
-This is a stacked PR-2. Create its branch from the branch containing the
-image-intelligence PR that was supplied immediately before this package. The
-backend reconciliation uses that PR's intelligence columns/jobs and conservative
-media-pairing schema. Once PR-1 is merged, retarget PR-2 to `main`.
-
-Do not copy files from this package into the PR-1 branch and commit them there;
-that would mix the two review scopes.
-
-The iOS files assume the earlier account/session-isolation client patch is
-already present (`TaliaExporter-account-isolation-fixed-v1`).
-
-## Apply
-
-The `talia-v14/` and `TaliaExporter/` folders preserve repository-relative paths.
-Copy each tree over the matching project only on the PR-2 branch.
-
-No database migration or new environment variable is required.
-
-## Verification
-
-Backend:
+`project.yml` is the source for regenerating the checked-in project with XcodeGen:
 
 ```bash
-cd services/exporter
-gofmt -w \
-  internal/domain/models.go \
-  internal/httpapi/respond.go \
-  internal/httpapi/capture_errors_test.go \
-  internal/store/repository.go \
-  internal/store/sessions.go \
-  internal/store/groups.go \
-  internal/store/media.go \
-  internal/store/postgres_integration_test.go \
-  internal/whatsapp/manager.go \
-  internal/whatsapp/selection_reconciliation_test.go \
-  contracts/exporter_api_contract_test.go
-go test ./...
+brew install xcodegen
+xcodegen generate
+xcodebuild -project TaliaExporter.xcodeproj -scheme TaliaExporter \
+  -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
+  CODE_SIGNING_ALLOWED=NO test
 ```
 
-Run PostgreSQL integration coverage as usual with `TEST_DATABASE_URL` configured.
+Choose an installed simulator name if it differs. For iPhone 17 simulation, use an Xcode installation that includes that device runtime.
 
-iOS:
+## Validation
 
-1. Add `TaliaExporterTests/CaptureControlRecoveryTests.swift` to the unit-test
-   target, not the application target.
-2. Run the existing Xcode test scheme:
+GitHub Actions builds the app and widget extension on macOS and runs 21 tests covering authentication, account isolation, capture recovery, workspace API payloads, pagination, conflicts, private data reset and widget sanitisation. It also renders all five tabs in light and dark with isolated test fixtures, exporting the screenshots and test result bundle as `ios-validation`.
 
-```bash
-xcodebuild \
-  -scheme TaliaExporter \
-  -destination 'platform=iOS Simulator,name=iPhone 16' \
-  clean test
-```
+Production screens load API data. Fixtures are used by previews and tests. Rendering checks do not exercise live WhatsApp pairing, APNs delivery, production uploads or installation on a physical iPhone; those require an authenticated device and configured backend services.
 
-## Deployment and acceptance
+## Backend compatibility
 
-Deploy the backend before distributing the iOS build.
+Contracts were checked against v14 revision `c38011c79b79a147f2b129c1c6392e679906d79c`. The app calls existing `exporter/tasks`, `task-messages`, `personal-notes`, `logs`, `idea-boards`, `idea-nodes`, `idea-connections`, and authorised image-access endpoints. This change adds no database migration or backend deployment.
 
-1. Sign in as Lucas Renshaw and confirm his WhatsApp remains linked.
-2. Select `Testing ingestion` and start capture.
-3. Confirm the screen becomes `LIVE` without an internet or supplied-values
-   alert.
-4. Pause and resume capture once.
-5. Send a new text in that group and confirm it appears in UK Chats.
-6. While the initial backlog drains, confirm logs contain
-   `reconciled pending WhatsApp selection batch` and eventually show
-   `remaining=false`.
-7. Confirm the Exporter pod does not restart and new live messages continue to
-   arrive while old bootstrap rows are reconciled.
+Edits send expected versions. Conflicts load the latest server state and require review before retrying. Account changes discard late reads and cancel in-flight workspace writes. Non-idempotent writes are not automatically retried after ambiguous failures. Photos are resized to JPEG before upload; downloaded thumbnails stay in memory and use a cookie-free session with an 8 MiB limit.
 
+Coverage shows the selected **rolling period**, not an inferred calendar-day count. The Inbox endpoint returns at most 200 messages per request; attaching messages and refreshing reveals the remaining items. Creating a task requires a group currently routed to Tasks on a linked, selected capture session. WhatsApp replies depend on the existing server delivery configuration.
+
+Previous capture recovery notes are preserved in `docs/capture-recovery-history.md`.

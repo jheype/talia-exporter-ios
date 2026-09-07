@@ -377,10 +377,14 @@ enum WidgetSharedStore {
     }
 
     static func clearAccountData() {
+        clearSnapshot()
+        resetPreferences()
+    }
+
+    static func clearSnapshot() {
         if let url = snapshotURL {
             try? FileManager.default.removeItem(at: url)
         }
-        resetPreferences()
     }
 
     private static var defaults: UserDefaults? {

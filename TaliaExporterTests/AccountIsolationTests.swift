@@ -47,7 +47,7 @@ final class AccountIsolationTests: XCTestCase {
         let model = AppModel(dependencies: Self.dependencies(api: api))
         model.user = joao
         model.session = Self.session(owner: joao.id)
-        model.groups = [.init(id: "joao-group@g.us", name: "Joao group", participantCount: 3, isSelected: true)]
+        model.groups = [.init(id: "joao-group@g.us", name: "Joao group", participantCount: 3, isSelected: true, lastMessageAt: nil)]
         model.route = .main
 
         await model.signIn(email: lucas.email, password: "secret")
@@ -81,7 +81,7 @@ final class AccountIsolationTests: XCTestCase {
         let cache = InMemoryDashboardCache()
         let dashboard = CachedDashboard(
             session: Self.session(owner: joaoID),
-            groups: [.init(id: "joao-group@g.us", name: "Joao group", participantCount: 3, isSelected: true)],
+            groups: [.init(id: "joao-group@g.us", name: "Joao group", participantCount: 3, isSelected: true, lastMessageAt: nil)],
             events: []
         )
 

@@ -1,9 +1,10 @@
-name: iOS build
+name: iOS build and tests
 
 on:
   push:
-    branches: [main]
+    branches: [main, feat/native-tasks-monochrome-ui]
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -15,16 +16,32 @@ concurrency:
 jobs:
   build:
     runs-on: macos-15
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Build for iOS Simulator
-        run: >-
-          xcodebuild
-          -project TaliaExporter.xcodeproj
-          -scheme TaliaExporter
-          -configuration Debug
-          -destination 'generic/platform=iOS Simulator'
-          CODE_SIGNING_ALLOWED=NO
-          build
+      - name: Generate Xcode project
+        run: |
+          brew install xcodegen
+          xcodegen generate
+      - name: Build and test
+        run: |
+          set -o pipefail
+          DEVICE=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next(x["udid"] for k,v in d["devices"].items() if "iOS" in k for x in v if "iPhone" in x["name"]))')
+          xcodebuild -project TaliaExporter.xcodeproj -scheme TaliaExporter -configuration Debug -destination "platform=iOS Simulator,id=$DEVICE" -resultBundlePath TestResults.xcresult CODE_SIGNING_ALLOWED=NO test | tee build.log
+      - name: Export screen captures
+        if: always()
+        run: |
+          if [ -d TestResults.xcresult ]; then
+            xcrun xcresulttool export attachments --path TestResults.xcresult --output-path Screenshots || true
+          fi
+      - name: Save project and diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-validation
+          path: |
+            TaliaExporter.xcodeproj
+            TestResults.xcresult
+            build.log
+            Screenshots

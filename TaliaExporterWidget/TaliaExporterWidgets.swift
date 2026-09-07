@@ -45,3 +45,14 @@ struct TaliaExporterWidgetBundle: WidgetBundle {
         TaliaUKChatsCoverageWidget()
     }
 }
+
+private extension UIColor {
+    static var exporterBackground: UIColor {
+        UIColor { $0.userInterfaceStyle == .dark
+            ? UIColor(red: 0.082, green: 0.082, blue: 0.082, alpha: 1)
+            : UIColor(red: 0.973, green: 0.973, blue: 0.961, alpha: 1) }
+    }
+}
+extension Color {
+    static var widgetBackground: Color { Color(uiColor: .exporterBackground) }
+}

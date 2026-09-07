@@ -43,6 +43,7 @@ enum AppRoute: Hashable {
 enum MainTab: Hashable {
     case home
     case groups
+    case tasks
     case activity
     case settings
 }
@@ -67,4 +68,3 @@ struct AppAlert: Identifiable, Equatable {
     let title: String
     let message: String
 }
-

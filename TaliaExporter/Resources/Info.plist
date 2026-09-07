@@ -6,6 +6,8 @@
 	<array>
 		<string>com.talia.exporter.refresh</string>
 	</array>
+	<key>CFBundleURLTypes</key>
+	<array><dict><key>CFBundleURLSchemes</key><array><string>talia-exporter</string></array></dict></array>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en_GB</string>
 	<key>CFBundleDisplayName</key>
