@@ -20,6 +20,9 @@ struct GroupsView: View {
         NavigationStack(path: $path) {
             List {
                 Section {
+                    selectionSummary
+                }.listRowBackground(Color.clear).listRowInsets(EdgeInsets())
+                Section {
                     Picker("Show groups", selection: $selectedOnly) {
                         Text("All groups").tag(false)
                         Text("Selected").tag(true)
@@ -60,9 +63,6 @@ struct GroupsView: View {
                     }
                 }
             }
-            .safeAreaInset(edge: .bottom) {
-                selectionSummary
-            }
         }
     }
 
@@ -83,10 +83,6 @@ struct GroupsView: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
-        .background(.regularMaterial)
-        .overlay(alignment: .top) {
-            Divider()
-        }
     }
 }
 
