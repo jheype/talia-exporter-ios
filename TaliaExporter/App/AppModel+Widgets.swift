@@ -20,7 +20,7 @@ extension AppModel {
               !routingSavingGroupIDs.contains(groupID) else { return false }
         let ownerUserID = user.id
         let accountGeneration = accountScopeGeneration
-        let feedback = function == .exporterMentions ? false : botFeedbackEnabled
+        let feedback = (function == .tasks || function == .logs) ? botFeedbackEnabled : false
         let reminders = function == .tasks ? botRemindersEnabled : false
         let destination = botDestinationID?
             .trimmingCharacters(in: .whitespacesAndNewlines)
@@ -110,6 +110,7 @@ extension AppModel {
                   route == .main,
                   widgetPreferences == preferences
             else { return }
+            widgetSnapshot = snapshot
             try WidgetSharedStore.save(
                 snapshot: snapshot,
                 ownerUserID: ownerUserID,

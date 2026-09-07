@@ -71,6 +71,7 @@ struct ConnectionFlowView: View {
 }
 
 private struct ConnectIntroView: View {
+    @EnvironmentObject private var appModel: AppModel
     let onContinue: () -> Void
 
     var body: some View {
@@ -80,10 +81,10 @@ private struct ConnectIntroView: View {
             Image(systemName: "link.circle.fill")
                 .font(.system(size: 60))
                 .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(Color.taliaBlue)
+                .foregroundStyle(Color.taliaAccent)
 
             Text("Connect your work WhatsApp")
-                .font(.system(size: 36, weight: .bold, design: .rounded))
+                .font(.system(size: 36, weight: .bold, design: .default))
                 .tracking(-0.8)
                 .padding(.top, 26)
 
@@ -98,6 +99,8 @@ private struct ConnectIntroView: View {
 
             Button("Connect WhatsApp", action: onContinue)
                 .buttonStyle(TaliaPrimaryButtonStyle())
+            Button("Set up later") { appModel.route = .main }
+                .frame(maxWidth: .infinity, minHeight: 48)
         }
         .padding(TaliaLayout.screenPadding)
     }
@@ -110,7 +113,7 @@ private struct ConnectionBenefit: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
-                .foregroundStyle(Color.taliaBlue)
+                .foregroundStyle(Color.taliaAccent)
                 .frame(width: 26)
             Text(text)
                 .font(.subheadline)
@@ -134,7 +137,7 @@ private struct PhoneNumberView: View {
             Spacer()
 
             Text("Enter your WhatsApp number")
-                .font(.system(size: 34, weight: .bold, design: .rounded))
+                .font(.system(size: 34, weight: .bold, design: .default))
                 .tracking(-0.7)
 
             Text("Include the country code used by the WhatsApp account.")
@@ -162,7 +165,7 @@ private struct PhoneNumberView: View {
             Button(action: onContinue) {
                 Group {
                     if isWorking {
-                        ProgressView().tint(.white)
+                        ProgressView().tint(Color.taliaOnAccent)
                     } else {
                         Text("Generate pairing code")
                     }
@@ -178,6 +181,9 @@ private struct PhoneNumberView: View {
 }
 
 private struct PairingCodeView: View {
+    @EnvironmentObject private var appModel: AppModel
+    @Environment(\.openURL) private var openURL
+    @State private var copied = false
     let code: String
     let expiresAt: Date?
     let status: ExporterSessionStatus
@@ -191,7 +197,7 @@ private struct PairingCodeView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 Text("Link this device")
-                    .font(.system(size: 34, weight: .bold, design: .rounded))
+                    .font(.system(size: 34, weight: .bold, design: .default))
                     .tracking(-0.7)
                     .padding(.top, 54)
 
@@ -218,6 +224,19 @@ private struct PairingCodeView: View {
                 .foregroundStyle(.secondary)
                 .padding(.top, 24)
 
+                HStack(spacing: 12) {
+                    Button(copied ? "Copied" : "Copy code", systemImage: "doc.on.doc") {
+                        UIPasteboard.general.setItems([["public.utf8-plain-text": code]], options: [
+                            .localOnly: true, .expirationDate: expiresAt ?? Date().addingTimeInterval(60)
+                        ])
+                        copied = true
+                    }.buttonStyle(TaliaSecondaryButtonStyle())
+                    Button("Open WhatsApp", systemImage: "arrow.up.right") {
+                        if let url = URL(string: "whatsapp://") { openURL(url) }
+                    }.buttonStyle(TaliaSecondaryButtonStyle())
+                }.padding(.top, 24)
+                Button("Generate another code") { appModel.goBackInConnectionFlow() }
+                    .font(.subheadline).padding(.top, 16)
                 Button("Check link", action: onCheck)
                     .buttonStyle(TaliaPrimaryButtonStyle())
                     .padding(.top, 44)
@@ -247,7 +266,7 @@ private struct PairingCodeView: View {
                 HStack(spacing: spacing) {
                     ForEach(characters.indices, id: \.self) { index in
                         Text(String(characters[index]))
-                            .font(.system(size: 22, weight: .bold, design: .monospaced))
+                            .font(.system(size: 22, weight: .bold, design: .default))
                             .frame(width: characterWidth, height: 54)
                             .background(Color.taliaSecondaryBackground)
                             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
@@ -269,6 +288,7 @@ private struct PairingCodeView: View {
     private func countdownText(at date: Date) -> String {
         guard let expiresAt else { return "Waiting for WhatsApp" }
         let remaining = max(0, Int(expiresAt.timeIntervalSince(date)))
+        if remaining == 0 { return "Code expired. Generate another code to continue." }
         return "Code expires in \(remaining / 60):\(String(format: "%02d", remaining % 60))"
     }
 }
@@ -286,7 +306,7 @@ private struct ConnectionGroupSelectionView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("Choose groups to capture")
-                .font(.system(size: 31, weight: .bold, design: .rounded))
+                .font(.system(size: 31, weight: .bold, design: .default))
                 .tracking(-0.6)
                 .padding(.horizontal, TaliaLayout.screenPadding)
                 .padding(.top, 28)
@@ -310,7 +330,7 @@ private struct ConnectionGroupSelectionView: View {
                         }
                         Spacer()
                         Image(systemName: group.isSelected ? "checkmark.circle.fill" : "circle")
-                            .foregroundStyle(group.isSelected ? Color.taliaBlue : Color.secondary)
+                            .foregroundStyle(group.isSelected ? Color.taliaAccent : Color.secondary)
                     }
                 }
                 .buttonStyle(.plain)
@@ -321,7 +341,7 @@ private struct ConnectionGroupSelectionView: View {
             Button(action: onComplete) {
                 Group {
                     if appModel.isWorking {
-                        ProgressView().tint(.white)
+                        ProgressView().tint(Color.taliaOnAccent)
                     } else {
                         Text("Start capturing \(appModel.selectedGroupsDescription)")
                     }

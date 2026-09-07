@@ -7,11 +7,12 @@ struct TaliaTaskProgressWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: ExporterWidgetProvider()) { entry in
             TaskProgressWidgetView(entry: entry)
-                .containerBackground(.fill.tertiary, for: .widget)
+                .containerBackground(Color.widgetBackground, for: .widget)
+                .widgetURL(URL(string: "talia-exporter://tasks"))
         }
         .configurationDisplayName("Talia Tasks")
         .description("See open work, blockers and live task progress.")
-        .supportedFamilies([.systemSmall, .systemMedium])
+        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
     }
 }
 
@@ -36,11 +37,11 @@ private struct TaskProgressWidgetView: View {
         VStack(alignment: .leading, spacing: 8) {
             Label("Talia Tasks", systemImage: "checklist")
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(.blue)
+                .foregroundStyle(.primary)
 
             HStack(alignment: .firstTextBaseline, spacing: 5) {
                 Text(entry.snapshot.summary.totalOpen.formatted())
-                    .font(.system(size: 34, weight: .bold, design: .rounded))
+                    .font(.system(size: 34, weight: .bold, design: .default))
                 Text("open")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -65,7 +66,7 @@ private struct TaskProgressWidgetView: View {
             HStack {
                 Label("Talia Tasks", systemImage: "checklist")
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(.primary)
                 Spacer()
                 Text("\(entry.snapshot.summary.totalOpen) open")
                     .font(.caption2.weight(.medium))
@@ -79,12 +80,12 @@ private struct TaskProgressWidgetView: View {
                     .foregroundStyle(.secondary)
                 Spacer()
             } else {
-                ForEach(entry.snapshot.tasks.prefix(3)) { task in
+                ForEach(entry.snapshot.tasks.prefix(family == .systemLarge ? 6 : 2)) { task in
                     VStack(alignment: .leading, spacing: 3) {
                         HStack(spacing: 6) {
                             Text(task.publicID)
-                                .font(.system(size: 9, weight: .semibold, design: .monospaced))
-                                .foregroundStyle(.blue)
+                                .font(.system(size: 9, weight: .semibold, design: .default))
+                                .foregroundStyle(.primary)
                             Text(task.title)
                                 .font(.caption.weight(.medium))
                                 .lineLimit(1)
@@ -93,7 +94,7 @@ private struct TaskProgressWidgetView: View {
                                 .font(.caption2.weight(.semibold))
                         }
                         ProgressView(value: Double(task.progress), total: 100)
-                            .tint(task.status == "blocked" ? .orange : .blue)
+                            .tint(task.status == "blocked" ? .orange : .primary)
                     }
                 }
             }
@@ -121,7 +122,7 @@ struct WidgetUnavailableView: View {
         VStack(alignment: .leading, spacing: 8) {
             Image(systemName: "rectangle.3.group")
                 .font(.title2)
-                .foregroundStyle(.blue)
+                .foregroundStyle(.primary)
             Text(title)
                 .font(.headline)
             Text(detail)

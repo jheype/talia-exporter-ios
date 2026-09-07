@@ -5,6 +5,7 @@ struct AppDependencies: Sendable {
     let cache: any DashboardCaching
     let backgroundRefresh: BackgroundRefreshCoordinator
     let pushNotifications: any PushNotificationCoordinating
+    var workspaceAPI: WorkspaceAPI? = nil
 
     static var live: AppDependencies {
         let baseURL = AppConfiguration.apiBaseURL
@@ -13,7 +14,8 @@ struct AppDependencies: Sendable {
             api: ExporterAPI(client: client),
             cache: SecureDashboardCache(),
             backgroundRefresh: .shared,
-            pushNotifications: SystemPushNotificationCoordinator()
+            pushNotifications: SystemPushNotificationCoordinator(),
+            workspaceAPI: WorkspaceAPI(client: client)
         )
     }
 

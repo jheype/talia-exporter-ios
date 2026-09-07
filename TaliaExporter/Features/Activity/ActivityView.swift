@@ -2,11 +2,15 @@ import SwiftUI
 
 struct ActivityView: View {
     @EnvironmentObject private var appModel: AppModel
+    @State private var showLiveFeed = false
+    @State private var search = ""
     @State private var selectedKind: CaptureEvent.Kind?
 
     private var filteredEvents: [CaptureEvent] {
-        guard let selectedKind else { return appModel.events }
-        return appModel.events.filter { $0.kind == selectedKind }
+        appModel.events.filter { event in
+            (selectedKind == nil || event.kind == selectedKind) &&
+            (search.isEmpty || event.groupName.localizedCaseInsensitiveContains(search) || event.detail.localizedCaseInsensitiveContains(search))
+        }
     }
 
     var body: some View {
@@ -22,6 +26,11 @@ struct ActivityView: View {
                     .pickerStyle(.menu)
                 }
 
+                Section {
+                    Button { showLiveFeed = true } label: {
+                        Label("Open live feed", systemImage: "text.bubble")
+                    }
+                }
                 Section("Recent") {
                     if filteredEvents.isEmpty {
                         EmptyStateView(
@@ -38,7 +47,10 @@ struct ActivityView: View {
                 }
             }
             .listStyle(.insetGrouped)
+            .taliaSurface()
             .navigationTitle("Activity")
+            .searchable(text: $search, prompt: "Search activity")
+            .sheet(isPresented: $showLiveFeed) { LiveFeedView() }
             .refreshable {
                 await appModel.refreshEvents()
             }
@@ -67,7 +79,7 @@ private struct ActivityDetailRow: View {
 
     private var colour: Color {
         switch event.kind {
-        case .captured: .taliaBlue
+        case .captured: .taliaAccent
         case .synchronised: .taliaLive
         case .warning: .orange
         }

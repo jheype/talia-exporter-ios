@@ -6,7 +6,9 @@ final class AppModel: ObservableObject {
     @Published var route: AppRoute = .loading
     @Published var selectedTab: MainTab = .home
     @Published var connectionStage: ConnectionStage = .intro
-    @Published var user: TaliaUser?
+    @Published var user: TaliaUser? {
+        didSet { workspace.setOwner(user?.id) }
+    }
     @Published var session: ExporterSession?
     @Published var groups: [ExportGroup] = []
     @Published var events: [CaptureEvent] = []
@@ -17,6 +19,7 @@ final class AppModel: ObservableObject {
     @Published var routingSavingGroupIDs: Set<String> = []
     @Published var widgetPreferences: WidgetPreferences
     @Published var widgetLastRefreshedAt: Date?
+    @Published var widgetSnapshot: ExporterWidgetSnapshot?
     @Published var isWorking = false
     @Published var alert: AppAlert?
     @Published var appearance: AppearanceMode {
@@ -26,6 +29,7 @@ final class AppModel: ObservableObject {
     }
 
     let api: any ExporterServing
+    let workspace: WorkspaceStore
     let cache: any DashboardCaching
     let pushNotifications: any PushNotificationCoordinating
     var pairingTask: Task<Void, Never>?
@@ -52,6 +56,7 @@ final class AppModel: ObservableObject {
 
     init(dependencies: AppDependencies = .live) {
         api = dependencies.api
+        workspace = WorkspaceStore(api: dependencies.workspaceAPI)
         cache = dependencies.cache
         backgroundRefresh = dependencies.backgroundRefresh
         pushNotifications = dependencies.pushNotifications
@@ -60,6 +65,12 @@ final class AppModel: ObservableObject {
         appearance = AppearanceMode(rawValue: savedValue ?? "system") ?? .system
         widgetPreferences = WidgetSharedStore.loadPreferences()
         widgetLastRefreshedAt = WidgetSharedStore.loadEnvelope()?.savedAt
+        workspace.onSessionExpired = { [weak self] error in
+            await self?.handle(error, title: "Session expired")
+        }
+        workspace.onMutation = { [weak self] in
+            await self?.refreshWidgetSnapshot(force: true, showErrors: false)
+        }
 
         backgroundRefresh.setHandler { [weak self] in
             guard let self else { return false }
@@ -315,6 +326,8 @@ final class AppModel: ObservableObject {
         WidgetSharedStore.clearAccountData()
         widgetPreferences = .default
         widgetLastRefreshedAt = nil
+        widgetSnapshot = nil
+        workspace.setOwner(nil)
     }
 
     func present(_ error: Error, title: String) {

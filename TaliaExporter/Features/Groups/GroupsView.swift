@@ -3,10 +3,12 @@ import SwiftUI
 struct GroupsView: View {
     @EnvironmentObject private var appModel: AppModel
     @State private var searchText = ""
+    @State private var selectedOnly = false
 
     private var filteredGroups: [ExportGroup] {
-        guard !searchText.isEmpty else { return appModel.groups }
-        return appModel.groups.filter {
+        let visible = appModel.groups.filter { !selectedOnly || $0.isSelected }
+        guard !searchText.isEmpty else { return visible }
+        return visible.filter {
             $0.name.localizedCaseInsensitiveContains(searchText)
                 || $0.category.localizedCaseInsensitiveContains(searchText)
                 || $0.effectiveFunction.title.localizedCaseInsensitiveContains(searchText)
@@ -16,6 +18,12 @@ struct GroupsView: View {
     var body: some View {
         NavigationStack {
             List {
+                Section {
+                    Picker("Show groups", selection: $selectedOnly) {
+                        Text("All groups").tag(false)
+                        Text("Selected").tag(true)
+                    }.pickerStyle(.segmented)
+                }.listRowBackground(Color.clear).listRowInsets(EdgeInsets())
                 Section {
                     ForEach(filteredGroups) { group in
                         GroupSelectionRow(
@@ -30,10 +38,11 @@ struct GroupsView: View {
                 } header: {
                     Text("Available groups")
                 } footer: {
-                    Text("Select a group to capture it, then choose whether its live messages feed UK Chats, Tasks or the operations log.")
+                    Text("Select a group to capture it, then choose whether its live messages feed UK Chats, Tasks, the operations log or your private notes.")
                 }
             }
             .listStyle(.insetGrouped)
+            .taliaSurface()
             .navigationTitle("Groups")
             .searchable(text: $searchText, prompt: "Search groups")
             .refreshable {
@@ -63,7 +72,7 @@ struct GroupsView: View {
     private var selectionSummary: some View {
         HStack(spacing: 12) {
             Image(systemName: "checkmark.circle.fill")
-                .foregroundStyle(Color.taliaBlue)
+                .foregroundStyle(Color.taliaAccent)
 
             Text("\(appModel.selectedGroupsDescription) selected")
                 .font(.subheadline.weight(.semibold))
@@ -119,7 +128,7 @@ private struct GroupSelectionRow: View {
 
                     Image(systemName: group.isSelected ? "checkmark.circle.fill" : "circle")
                         .font(.title3)
-                        .foregroundStyle(group.isSelected ? Color.taliaBlue : Color.secondary.opacity(0.45))
+                        .foregroundStyle(group.isSelected ? Color.taliaAccent : Color.secondary.opacity(0.45))
                         .contentTransition(.symbolEffect(.replace))
                     }
                     .contentShape(Rectangle())
@@ -133,31 +142,25 @@ private struct GroupSelectionRow: View {
                 } label: {
                     Image(systemName: "slider.horizontal.3")
                         .font(.body.weight(.semibold))
-                        .foregroundStyle(Color.taliaBlue)
-                        .frame(width: 36, height: 36)
-                        .background(Color.taliaBlue.opacity(0.1), in: Circle())
+                        .foregroundStyle(Color.taliaAccent)
+                        .frame(width: 44, height: 44)
+                        .background(Color.taliaAccent.opacity(0.1), in: Circle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Configure \(group.name)")
             }
 
-            if group.isSelected {
-                GroupHistoryProgress(
-                    group: group,
-                    isRetrying: isRetrying,
-                    onRetry: onRetry
-                )
-                .padding(.leading, 52)
-            }
+
         }
         .padding(.vertical, 5)
     }
 
     private var functionColour: Color {
         switch group.effectiveFunction {
-        case .exporterMentions: .taliaBlue
+        case .exporterMentions: .taliaAccent
         case .tasks: .taliaLive
         case .logs: .orange
+        case .personalNotes: .taliaSecondaryText
         }
     }
 }
@@ -199,35 +202,40 @@ private struct GroupRoutingView: View {
             } header: {
                 Text("Message routing")
             } footer: {
-                Text("The function is account-scoped. Changing it affects new live messages only; retained history never executes task or log commands.")
+                Text("Changes apply to new messages. Existing history stays available.")
             }
 
-            if function != .exporterMentions {
+            if function == .tasks || function == .logs {
                 Section {
                     Toggle("Queue WhatsApp acknowledgements", isOn: $botFeedbackEnabled)
-                        .tint(Color.taliaBlue)
+                        .tint(Color.taliaAccent)
 
                     if function == .tasks {
                         Toggle("Queue inactive-task reminders", isOn: $botRemindersEnabled)
-                            .tint(Color.taliaBlue)
+                            .tint(Color.taliaAccent)
                     }
 
                     TextField("Meta group destination ID (optional)", text: $botDestinationID)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                 } header: {
-                    Text("WhatsApp bot readiness")
+                    Text("WhatsApp replies")
                 } footer: {
-                    Text("Replies are stored safely now. Delivery starts only after an eligible official Meta Groups API number and destination are configured; the app does not use unofficial WhatsApp automation.")
+                    Text("Replies require a configured WhatsApp delivery destination. Until then, they remain queued.")
                 }
             }
 
             Section("Capture") {
                 LabeledContent("Selected", value: group?.isSelected == true ? "Yes" : "No")
                 LabeledContent("Live capture", value: appModel.captureEnabled ? "Enabled" : "Paused")
-                LabeledContent("Configuration", value: "Revision \(group?.effectiveFunctionRevision ?? 1)")
+                if let group {
+                    GroupHistoryProgress(group: group, isRetrying: appModel.historyRetryingGroupIDs.contains(group.id)) {
+                        Task { await appModel.retryHistorySync(for: group) }
+                    }
+                }
             }
         }
+        .taliaSurface()
         .navigationTitle(group?.name ?? "Group function")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -244,8 +252,9 @@ private struct GroupRoutingView: View {
                         )
                         if saved {
                             dismiss()
-                        } else if let latestRevision = group?.effectiveFunctionRevision {
-                            expectedRevision = latestRevision
+                        } else {
+                            didLoad = false
+                            loadCurrentValues()
                         }
                     }
                 }
@@ -260,7 +269,7 @@ private struct GroupRoutingView: View {
             }
         }
         .onChange(of: function) { _, newValue in
-            if newValue == .exporterMentions {
+            if newValue == .exporterMentions || newValue == .personalNotes {
                 botFeedbackEnabled = false
                 botRemindersEnabled = false
                 botDestinationID = ""
@@ -294,7 +303,7 @@ private struct GroupHistoryProgress: View {
             if state.isActive {
                 ProgressView()
                     .progressViewStyle(.linear)
-                    .tint(Color.taliaBlue)
+                    .tint(Color.taliaAccent)
             } else if state != .complete {
                 ProgressView(value: 0)
                     .progressViewStyle(.linear)
@@ -385,7 +394,7 @@ private struct GroupHistoryProgress: View {
         case .failed:
             .red
         default:
-            .taliaBlue
+            .taliaAccent
         }
     }
 }

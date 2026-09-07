@@ -7,7 +7,8 @@ struct TaliaCapturedMessagesWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: ExporterWidgetProvider()) { entry in
             CapturedMessagesWidgetView(entry: entry)
-                .containerBackground(.fill.tertiary, for: .widget)
+                .widgetURL(URL(string: "talia-exporter://activity"))
+                .containerBackground(Color.widgetBackground, for: .widget)
         }
         .configurationDisplayName("Talia Messages")
         .description("See the latest live messages from selected task and log groups.")
@@ -21,7 +22,8 @@ struct TaliaUKChatsCoverageWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: ExporterWidgetProvider()) { entry in
             UKChatsCoverageWidgetView(entry: entry)
-                .containerBackground(.fill.tertiary, for: .widget)
+                .widgetURL(URL(string: "talia-exporter://groups"))
+                .containerBackground(Color.widgetBackground, for: .widget)
         }
         .configurationDisplayName("UK Chats Coverage")
         .description("See captured messages, active groups and discarded messages.")
@@ -57,11 +59,11 @@ private struct UKChatsCoverageWidgetView: View {
         VStack(alignment: .leading, spacing: 7) {
             Label("UK Chats", systemImage: "chart.bar.doc.horizontal")
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(.blue)
+                .foregroundStyle(.primary)
 
             HStack(alignment: .firstTextBaseline, spacing: 5) {
                 Text(coverage.captured.formatted())
-                    .font(.system(size: 31, weight: .bold, design: .rounded))
+                    .font(.system(size: 31, weight: .bold, design: .default))
                     .minimumScaleFactor(0.7)
                     .lineLimit(1)
                 Text("captured")
@@ -95,7 +97,7 @@ private struct UKChatsCoverageWidgetView: View {
             HStack {
                 Label("UK Chats Coverage", systemImage: "chart.bar.doc.horizontal")
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(.primary)
                 Spacer()
                 Text(coverage.period.title)
                     .font(.caption2)
@@ -107,7 +109,7 @@ private struct UKChatsCoverageWidgetView: View {
                     coverage.captured.formatted(),
                     label: "Captured",
                     systemImage: "tray.and.arrow.down.fill",
-                    colour: .blue
+                    colour: .primary
                 )
                 coverageMetric(
                     coverage.activeGroups.formatted(),
@@ -172,7 +174,7 @@ private struct CapturedMessagesWidgetView: View {
     @Environment(\.widgetFamily) private var family
     let entry: ExporterWidgetEntry
 
-    private var maximumRows: Int { family == .systemLarge ? 6 : 3 }
+    private var maximumRows: Int { family == .systemLarge ? 5 : 2 }
 
     var body: some View {
         if entry.envelope == nil {
@@ -185,7 +187,7 @@ private struct CapturedMessagesWidgetView: View {
                 HStack {
                     Label("Captured messages", systemImage: "message.badge")
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(.primary)
                     Spacer()
                     Text(entry.snapshot.generatedAt, style: .time)
                         .font(.caption2)
@@ -202,12 +204,12 @@ private struct CapturedMessagesWidgetView: View {
                     ForEach(entry.snapshot.messages.prefix(maximumRows)) { message in
                         HStack(alignment: .top, spacing: 8) {
                             Circle()
-                                .fill(.blue.opacity(0.15))
+                                .fill(.primary.opacity(0.15))
                                 .frame(width: 28, height: 28)
                                 .overlay {
                                     Text(String((message.sender.first ?? "T")).uppercased())
                                         .font(.caption2.weight(.bold))
-                                        .foregroundStyle(.blue)
+                                        .foregroundStyle(.primary)
                                 }
                             VStack(alignment: .leading, spacing: 1) {
                                 HStack(spacing: 5) {

@@ -6,14 +6,14 @@ struct BrandLockup: View {
     var body: some View {
         VStack(alignment: .leading, spacing: compact ? 1 : 2) {
             Text("TALIA")
-                .font(.system(size: compact ? 17 : 21, weight: .semibold, design: .rounded))
+                .font(.system(size: compact ? 17 : 21, weight: .semibold, design: .default))
                 .tracking(compact ? 4 : 5)
                 .foregroundStyle(.primary)
 
             Text("EXPORTER")
-                .font(.system(size: compact ? 9 : 11, weight: .semibold, design: .rounded))
+                .font(.system(size: compact ? 9 : 11, weight: .semibold, design: .default))
                 .tracking(compact ? 2.4 : 3.2)
-                .foregroundStyle(Color.taliaBlue)
+                .foregroundStyle(Color.taliaAccent)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Talia Exporter")
@@ -51,11 +51,11 @@ struct GroupAvatar: View {
     var body: some View {
         ZStack {
             Circle()
-                .fill(Color.taliaBlue.opacity(0.12))
+                .fill(Color.taliaAccent.opacity(0.12))
 
             Text(initials)
-                .font(.system(size: size * 0.28, weight: .bold, design: .rounded))
-                .foregroundStyle(Color.taliaBlue)
+                .font(.system(size: size * 0.28, weight: .bold, design: .default))
+                .foregroundStyle(Color.taliaAccent)
         }
         .frame(width: size, height: size)
         .accessibilityHidden(true)

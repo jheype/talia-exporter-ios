@@ -11,10 +11,11 @@ struct SettingsView: View {
             Form {
                 accountSection
                 captureSection
-                widgetsSection
                 appearanceSection
+                widgetsSection
                 aboutSection
             }
+            .taliaSurface()
             .navigationTitle("Settings")
             .confirmationDialog(
                 "Unlink WhatsApp?",
@@ -38,7 +39,7 @@ struct SettingsView: View {
             HStack(spacing: 12) {
                 Image(systemName: "person.crop.circle.fill")
                     .font(.system(size: 40))
-                    .foregroundStyle(Color.taliaBlue)
+                    .foregroundStyle(Color.taliaAccent)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(appModel.user?.displayName ?? "Talia user")
@@ -73,11 +74,11 @@ struct SettingsView: View {
             ) {
                 Label("Capture enabled", systemImage: "dot.radiowaves.left.and.right")
             }
-            .tint(Color.taliaBlue)
-            .disabled(appModel.isWorking)
+            .tint(Color.taliaAccent)
+            .disabled(appModel.isWorking || appModel.session == nil)
 
             LabeledContent {
-                Text("Text only")
+                Text("Messages and attachments")
                     .foregroundStyle(.secondary)
             } label: {
                 Label("Captured content", systemImage: "text.bubble")
@@ -89,15 +90,19 @@ struct SettingsView: View {
             )) {
                 Label("Interruption alerts", systemImage: "bell.badge")
             }
-            .tint(Color.taliaBlue)
+            .tint(Color.taliaAccent)
             .disabled(isChangingNotifications)
 
-            Button {
-                showUnlinkConfirmation = true
-            } label: {
-                Label("Unlink WhatsApp", systemImage: "link.badge.plus")
+            if appModel.session != nil {
+                Button { showUnlinkConfirmation = true } label: {
+                    Label("Unlink WhatsApp", systemImage: "link.badge.plus")
+                }.foregroundStyle(.red)
+            } else {
+                Button("Connect WhatsApp", systemImage: "link") {
+                    appModel.connectionStage = .intro
+                    appModel.route = .connection
+                }
             }
-            .foregroundStyle(.red)
         }
     }
 
@@ -144,7 +149,7 @@ struct SettingsView: View {
     private var aboutSection: some View {
         Section("About") {
             LabeledContent("Version", value: version)
-            LabeledContent("WhatsApp", value: appModel.session?.phoneNumber ?? "Linked")
+            LabeledContent("WhatsApp", value: appModel.session?.phoneNumber ?? "Not linked")
             LabeledContent("Status", value: appModel.session?.status.title ?? "Unavailable")
         }
     }
@@ -182,10 +187,10 @@ private struct AppearanceChoice: View {
                 Text(mode.title)
                     .font(.caption.weight(.semibold))
             }
-            .foregroundStyle(isSelected ? Color.white : Color.primary)
+            .foregroundStyle(isSelected ? Color.taliaOnAccent : Color.primary)
             .frame(maxWidth: .infinity)
             .frame(height: 74)
-            .background(isSelected ? Color.taliaBlue : Color.taliaTertiaryBackground)
+            .background(isSelected ? Color.taliaAccent : Color.taliaTertiaryBackground)
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: 14, style: .continuous)

@@ -4,6 +4,7 @@ enum HTTPMethod: String, Sendable {
     case get = "GET"
     case post = "POST"
     case put = "PUT"
+    case patch = "PATCH"
     case delete = "DELETE"
 }
 
@@ -122,6 +123,28 @@ actor APIClient {
         guard let storage = session.configuration.httpCookieStorage else { return }
         for cookie in storage.cookies(for: baseURL) ?? [] {
             storage.deleteCookie(cookie)
+        }
+    }
+
+    /// Multipart upload uses the same authenticated session as JSON requests.
+    /// Only a rejected authentication may be retried; timeouts never replay uploads.
+    func uploadJPEG(_ data: Data, path: String) async throws {
+        guard !data.isEmpty, data.count <= 8 * 1_024 * 1_024 else {
+            throw APIError(statusCode: nil, code: "CLIENT.IMAGE_TOO_LARGE", message: "Choose an image smaller than 8 MB.")
+        }
+        let boundary = "Talia-\(UUID().uuidString)"
+        var payload = Data("--\(boundary)\r\nContent-Disposition: form-data; name=\"file\"; filename=\"idea.jpg\"\r\nContent-Type: image/jpeg\r\n\r\n".utf8)
+        payload.append(data)
+        payload.append(Data("\r\n--\(boundary)--\r\n".utf8))
+        var request = try makeRequest(.post, path: path, queryItems: [], body: nil)
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        request.httpBody = payload
+        do {
+            try await performWithoutResponse(request)
+        } catch let error as APIError where error.statusCode == 401 {
+            try await refreshSession()
+            try Task.checkCancellation()
+            try await performWithoutResponse(request)
         }
     }
 
