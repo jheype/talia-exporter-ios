@@ -364,4 +364,3 @@ private struct NewTaskView: View {
         }.interactiveDismissDisabled(store.isMutating)
     }
 }
-

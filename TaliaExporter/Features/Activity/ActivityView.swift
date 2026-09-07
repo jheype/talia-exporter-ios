@@ -5,125 +5,88 @@ struct ActivityView: View {
     @State private var showLiveFeed = false
     @State private var search = ""
     @State private var selectedKind: CaptureEvent.Kind?
+    @State private var period = ActivityPeriod.all
+    private enum ActivityPeriod: String, CaseIterable { case all = "All dates", today = "Today", week = "Last 7 days" }
 
     private var filteredEvents: [CaptureEvent] {
         appModel.events.filter { event in
-            (selectedKind == nil || event.kind == selectedKind) &&
-            (search.isEmpty || event.groupName.localizedCaseInsensitiveContains(search) || event.detail.localizedCaseInsensitiveContains(search))
-        }
+            let matchesDate = period == .all ||
+                (period == .today && Calendar.current.isDateInToday(event.createdAt)) ||
+                (period == .week && event.createdAt >= Date().addingTimeInterval(-7 * 86_400))
+            return matchesDate && (selectedKind == nil || event.kind == selectedKind) &&
+                (search.isEmpty || event.groupName.localizedCaseInsensitiveContains(search) || event.detail.localizedCaseInsensitiveContains(search))
+        }.sorted { $0.createdAt > $1.createdAt }
     }
 
     var body: some View {
         NavigationStack {
-            List {
-                Section {
-                    Picker("Filter", selection: $selectedKind) {
-                        Text("All").tag(Optional<CaptureEvent.Kind>.none)
-                        ForEach(CaptureEvent.Kind.allCases) { kind in
-                            Text(kind.rawValue).tag(Optional(kind))
-                        }
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    HStack {
+                        Text("Activity").font(.largeTitle.bold()).tracking(-0.8)
+                        Spacer()
+                        Button { Task { await appModel.refreshEvents() } } label: { Image(systemName: "arrow.clockwise") }
+                            .buttonStyle(TaliaIconButtonStyle()).accessibilityLabel("Refresh activity")
                     }
-                    .pickerStyle(.menu)
-                }
-
-                Section {
-                    Button { showLiveFeed = true } label: {
-                        Label("Open live feed", systemImage: "text.bubble")
+                    HStack(spacing: 6) {
+                        Text("Events").font(.subheadline.weight(.semibold)).frame(maxWidth: .infinity, minHeight: 44)
+                            .background(Color.taliaTertiaryBackground, in: RoundedRectangle(cornerRadius: 12))
+                        Button { showLiveFeed = true } label: {
+                            Text("Live feed").font(.subheadline).frame(maxWidth: .infinity, minHeight: 44)
+                        }.buttonStyle(.plain)
+                    }.padding(5).background(Color.taliaSecondaryBackground, in: RoundedRectangle(cornerRadius: 16))
+                    WorkSearchField(text: $search, prompt: "Search activity")
+                    HStack(spacing: 12) {
+                        Menu {
+                            Button("All events") { selectedKind = nil }
+                            ForEach(CaptureEvent.Kind.allCases) { kind in
+                                Button(kind.rawValue) { selectedKind = kind }
+                            }
+                        } label: { Label(selectedKind?.rawValue ?? "All events", systemImage: "chevron.down") }
+                            .buttonStyle(TaliaSecondaryButtonStyle())
+                        Menu {
+                            ForEach(ActivityPeriod.allCases, id: \.self) { value in
+                                Button(value.rawValue) { period = value }
+                            }
+                        } label: { Label(period.rawValue, systemImage: "calendar") }
+                            .buttonStyle(TaliaSecondaryButtonStyle())
                     }
-                }
-                Section("Recent") {
+                    LazyVStack(alignment: .leading, spacing: 0) {
+                        ForEach(filteredEvents) { event in ActivityTimelineRow(event: event) }
+                    }
                     if filteredEvents.isEmpty {
-                        EmptyStateView(
-                            title: "No matching activity",
-                            message: "Try another filter to see recent capture events.",
-                            systemImage: "line.3.horizontal.decrease.circle"
-                        )
-                        .listRowBackground(Color.clear)
-                    } else {
-                        ForEach(filteredEvents) { event in
-                            ActivityDetailRow(event: event)
-                        }
+                        WorkEmptyState(title: "No matching activity", message: "Try another date, event type or search.", symbol: "clock")
                     }
-                }
-            }
-            .listStyle(.insetGrouped)
-            .taliaSurface()
-            .navigationTitle("Activity")
-            .searchable(text: $search, prompt: "Search activity")
-            .sheet(isPresented: $showLiveFeed) { LiveFeedView() }
-            .refreshable {
-                await appModel.refreshEvents()
-            }
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    LivePill(
-                        title: appModel.compactCaptureStatus,
-                        colour: appModel.captureStatusColour
-                    )
-                }
-            }
+                }.padding(20)
+            }.taliaSurface().toolbar(.hidden, for: .navigationBar)
+                .refreshable { await appModel.refreshEvents() }
+                .sheet(isPresented: $showLiveFeed) { LiveFeedView() }
         }
     }
 }
 
-private struct ActivityDetailRow: View {
+private struct ActivityTimelineRow: View {
     let event: CaptureEvent
-
-    private var symbol: String {
-        switch event.kind {
-        case .captured: "text.bubble.fill"
-        case .synchronised: "arrow.triangle.2.circlepath"
-        case .warning: "exclamationmark.triangle.fill"
-        }
-    }
-
-    private var colour: Color {
-        switch event.kind {
-        case .captured: .taliaAccent
-        case .synchronised: .taliaLive
-        case .warning: .orange
-        }
-    }
-
+    private var colour: Color { event.kind == .warning ? .orange : .taliaLive }
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            Image(systemName: symbol)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(colour)
-                .frame(width: 34, height: 34)
-                .background(colour.opacity(0.12))
-                .clipShape(Circle())
-
-            VStack(alignment: .leading, spacing: 4) {
-                HStack {
-                    Text(event.groupName)
-                        .font(.body.weight(.semibold))
-
-                    Spacer()
-
-                    Text(event.time)
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
+            VStack(alignment: .trailing, spacing: 4) {
+                Text(event.time).font(.caption)
+                if !Calendar.current.isDateInToday(event.createdAt) {
+                    Text(event.createdAt, format: .dateTime.day().month(.abbreviated)).font(.caption2)
                 }
-
-                Text(event.detail)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-
-                Text(event.kind.rawValue)
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(colour)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(colour.opacity(0.10))
-                    .clipShape(Capsule())
-            }
-        }
-        .padding(.vertical, 5)
+            }.foregroundStyle(.secondary).frame(width: 44, alignment: .trailing).padding(.top, 3)
+            VStack(spacing: 4) {
+                Circle().fill(colour).frame(width: 8, height: 8)
+                Rectangle().fill(Color.taliaSeparator).frame(width: 1)
+            }.padding(.top, 6)
+            VStack(alignment: .leading, spacing: 6) {
+                Text(event.detail).font(.subheadline.weight(.semibold))
+                Text(event.groupName).font(.caption).foregroundStyle(.secondary)
+                Text(event.kind.rawValue).font(.caption2).foregroundStyle(colour)
+                Divider().padding(.top, 12)
+            }.frame(maxWidth: .infinity, alignment: .leading).padding(.bottom, 18)
+        }.fixedSize(horizontal: false, vertical: true).accessibilityElement(children: .combine)
     }
 }
 
-#Preview {
-    ActivityView()
-        .environmentObject(AppModel.preview())
-}

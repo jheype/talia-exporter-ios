@@ -4,6 +4,7 @@ struct GroupsView: View {
     @EnvironmentObject private var appModel: AppModel
     @State private var searchText = ""
     @State private var selectedOnly = false
+    @State private var path: [String] = []
 
     private var filteredGroups: [ExportGroup] {
         let visible = appModel.groups.filter { !selectedOnly || $0.isSelected }
@@ -16,7 +17,7 @@ struct GroupsView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             List {
                 Section {
                     Picker("Show groups", selection: $selectedOnly) {
@@ -26,14 +27,9 @@ struct GroupsView: View {
                 }.listRowBackground(Color.clear).listRowInsets(EdgeInsets())
                 Section {
                     ForEach(filteredGroups) { group in
-                        GroupSelectionRow(
-                            group: group,
-                            isRetrying: appModel.historyRetryingGroupIDs.contains(group.id),
+                        GroupSelectionRow(group: group,
                             onToggle: { appModel.toggleGroup(group) },
-                            onRetry: {
-                                Task { await appModel.retryHistorySync(for: group) }
-                            }
-                        )
+                            onConfigure: { path.append(group.id) })
                     }
                 } header: {
                     Text("Available groups")
@@ -44,6 +40,7 @@ struct GroupsView: View {
             .listStyle(.insetGrouped)
             .taliaSurface()
             .navigationTitle("Groups")
+            .navigationDestination(for: String.self) { GroupRoutingView(groupID: $0) }
             .searchable(text: $searchText, prompt: "Search groups")
             .refreshable {
                 await appModel.refreshGroups()
@@ -95,73 +92,31 @@ struct GroupsView: View {
 
 private struct GroupSelectionRow: View {
     let group: ExportGroup
-    let isRetrying: Bool
     let onToggle: () -> Void
-    let onRetry: () -> Void
+    let onConfigure: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 8) {
-                Button(action: onToggle) {
-                    HStack(spacing: 12) {
-                    GroupAvatar(initials: group.initials)
-
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(group.name)
-                            .font(.body.weight(.medium))
-                            .foregroundStyle(.primary)
-
-                        HStack(spacing: 5) {
-                            Text(group.category)
-                            Text("•")
-                            Text(group.lastActivity)
-                        }
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-
-                        Label(group.effectiveFunction.shortTitle, systemImage: group.effectiveFunction.systemImage)
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(functionColour)
-                    }
-
-                    Spacer()
-
-                    Image(systemName: group.isSelected ? "checkmark.circle.fill" : "circle")
-                        .font(.title3)
-                        .foregroundStyle(group.isSelected ? Color.taliaAccent : Color.secondary.opacity(0.45))
-                        .contentTransition(.symbolEffect(.replace))
-                    }
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("\(group.name), \(group.isSelected ? "selected" : "not selected")")
-                .accessibilityHint("Double tap to toggle capture for this group")
-
-                NavigationLink {
-                    GroupRoutingView(groupID: group.id)
-                } label: {
-                    Image(systemName: "slider.horizontal.3")
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(Color.taliaAccent)
-                        .frame(width: 44, height: 44)
-                        .background(Color.taliaAccent.opacity(0.1), in: Circle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Configure \(group.name)")
-            }
-
-
-        }
-        .padding(.vertical, 5)
-    }
-
-    private var functionColour: Color {
-        switch group.effectiveFunction {
-        case .exporterMentions: .taliaAccent
-        case .tasks: .taliaLive
-        case .logs: .orange
-        case .personalNotes: .taliaSecondaryText
-        }
+        HStack(spacing: 10) {
+            Button(action: onConfigure) {
+                HStack(spacing: 12) {
+                    GroupAvatar(initials: group.initials, size: 40)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(group.name).font(.subheadline.weight(.semibold))
+                            .lineLimit(1).foregroundStyle(Color.taliaAccent)
+                        Text(group.effectiveFunction.shortTitle).font(.caption).foregroundStyle(.secondary)
+                        Text("Last activity \(group.lastActivity)").font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                    }.frame(maxWidth: .infinity, alignment: .leading)
+                }.frame(maxWidth: .infinity, minHeight: 66, alignment: .leading).contentShape(Rectangle())
+            }.buttonStyle(.plain).layoutPriority(1)
+            Button(action: onToggle) {
+                Image(systemName: group.isSelected ? "checkmark.circle.fill" : "circle")
+                    .font(.title3).foregroundStyle(group.isSelected ? Color.taliaLive : .taliaSecondaryText)
+                    .frame(width: 44, height: 44)
+            }.buttonStyle(.plain).fixedSize()
+                .accessibilityLabel("\(group.isSelected ? "Stop capturing" : "Capture") \(group.name)")
+            Button(action: onConfigure) { Image(systemName: "chevron.right").font(.caption).frame(width: 24, height: 44) }
+                .buttonStyle(.plain).fixedSize().foregroundStyle(.secondary).accessibilityLabel("Configure \(group.name)")
+        }.padding(.vertical, 4)
     }
 }
 
