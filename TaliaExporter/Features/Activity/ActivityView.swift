@@ -89,4 +89,3 @@ private struct ActivityTimelineRow: View {
         }.fixedSize(horizontal: false, vertical: true).accessibilityElement(children: .combine)
     }
 }
-

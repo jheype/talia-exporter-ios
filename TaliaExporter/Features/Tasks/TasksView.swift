@@ -239,6 +239,15 @@ struct WorkEmptyState: View {
 }
 
 enum WorkDueFilter {
+    static func creationDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.timeZone = TimeZone(identifier: "Europe/London")
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: date)
+    }
+
     static let values = ["", "today", "overdue", "upcoming"]
     static func title(_ value: String) -> String {
         switch value {
@@ -339,7 +348,12 @@ private struct NewTaskView: View {
                         ForEach(WorkPriority.allCases) { Text($0.title).tag($0) }
                     }
                     Toggle("Due date", isOn: $hasDue)
-                    if hasDue { DatePicker("Due", selection: $due) }
+                    if hasDue {
+                        DatePicker("Due", selection: $due, displayedComponents: .date)
+                            .environment(\.timeZone, TimeZone(identifier: "Europe/London") ?? .gmt)
+                        Text("Due at 17:00 UK time. Adjust the time in task details after creating it.")
+                            .font(.footnote).foregroundStyle(.secondary)
+                    }
                 }
                 Section("Checklist") {
                     TextField("One item per line", text: $checklist, axis: .vertical).lineLimit(3...8)
@@ -354,7 +368,7 @@ private struct NewTaskView: View {
                                     "group_jid": .string(groupJID), "title": .string(title),
                                     "description": .string(description), "priority": .string(priority.rawValue),
                                     "assignee_name": .string(assignee), "project": .string(project),
-                                    "due": .string(hasDue ? due.ISO8601Format() : ""), "items": .strings(items)
+                                    "due": .string(hasDue ? WorkDueFilter.creationDate(due) : ""), "items": .strings(items)
                                 ])
                                 if saved { dismiss() }
                             }

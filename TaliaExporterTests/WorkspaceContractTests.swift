@@ -118,6 +118,27 @@ final class WorkspaceContractTests: XCTestCase {
         XCTAssertEqual(try JSONDecoder().decode(GroupFunction.self, from: Data(#""personal_notes""#.utf8)), .personalNotes)
     }
 
+    func testCreationSendsUKCalendarDateAndDoesNotReplayUnavailableWrite() async throws {
+        let observed = RequestRecorder()
+        WorkspaceStubProtocol.install { request in
+            observed.append(request)
+            return (503, #"{"code":"SERVICE.UNAVAILABLE","message":"Unavailable"}"#, 0)
+        }
+        let date = try XCTUnwrap(ISO8601DateFormatter().date(from: "2026-09-07T23:30:00Z"))
+        do {
+            let _: WorkTask = try await makeAPI().write(.post, path: "exporter/tasks", body: [
+                "group_jid": .string("123@g.us"), "title": .string("Check stock"),
+                "due": .string(WorkDueFilter.creationDate(date))
+            ])
+            XCTFail("An unavailable response must be surfaced")
+        } catch let error as APIError { XCTAssertEqual(error.statusCode, 503) }
+        XCTAssertEqual(observed.values.count, 1)
+        let request = try XCTUnwrap(observed.values.first)
+        let body = try XCTUnwrap(JSONSerialization.jsonObject(with: request.bodyData) as? [String: Any])
+        XCTAssertEqual(body["due"] as? String, "2026-09-08")
+        XCTAssertEqual(request.httpMethod, "POST")
+    }
+
     private func makeAPI() -> WorkspaceAPI {
         let config = URLSessionConfiguration.ephemeral
         config.protocolClasses = [WorkspaceStubProtocol.self]
@@ -233,4 +254,3 @@ final class ApprovedLayoutTests: XCTestCase {
         }
     }
 }
-
