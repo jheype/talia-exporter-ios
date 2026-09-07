@@ -212,9 +212,18 @@ private struct EditTaskView: View {
     @State private var priority: WorkPriority = .medium
     @State private var hasDueDate = false
     @State private var due = Date()
+    @State private var expectedVersion: Int64 = 0
     var body: some View {
         NavigationStack {
             Form {
+                if let error = store.errorMessage {
+                    Section {
+                        Text(error).font(.footnote).foregroundStyle(.red)
+                        Button("Reload latest details") {
+                            if let latest = store.detail { load(latest); store.errorMessage = nil }
+                        }
+                    }
+                }
                 Section {
                     TextField("Assignee", text: $assignee)
                     TextField("Project", text: $project)
@@ -232,8 +241,7 @@ private struct EditTaskView: View {
                     }
                 }
                 .onAppear {
-                    assignee = task.assigneeName ?? ""; project = task.project ?? ""
-                    priority = task.priority; hasDueDate = task.dueAt != nil; due = task.dueAt ?? Date()
+                    load(task)
                 }
         }
     }
@@ -244,6 +252,12 @@ private struct EditTaskView: View {
         fields[name.isEmpty ? "clear_assignee" : "assignee_name"] = name.isEmpty ? .bool(true) : .string(name)
         fields[projectName.isEmpty ? "clear_project" : "project"] = projectName.isEmpty ? .bool(true) : .string(projectName)
         fields[hasDueDate ? "due_at" : "clear_due_at"] = hasDueDate ? .string(due.ISO8601Format()) : .bool(true)
-        if await store.updateTask(task, fields: fields) { dismiss() }
+        if await store.updateTask(task, fields: fields, expectedVersion: expectedVersion) { dismiss() }
+    }
+
+    private func load(_ value: WorkTask) {
+        expectedVersion = value.version
+        assignee = value.assigneeName ?? ""; project = value.project ?? ""
+        priority = value.priority; hasDueDate = value.dueAt != nil; due = value.dueAt ?? Date()
     }
 }

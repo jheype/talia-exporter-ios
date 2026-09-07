@@ -46,6 +46,7 @@ struct AppRootView: View {
         .task(id: "\(appModel.route)-\(scenePhase)") {
             guard appModel.route == .main, scenePhase == .active else { return }
             appModel.workspace.setOwner(appModel.user?.id)
+            await appModel.refreshWidgetSnapshot()
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(10))
                 guard !Task.isCancelled, scenePhase == .active else { return }

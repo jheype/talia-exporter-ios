@@ -8,7 +8,7 @@ struct HomeView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
+                VStack(alignment: .leading, spacing: 18) {
                     HStack {
                         BrandLockup(compact: true)
                         Spacer()
@@ -53,12 +53,22 @@ struct HomeView: View {
                             }.taliaCard()
                         }
                     }
-                    sectionHeading("Recent activity") { appModel.selectedTab = .activity }
-                    if appModel.events.isEmpty {
-                        Text("New capture events will appear here.").font(.subheadline).foregroundStyle(.secondary).padding(.vertical, 8)
+                    sectionHeading("Latest messages") { showLiveFeed = true }
+                    if appModel.messages.isEmpty {
+                        Text("Captured messages will appear here.").font(.subheadline).foregroundStyle(.secondary).padding(.vertical, 8)
                     } else {
                         VStack(spacing: 0) {
-                            ForEach(appModel.events.prefix(3)) { event in ActivityRow(event: event) }
+                            ForEach(appModel.messages.prefix(2)) { message in
+                                HStack(spacing: 10) {
+                                    GroupAvatar(initials: message.groupName.workInitials, size: 36)
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(message.groupName).font(.caption.weight(.semibold)).lineLimit(1)
+                                        Text(message.body).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                                    }
+                                    Spacer(minLength: 4)
+                                    Text(message.timestamp, style: .time).font(.caption2).foregroundStyle(.secondary)
+                                }.padding(.vertical, 8)
+                            }
                         }.taliaCard()
                     }
                 }.padding(20)
@@ -70,37 +80,38 @@ struct HomeView: View {
     }
 
     private var captureCard: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            HStack {
-                LivePill(title: appModel.session == nil ? "NOT LINKED" : appModel.compactCaptureStatus,
-                         colour: appModel.captureStatusColour)
-                Spacer()
-                Image(systemName: "dot.radiowaves.left.and.right").foregroundStyle(.secondary)
-            }
-            Text(appModel.session == nil ? "Connect WhatsApp" : appModel.captureIsLive ? "Capture is active" : appModel.session?.status == .reconnecting ? "Restoring connection" : "Capture is paused")
-                .font(.title2.bold())
+        VStack(alignment: .leading, spacing: 14) {
+            Button { appModel.selectedTab = .settings } label: {
+                HStack(alignment: .top, spacing: 10) {
+                    Circle().fill(appModel.captureStatusColour).frame(width: 8, height: 8).padding(.top, 5)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(appModel.session == nil ? "Connect WhatsApp" : appModel.captureIsLive ? "Capture active" : appModel.session?.status == .reconnecting ? "Restoring connection" : "Capture paused")
+                            .font(.subheadline.weight(.semibold))
+                        Text(appModel.session?.status.title ?? "Set up capture to get started")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right").font(.caption).foregroundStyle(.secondary)
+                }
+            }.buttonStyle(.plain)
             if let coverage = snapshot?.ukChatsCoverage {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 3) {
                     Text(coverage.captured.formatted()).font(.system(size: 40, weight: .bold)).monospacedDigit()
                     Text("messages captured · \(coverage.period.title.lowercased())").font(.caption).foregroundStyle(.secondary)
                 }
             }
-            HStack {
-                Label("\(appModel.selectedGroupCount) groups", systemImage: "person.2")
-                Spacer()
-                Text("Synced \(appModel.session?.lastSynchronisedAt?.relativeDescription ?? "—")")
-            }.font(.caption).foregroundStyle(.secondary)
             if appModel.session == nil || appModel.session?.status == .loggedOut {
                 Button("Connect WhatsApp") { appModel.connectionStage = .intro; appModel.route = .connection }
                     .buttonStyle(TaliaPrimaryButtonStyle())
             } else {
-                HStack(spacing: 12) {
+                HStack {
+                    Button { appModel.selectedTab = .groups } label: {
+                        Label("\(appModel.selectedGroupCount) groups", systemImage: "person.2").font(.caption).foregroundStyle(.secondary)
+                    }.buttonStyle(.plain)
+                    Spacer()
                     Button(appModel.captureEnabled ? "Pause" : "Resume", systemImage: appModel.captureEnabled ? "pause.fill" : "play.fill") {
                         Task { await appModel.setCaptureEnabled(!appModel.captureEnabled) }
                     }.buttonStyle(TaliaSecondaryButtonStyle()).disabled(appModel.isWorking)
-                    Button { showLiveFeed = true } label: {
-                        Label("Live feed", systemImage: "arrow.up.right").frame(maxWidth: .infinity)
-                    }.buttonStyle(TaliaSecondaryButtonStyle())
                 }
             }
         }.taliaCard()
@@ -108,9 +119,8 @@ struct HomeView: View {
 
     private func metric(_ value: String, label: String, symbol: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            VStack(alignment: .leading, spacing: 12) {
-                Image(systemName: symbol).font(.body).foregroundStyle(.secondary)
-                Text(value).font(.system(size: 32, weight: .semibold)).monospacedDigit()
+            VStack(alignment: .leading, spacing: 6) {
+                Text(value).font(.system(size: 28, weight: .semibold)).monospacedDigit()
                 Text(label).font(.caption).foregroundStyle(.secondary)
             }.frame(maxWidth: .infinity, alignment: .leading).taliaCard()
         }.buttonStyle(.plain)

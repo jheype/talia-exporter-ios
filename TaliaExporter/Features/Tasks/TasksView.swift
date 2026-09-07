@@ -7,6 +7,7 @@ struct TasksView: View {
     @State private var path: [UUID] = []
     @State private var showFilters = false
     @State private var showClear = false
+    @State private var showNewTask = false
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -29,6 +30,7 @@ struct TasksView: View {
             .refreshable { await store.refreshCurrentSection() }
             .navigationDestination(for: UUID.self) { TaskDetailView(taskID: $0) }
             .sheet(isPresented: $showFilters) { TaskFiltersView() }
+            .sheet(isPresented: $showNewTask) { NewTaskView() }
             .confirmationDialog("Clear this column for everyone?", isPresented: $showClear, titleVisibility: .visible) {
                 Button("Clear \(store.filters.status.title)", role: .destructive) { Task { await store.clearColumn() } }
             } message: { Text("Tasks will be hidden from the shared board. Their history is retained.") }
@@ -65,6 +67,10 @@ struct TasksView: View {
                 .font(.largeTitle.bold()).tracking(-0.8)
             if store.section == .notes { Image(systemName: "lock.fill").foregroundStyle(.secondary) }
             Spacer()
+            if store.section == .board {
+                Button { showNewTask = true } label: { Image(systemName: "plus").frame(width: 44, height: 44) }
+                    .accessibilityLabel("New task")
+            }
             Menu {
                 ForEach(WorkspaceStore.Section.allCases) { section in
                     Button(section.rawValue, systemImage: section.symbol) { store.section = section }
@@ -122,7 +128,8 @@ struct TasksView: View {
                     Button { store.filters.status = status } label: {
                         VStack(spacing: 4) {
                             Text(status.title).font(.caption).lineLimit(2).minimumScaleFactor(0.85)
-                            Text(count(for: status)).font(.headline)
+                            if status == .done { Image(systemName: "checkmark").font(.headline) }
+                            else { Text(count(for: status)).font(.headline) }
                         }
                         .frame(maxWidth: .infinity, minHeight: 60)
                         .foregroundStyle(store.filters.status == status ? Color.taliaOnAccent : .taliaAccent)
@@ -140,7 +147,7 @@ struct TasksView: View {
                     Button("Clear") { showClear = true }.font(.subheadline).disabled(store.isMutating)
                 }
             }
-            if store.loading.contains("tasks") { ProgressView().frame(maxWidth: .infinity) }
+            if store.loading.contains("tasks") && store.tasks.isEmpty { ProgressView().frame(maxWidth: .infinity) }
             if store.tasks.isEmpty && !store.loading.contains("tasks") {
                 WorkEmptyState(title: "No tasks in this view", message: "Try another status or adjust your filters.", symbol: "checklist")
             }
@@ -161,7 +168,7 @@ struct TasksView: View {
         case .todo: String(store.summary.todo)
         case .inProgress: String(store.summary.inProgress)
         case .blocked: String(store.summary.blocked)
-        case .done: "View"
+        case .done: "Completed tasks"
         case .cancelled: ""
         }
     }
@@ -279,3 +286,82 @@ private struct TaskFiltersView: View {
         }.presentationDetents([.medium, .large])
     }
 }
+
+private struct NewTaskView: View {
+    @EnvironmentObject private var appModel: AppModel
+    @EnvironmentObject private var store: WorkspaceStore
+    @Environment(\.dismiss) private var dismiss
+    @State private var groupJID = ""
+    @State private var title = ""
+    @State private var description = ""
+    @State private var assignee = ""
+    @State private var project = ""
+    @State private var priority: WorkPriority = .medium
+    @State private var hasDue = false
+    @State private var due = Date()
+    @State private var checklist = ""
+
+    private var groupChoices: [(id: String, name: String)] {
+        var choices: [String: String] = [:]
+        for task in store.tasks { choices[task.sourceGroupJID] = task.sourceGroupName }
+        for group in appModel.groups where group.isSelected && group.effectiveFunction == .tasks {
+            choices[group.id] = group.name
+        }
+        return choices.map { (id: $0.key, name: $0.value) }.sorted { $0.name < $1.name }
+    }
+    private var items: [String] {
+        checklist.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+    }
+    private var valid: Bool {
+        !groupJID.isEmpty && title.trimmingCharacters(in: .whitespacesAndNewlines).count >= 3 &&
+        title.count <= 200 && description.count <= 4000 && assignee.count <= 120 && project.count <= 120 &&
+        items.count <= 50 && items.allSatisfy { $0.count <= 500 }
+    }
+    var body: some View {
+        NavigationStack {
+            Form {
+                if let error = store.errorMessage { Section { Text(error).foregroundStyle(.red).font(.footnote) } }
+                Section("Task") {
+                    TextField("Title", text: $title)
+                    TextField("Description (optional)", text: $description, axis: .vertical).lineLimit(2...5)
+                    Picker("Group", selection: $groupJID) {
+                        Text("Choose a Tasks group").tag("")
+                        ForEach(groupChoices, id: \.id) { Text($0.name).tag($0.id) }
+                    }
+                    if groupChoices.isEmpty {
+                        Button("Configure a Tasks group") { dismiss(); appModel.selectedTab = .groups }
+                    }
+                }
+                Section("Details") {
+                    TextField("Assignee (defaults to you)", text: $assignee)
+                    TextField("Project (optional)", text: $project)
+                    Picker("Priority", selection: $priority) {
+                        ForEach(WorkPriority.allCases) { Text($0.title).tag($0) }
+                    }
+                    Toggle("Due date", isOn: $hasDue)
+                    if hasDue { DatePicker("Due", selection: $due) }
+                }
+                Section("Checklist") {
+                    TextField("One item per line", text: $checklist, axis: .vertical).lineLimit(3...8)
+                }
+            }.taliaSurface().navigationTitle("New task").navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.disabled(store.isMutating) }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Create") {
+                            Task {
+                                let saved = await store.createTask(fields: [
+                                    "group_jid": .string(groupJID), "title": .string(title),
+                                    "description": .string(description), "priority": .string(priority.rawValue),
+                                    "assignee_name": .string(assignee), "project": .string(project),
+                                    "due": .string(hasDue ? due.ISO8601Format() : ""), "items": .strings(items)
+                                ])
+                                if saved { dismiss() }
+                            }
+                        }.disabled(!valid || store.isMutating)
+                    }
+                }
+        }.interactiveDismissDisabled(store.isMutating)
+    }
+}
+

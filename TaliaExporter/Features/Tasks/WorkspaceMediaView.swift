@@ -53,10 +53,16 @@ actor WorkspaceImageIO {
         configuration.timeoutIntervalForResource = 30
         let session = URLSession(configuration: configuration)
         defer { session.invalidateAndCancel() }
-        let (data, response) = try await session.data(from: url)
+        let (bytes, response) = try await session.bytes(from: url)
         guard let response = response as? HTTPURLResponse, (200..<300).contains(response.statusCode),
-              response.mimeType?.hasPrefix("image/") == true, data.count <= 8 * 1024 * 1024 else {
+              response.mimeType?.hasPrefix("image/") == true, response.expectedContentLength <= 8 * 1024 * 1024 else {
             throw URLError(.cannotDecodeContentData)
+        }
+        var data = Data()
+        data.reserveCapacity(Int(max(0, response.expectedContentLength)))
+        for try await byte in bytes {
+            guard data.count < 8 * 1024 * 1024 else { throw URLError(.dataLengthExceedsMaximum) }
+            data.append(byte)
         }
         return data
     }

@@ -56,11 +56,7 @@ struct SettingsView: View {
                     .foregroundStyle(Color.taliaLive)
             }
 
-            Button(role: .destructive) {
-                Task { await appModel.signOut() }
-            } label: {
-                Label("Sign out", systemImage: "rectangle.portrait.and.arrow.right")
-            }
+
         }
     }
 
@@ -77,13 +73,6 @@ struct SettingsView: View {
             .tint(Color.taliaAccent)
             .disabled(appModel.isWorking || appModel.session == nil)
 
-            LabeledContent {
-                Text("Messages and attachments")
-                    .foregroundStyle(.secondary)
-            } label: {
-                Label("Captured content", systemImage: "text.bubble")
-            }
-
             Toggle(isOn: Binding(
                 get: { notificationsEnabled },
                 set: updateNotifications
@@ -93,29 +82,12 @@ struct SettingsView: View {
             .tint(Color.taliaAccent)
             .disabled(isChangingNotifications)
 
-            if appModel.session != nil {
-                Button { showUnlinkConfirmation = true } label: {
-                    Label("Unlink WhatsApp", systemImage: "link.badge.plus")
-                }.foregroundStyle(.red)
-            } else {
-                Button("Connect WhatsApp", systemImage: "link") {
-                    appModel.connectionStage = .intro
-                    appModel.route = .connection
-                }
-            }
+
         }
     }
 
     private var appearanceSection: some View {
         Section("Appearance") {
-            Picker("Theme", selection: $appModel.appearance) {
-                ForEach(AppearanceMode.allCases) { mode in
-                    Label(mode.title, systemImage: mode.systemImage)
-                        .tag(mode)
-                }
-            }
-            .pickerStyle(.navigationLink)
-
             HStack(spacing: 10) {
                 ForEach(AppearanceMode.allCases) { mode in
                     AppearanceChoice(mode: mode, isSelected: appModel.appearance == mode) {
@@ -149,6 +121,21 @@ struct SettingsView: View {
     private var aboutSection: some View {
         Section("About") {
             LabeledContent("Version", value: version)
+            if appModel.session != nil {
+                Button { showUnlinkConfirmation = true } label: {
+                    Label("Unlink WhatsApp", systemImage: "link.badge.plus")
+                }.foregroundStyle(.red)
+            } else {
+                Button("Connect WhatsApp", systemImage: "link") {
+                    appModel.connectionStage = .intro
+                    appModel.route = .connection
+                }
+            }
+            Button(role: .destructive) {
+                Task { await appModel.signOut() }
+            } label: {
+                Label("Sign out", systemImage: "rectangle.portrait.and.arrow.right")
+            }
             LabeledContent("WhatsApp", value: appModel.session?.phoneNumber ?? "Not linked")
             LabeledContent("Status", value: appModel.session?.status.title ?? "Unavailable")
         }

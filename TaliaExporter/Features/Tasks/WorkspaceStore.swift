@@ -249,6 +249,7 @@ final class WorkspaceStore: ObservableObject {
         let scope = generation, id = UUID()
         mutationID = id
         isMutating = true
+        errorMessage = nil
         reads.removeAll()
         loading.removeAll()
         defer {
@@ -289,9 +290,21 @@ final class WorkspaceStore: ObservableObject {
     }
 
     @discardableResult
-    func updateTask(_ task: WorkTask, fields: [String: WorkValue]) async -> Bool {
+    func createTask(fields: [String: WorkValue]) async -> Bool {
+        let saved = await mutate({ api in
+            try await api.write(.post, path: "exporter/tasks", body: fields, response: WorkTask.self)
+        }, apply: { task in
+            self.detail = task
+            self.requestedTaskID = task.id
+        })
+        if saved { await loadTasks() }
+        return saved
+    }
+
+    @discardableResult
+    func updateTask(_ task: WorkTask, fields: [String: WorkValue], expectedVersion: Int64? = nil) async -> Bool {
         var body = fields
-        body["expected_version"] = .integer(task.version)
+        body["expected_version"] = .integer(expectedVersion ?? task.version)
         body["reason"] = .string("Updated in Talia Exporter iOS")
         let saved = await mutate({ api in
             try await api.write(.patch, path: "exporter/tasks/\(task.id)", body: body, response: WorkTask.self)

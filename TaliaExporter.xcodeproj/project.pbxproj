@@ -38,6 +38,7 @@
 		9B4C1650A2106FCB8D05409A /* GroupsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 995F6A37CE9553259CBB60B4 /* GroupsView.swift */; };
 		A518394F4123F2CD038CCE64 /* TaliaTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 667994583DC2F0AE020D9ED9 /* TaliaTheme.swift */; };
 		A7ADD9D5DF60F32DFAB1473E /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6117F0CE8D3E2BEED7EBE4E3 /* SettingsView.swift */; };
+		A9A1DFF1E1D3AA927167A988 /* WorkspaceContractTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0B63149E0833C221BE9A216 /* WorkspaceContractTests.swift */; };
 		A9D7C07AB4BFAB82FEB62E98 /* AppModel+Widgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 630B996A7D28F67FD1295EE9 /* AppModel+Widgets.swift */; };
 		A9F0CF3EEB9F14896A585024 /* TaskProgressWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9DE0B72669929C6C78534B3 /* TaskProgressWidget.swift */; };
 		AA7892722AE7502312531DED /* WorkspaceMediaView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9216FFE0758FCB55B00C9E6 /* WorkspaceMediaView.swift */; };
@@ -135,6 +136,7 @@
 		C4EC79468D89962EA7EA6009 /* AppDependencies.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDependencies.swift; sourceTree = "<group>"; };
 		C8DEEBC37316863B313DDA99 /* TaliaExporter.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = TaliaExporter.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CA753C67F5C8EA3C6ED9C4B5 /* IdeasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdeasView.swift; sourceTree = "<group>"; };
+		D0B63149E0833C221BE9A216 /* WorkspaceContractTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceContractTests.swift; sourceTree = "<group>"; };
 		D34F7C6FE41989269EB6A0B7 /* PushNotificationCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationCoordinator.swift; sourceTree = "<group>"; };
 		DEC22F64829B15FCE774C193 /* AppRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRootView.swift; sourceTree = "<group>"; };
 		E21D3580AA0961D0FAF6582A /* ActivityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityView.swift; sourceTree = "<group>"; };
@@ -224,6 +226,7 @@
 				8EA4F2E41504F188DB9057B0 /* AccountIsolationTests.swift */,
 				3AC18663E1C15CB63DFC0B91 /* APIClientAuthenticationTests.swift */,
 				24F73CE6745ADBE6BEB294B7 /* CaptureControlRecoveryTests.swift */,
+				D0B63149E0833C221BE9A216 /* WorkspaceContractTests.swift */,
 			);
 			path = TaliaExporterTests;
 			sourceTree = "<group>";
@@ -554,6 +557,7 @@
 				2A3F0DFB92C0FD27843431E3 /* APIClientAuthenticationTests.swift in Sources */,
 				CCC3CBCA31FE58FB2D545A10 /* AccountIsolationTests.swift in Sources */,
 				69A645AAB10C074146D52C56 /* CaptureControlRecoveryTests.swift in Sources */,
+				A9A1DFF1E1D3AA927167A988 /* WorkspaceContractTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -602,6 +606,7 @@
 					"@executable_path/Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.talia.exporter;
+				PRODUCT_MODULE_NAME = TaliaExporter;
 				PRODUCT_NAME = "Talia Exporter";
 				SDKROOT = iphoneos;
 				SUPPORTS_MACCATALYST = NO;
@@ -811,6 +816,7 @@
 					"@executable_path/Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.talia.exporter;
+				PRODUCT_MODULE_NAME = TaliaExporter;
 				PRODUCT_NAME = "Talia Exporter";
 				SDKROOT = iphoneos;
 				SUPPORTS_MACCATALYST = NO;

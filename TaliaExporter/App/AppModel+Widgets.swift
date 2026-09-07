@@ -89,6 +89,23 @@ extension AppModel {
         }
         widgetPreferences = validated
         WidgetSharedStore.savePreferences(validated)
+        // Hide content immediately, even when the following network refresh fails.
+        if let owner = user?.id {
+            let existing = widgetSnapshot ?? WidgetSharedStore.loadEnvelope().flatMap {
+                $0.ownerUserID == owner ? $0.snapshot : nil
+            }
+            if let existing {
+                do {
+                    try WidgetSharedStore.save(snapshot: existing, ownerUserID: owner, preferences: validated)
+                } catch {
+                    // Removing the snapshot is safer than retaining newly hidden text.
+                    WidgetSharedStore.clearSnapshot()
+                }
+                #if canImport(WidgetKit)
+                WidgetCenter.shared.reloadAllTimelines()
+                #endif
+            }
+        }
         await refreshWidgetSnapshot(force: true, showErrors: true)
     }
 

@@ -297,6 +297,9 @@ private struct IdeaEditor: View {
     var body: some View {
         NavigationStack {
             Form {
+                if let error = store.errorMessage {
+                    Section { Text(error).font(.footnote).foregroundStyle(.red) }
+                }
                 if node?.kind != "image" {
                     Section("Idea") {
                         TextField("Title", text: $title)
