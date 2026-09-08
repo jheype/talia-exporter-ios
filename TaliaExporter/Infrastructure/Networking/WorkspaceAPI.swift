@@ -1,7 +1,7 @@
 import Foundation
 
 /// Shares the Exporter's cookie session and refresh single-flight; never creates a second login.
-actor WorkspaceAPI {
+actor WorkspaceAPI: CalendarDeadlineServing {
     let client: APIClient
 
     init(client: APIClient) { self.client = client }
@@ -10,8 +10,20 @@ actor WorkspaceAPI {
         try await client.send(.get, path: "exporter/tasks", queryItems: filters.queryItems(cursor: cursor))
     }
 
+    func calendarDeadlines(preferences: CalendarPreferences) async throws -> CalendarDeadlineSnapshot {
+        try await client.send(.get, path: "exporter/calendar/deadlines", queryItems: [
+            .init(name: "include_tasks", value: String(preferences.includeTasks)),
+            .init(name: "include_notes", value: String(preferences.includeNotes)),
+            .init(name: "assignee", value: preferences.assignee)
+        ])
+    }
+
     func task(_ id: UUID) async throws -> WorkTask {
         try await client.send(.get, path: "exporter/tasks/\(id.uuidString)")
+    }
+
+    func personalNote(_ id: UUID) async throws -> PersonalNote {
+        try await client.send(.get, path: "exporter/personal-notes/\(id.uuidString)")
     }
 
     func list<Item: Decodable & Sendable>(_ path: String, query: [URLQueryItem] = []) async throws -> [Item] {

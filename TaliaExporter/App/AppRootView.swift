@@ -21,35 +21,21 @@ struct AppRootView: View {
             }
         }
         .environmentObject(appModel.workspace)
-        .onOpenURL { url in
-            guard appModel.user != nil, url.scheme == "talia-exporter" else { return }
-            switch url.host {
-            case "tasks":
-                appModel.workspace.section = .board
-                let query = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
-                var filters = WorkFilters()
-                filters.search = query.first { $0.name == "search" }?.value ?? ""
-                filters.status = WorkStatus(rawValue: query.first { $0.name == "status" }?.value ?? "") ?? .inProgress
-                filters.due = query.first { $0.name == "due" }?.value ?? ""
-                appModel.workspace.filters = filters
-                appModel.selectedTab = .tasks
-            case "activity": appModel.selectedTab = .activity
-            case "groups": appModel.selectedTab = .groups
-            case "settings": appModel.selectedTab = .settings
-            default: appModel.selectedTab = .home
-            }
-        }
+        .environmentObject(appModel.calendarSync)
+        .onOpenURL { appModel.openWorkspaceURL($0) }
         .animation(.snappy(duration: 0.38), value: appModel.route)
         .task {
             await appModel.bootstrap()
         }
-        .task(id: "\(appModel.route)-\(scenePhase)") {
+        .task(id: "\(appModel.route)-\(scenePhase)-\(appModel.user?.id.uuidString ?? "")") {
             guard appModel.route == .main, scenePhase == .active else { return }
             appModel.workspace.setOwner(appModel.user?.id)
+            await appModel.calendarSync.refresh(force: true)
             await appModel.refreshWidgetSnapshot()
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(10))
                 guard !Task.isCancelled, scenePhase == .active else { return }
+                await appModel.calendarSync.refresh()
                 await appModel.refreshDashboard(showErrors: false)
             }
         }

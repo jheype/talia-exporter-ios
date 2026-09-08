@@ -139,6 +139,29 @@ final class WorkspaceContractTests: XCTestCase {
         XCTAssertEqual(request.httpMethod, "POST")
     }
 
+    @MainActor
+    func testPersonalNoteDeadlineAndClearPreserveOptimisticTimestamp() async throws {
+        let observed = RequestRecorder()
+        let timestamp = "2026-09-08T10:00:00.123456Z"
+        let payload = "{\"id\":\"33333333-3333-3333-3333-333333333333\",\"body\":\"Renew insurance\",\"due_at\":\"2026-10-25T01:30:00Z\",\"created_at\":\"2026-09-08T10:00:00Z\",\"updated_at\":\"\(timestamp)\"}"
+        WorkspaceStubProtocol.install { request in
+            observed.append(request)
+            return (200, payload, 0)
+        }
+        let api = makeAPI()
+        let note = try await api.personalNote(UUID(uuidString: "33333333-3333-3333-3333-333333333333")!)
+        XCTAssertEqual(note.updatedAt, timestamp)
+        XCTAssertNotNil(note.dueAt)
+        let store = WorkspaceStore(api: api)
+        store.setOwner(UUID())
+        let saved = await store.saveNote(note.body, note: note, dueAt: nil)
+        XCTAssertTrue(saved)
+        let patch = try XCTUnwrap(observed.values.first { $0.httpMethod == "PATCH" })
+        let body = try XCTUnwrap(JSONSerialization.jsonObject(with: patch.bodyData) as? [String: Any])
+        XCTAssertTrue(body["due_at"] is NSNull)
+        XCTAssertEqual(body["expected_updated_at"] as? String, timestamp)
+    }
+
     private func makeAPI() -> WorkspaceAPI {
         let config = URLSessionConfiguration.ephemeral
         config.protocolClasses = [WorkspaceStubProtocol.self]

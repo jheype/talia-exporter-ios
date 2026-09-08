@@ -10,7 +10,10 @@ final class AppModel: ObservableObject {
     @Published var selectedTab: MainTab = .home
     @Published var connectionStage: ConnectionStage = .intro
     @Published var user: TaliaUser? {
-        didSet { workspace.setOwner(user?.id) }
+        didSet {
+            workspace.setOwner(user?.id)
+            calendarSync.setOwner(user?.id)
+        }
     }
     @Published var session: ExporterSession?
     @Published var groups: [ExportGroup] = []
@@ -33,8 +36,10 @@ final class AppModel: ObservableObject {
 
     let api: any ExporterServing
     let workspace: WorkspaceStore
+    let calendarSync: CalendarSyncController
     let cache: any DashboardCaching
     let pushNotifications: any PushNotificationCoordinating
+    var pendingWorkspaceURL: URL?
     var pairingTask: Task<Void, Never>?
     var selectionTask: Task<Void, Never>?
     var selectionTaskID: UUID?
@@ -60,6 +65,7 @@ final class AppModel: ObservableObject {
     init(dependencies: AppDependencies = .live) {
         api = dependencies.api
         workspace = WorkspaceStore(api: dependencies.workspaceAPI)
+        calendarSync = CalendarSyncController(api: dependencies.workspaceAPI)
         cache = dependencies.cache
         backgroundRefresh = dependencies.backgroundRefresh
         pushNotifications = dependencies.pushNotifications
@@ -71,7 +77,11 @@ final class AppModel: ObservableObject {
         workspace.onSessionExpired = { [weak self] error in
             await self?.handle(error, title: "Session expired")
         }
+        calendarSync.onSessionExpired = { [weak self] error in
+            await self?.handle(error, title: "Session expired")
+        }
         workspace.onMutation = { [weak self] in
+            await self?.calendarSync.refresh(force: true)
             await self?.refreshWidgetSnapshot(force: true, showErrors: false)
         }
 
@@ -144,11 +154,14 @@ final class AppModel: ObservableObject {
             present(error, title: "Unable to connect")
         }
 
+        resumeWorkspaceURL()
         backgroundRefresh.schedule()
     }
 
     func performBackgroundRefresh() async -> Bool {
         guard user != nil, route == .main, !isRefreshingDashboard else { return true }
+        await calendarSync.refresh(force: true)
+        guard !Task.isCancelled else { return false }
         isRefreshingDashboard = true
         defer { isRefreshingDashboard = false }
         stateReadRevision &+= 1
@@ -276,6 +289,7 @@ final class AppModel: ObservableObject {
         UserDefaults.standard.set(false, forKey: Self.interruptionAlertsKey)
         clearAccountOwnedRuntimeState()
         user = nil
+        await calendarSync.waitForCleanup()
         route = .signedOut
         if let authenticatedUserID {
             await cache.clear(for: authenticatedUserID)

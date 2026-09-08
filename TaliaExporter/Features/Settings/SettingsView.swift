@@ -12,6 +12,13 @@ struct SettingsView: View {
                 accountSection
                 captureSection
                 appearanceSection
+                Section("Calendar") {
+                    NavigationLink {
+                        CalendarSettingsView(controller: appModel.calendarSync)
+                    } label: {
+                        Label("Apple Calendar", systemImage: "calendar.badge.clock")
+                    }
+                }
                 widgetsSection
                 aboutSection
             }
