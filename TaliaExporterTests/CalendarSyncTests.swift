@@ -1,4 +1,5 @@
 import XCTest
+import EventKit
 @testable import TaliaExporter
 
 final class CalendarSyncTests: XCTestCase {
@@ -127,6 +128,69 @@ final class CalendarSyncTests: XCTestCase {
             .entry(ownerID: UUID(), calendarID: "private")
         model.openWorkspaceURL(other.url)
         XCTAssertEqual(model.selectedTab, .home)
+    }
+
+    func testEventKitCreatesMovesAndRemovesOnlyTaliaEvents() async throws {
+        guard ProcessInfo.processInfo.environment["TALIA_CALENDAR_INTEGRATION_TESTS"] == "1" else {
+            throw XCTSkip("Run with simulator Calendar access granted; see the iOS CI workflow.")
+        }
+        XCTAssertEqual(EKEventStore.authorizationStatus(for: .event), .fullAccess)
+        let store = EKEventStore()
+        let source = try XCTUnwrap(store.defaultCalendarForNewEvents?.source ?? store.sources.first { $0.sourceType == .local })
+        let calendar = EKCalendar(for: .event, eventStore: store)
+        calendar.title = "Talia test \(UUID())"
+        calendar.source = source
+        try store.saveCalendar(calendar, commit: true)
+        defer { try? store.removeCalendar(calendar, commit: true) }
+        let now = Date()
+        let due = now.addingTimeInterval(3600)
+        let foreign = EKEvent(eventStore: store)
+        foreign.calendar = calendar
+        foreign.title = "Unrelated appointment"
+        foreign.startDate = due
+        foreign.endDate = due.addingTimeInterval(300)
+        try store.save(foreign, span: .thisEvent, commit: true)
+        let suite = "calendar-eventkit-\(UUID())"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let service = EventKitCalendarStore(defaults: defaults)
+        let entry = CalendarDeadline(id: itemID, kind: .note, title: "Renew insurance", dueAt: due)
+            .entry(ownerID: owner, calendarID: calendar.calendarIdentifier)
+        _ = try await service.synchronise(entries: [entry], ownerID: owner, calendarID: calendar.calendarIdentifier)
+        func readEvents() -> [EKEvent] {
+            store.reset()
+            return store.events(matching: store.predicateForEvents(withStart: now.addingTimeInterval(-86400),
+                end: now.addingTimeInterval(86400), calendars: [calendar]))
+        }
+        var owned = try XCTUnwrap(readEvents().first { $0.url == entry.url })
+        XCTAssertEqual(owned.alarms?.count, 1)
+        XCTAssertEqual(owned.alarms?.first?.relativeOffset, 0)
+        XCTAssertEqual(owned.startDate.timeIntervalSince(due), 0, accuracy: 1)
+        let originalID = owned.eventIdentifier
+        let moved = CalendarDeadline(id: itemID, kind: .note, title: "Renew insurance policy", dueAt: due.addingTimeInterval(3600))
+            .entry(ownerID: owner, calendarID: calendar.calendarIdentifier)
+        _ = try await service.synchronise(entries: [moved], ownerID: owner, calendarID: calendar.calendarIdentifier)
+        _ = try await service.synchronise(entries: [moved], ownerID: owner, calendarID: calendar.calendarIdentifier)
+        let afterMove = readEvents().filter { $0.url == entry.url }
+        XCTAssertEqual(afterMove.count, 1)
+        owned = try XCTUnwrap(afterMove.first)
+        XCTAssertEqual(owned.eventIdentifier, originalID)
+        XCTAssertEqual(owned.startDate.timeIntervalSince(moved.dueAt), 0, accuracy: 1)
+        // Simulate an existing event whose deadline has just passed. Its alarm
+        // must survive an otherwise unchanged reconciliation.
+        let passed = CalendarEntry(ownerID: owner, url: moved.url, calendarID: moved.calendarID,
+                                   title: moved.title, dueAt: now.addingTimeInterval(-60))
+        owned.startDate = passed.dueAt
+        owned.endDate = passed.endAt
+        try store.save(owned, span: .thisEvent, commit: true)
+        _ = try await service.synchronise(entries: [passed], ownerID: owner, calendarID: calendar.calendarIdentifier)
+        XCTAssertEqual(readEvents().first { $0.url == entry.url }?.alarms?.count, 1)
+        _ = try await service.synchronise(entries: [], ownerID: owner, calendarID: calendar.calendarIdentifier)
+        let remaining = readEvents()
+        XCTAssertFalse(remaining.contains { $0.url == entry.url })
+        XCTAssertTrue(remaining.contains { $0.eventIdentifier == foreign.eventIdentifier })
+        _ = try await service.synchronise(entries: [passed], ownerID: owner, calendarID: calendar.calendarIdentifier)
+        XCTAssertFalse(readEvents().contains { $0.url == entry.url }, "Do not create new past events")
     }
 
     private func snapshot() -> CalendarDeadlineSnapshot {
