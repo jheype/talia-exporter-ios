@@ -39,7 +39,10 @@ jobs:
           assert len(paths) == 1, paths
           path = paths[0]
           data = plistlib.loads(path.read_bytes())
-          targets = [target for config in data["TestConfigurations"] for target in config["TestTargets"]]
+          if "TestConfigurations" in data:
+              targets = [target for config in data["TestConfigurations"] for target in config["TestTargets"]]
+          else:
+              targets = [target for target in data.values() if isinstance(target, dict) and "TestBundlePath" in target]
           assert targets, "No test targets in the generated xctestrun"
           for target in targets:
               target.setdefault("EnvironmentVariables", {})["TALIA_CALENDAR_INTEGRATION_TESTS"] = "1"
