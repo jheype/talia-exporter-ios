@@ -31,6 +31,7 @@ actor EventKitCalendarStore: CalendarEventServing {
 
     func calendars() -> [CalendarDestination] {
         guard authorisation() == .fullAccess else { return [] }
+        store.reset()
         let defaultID = store.defaultCalendarForNewEvents?.calendarIdentifier
         return store.calendars(for: .event).filter(\.allowsContentModifications).map {
             CalendarDestination(id: $0.calendarIdentifier, title: $0.title,
@@ -41,6 +42,7 @@ actor EventKitCalendarStore: CalendarEventServing {
     func synchronise(entries: [CalendarEntry], ownerID: UUID, calendarID: String) throws -> Int {
         try Task.checkCancellation()
         guard authorisation() == .fullAccess else { throw CalendarSyncError.accessDenied }
+        store.reset()
         guard let calendar = store.calendar(withIdentifier: calendarID), calendar.allowsContentModifications else {
             throw CalendarSyncError.missingCalendar
         }
@@ -111,6 +113,7 @@ actor EventKitCalendarStore: CalendarEventServing {
         let obsolete = links.values.filter { $0.ownerID != ownerID }
         guard !obsolete.isEmpty else { return }
         guard authorisation() == .fullAccess else { throw CalendarSyncError.accessDenied }
+        store.reset()
         defer { persist() }
         for link in obsolete {
             try Task.checkCancellation()
@@ -122,6 +125,7 @@ actor EventKitCalendarStore: CalendarEventServing {
         let obsolete = links.values.filter { $0.ownerID == ownerID }
         guard !obsolete.isEmpty else { return }
         guard authorisation() == .fullAccess else { throw CalendarSyncError.accessDenied }
+        store.reset()
         defer { persist() }
         for link in obsolete {
             try Task.checkCancellation()
