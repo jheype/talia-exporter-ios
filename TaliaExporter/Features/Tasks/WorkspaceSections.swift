@@ -140,22 +140,22 @@ struct PersonalNotesView: View {
         LazyVStack(alignment: .leading, spacing: 14) {
             Text("Only visible to you").font(.subheadline).foregroundStyle(Color.taliaSecondaryText)
             VStack(alignment: .leading, spacing: 12) {
-              HStack {
-                TextField(editing == nil ? "Add a personal note…" : "Edit note…", text: $bodyText, axis: .vertical).lineLimit(1...6)
-                Button {
-                    Task {
-                        if await store.saveNote(bodyText, note: editing, dueAt: hasDeadline ? deadline : nil) { resetEditor() }
-                    }
-                } label: { Image(systemName: editing == nil ? "plus.circle.fill" : "checkmark.circle.fill").font(.title).frame(width: 44, height: 44) }
-                .disabled(store.isMutating || bodyText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || bodyText.unicodeScalars.count > 4000)
-                .accessibilityLabel(editing == nil ? "Add note" : "Save note")
-              }
-              Toggle("Deadline", isOn: $hasDeadline).tint(Color.taliaAccent)
-              if hasDeadline {
+                HStack {
+                    TextField(editing == nil ? "Add a personal note…" : "Edit note…", text: $bodyText, axis: .vertical).lineLimit(1...6)
+                    Button {
+                        Task {
+                            if await store.saveNote(bodyText, note: editing, dueAt: hasDeadline ? deadline : nil) { resetEditor() }
+                          }
+                      } label: { Image(systemName: editing == nil ? "plus.circle.fill" : "checkmark.circle.fill").font(.title).frame(width: 44, height: 44) }
+                    .disabled(store.isMutating || bodyText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || bodyText.unicodeScalars.count > 4000)
+                    .accessibilityLabel(editing == nil ? "Add note" : "Save note")
+                }
+                Toggle("Deadline", isOn: $hasDeadline).tint(Color.taliaAccent)
+                if hasDeadline {
                   DatePicker("Due", selection: $deadline, displayedComponents: [.date, .hourAndMinute])
                   Text("Uses your iPhone time zone. Enable Apple Calendar in Settings for a reminder.")
                       .font(.caption).foregroundStyle(.secondary)
-              }
+                }
             }.taliaCard()
             if editing != nil { Button("Cancel editing") { resetEditor() }.font(.subheadline) }
             if store.loading.contains("notes") { ProgressView().frame(maxWidth: .infinity) }

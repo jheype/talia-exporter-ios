@@ -56,31 +56,40 @@ actor EventKitCalendarStore: CalendarEventServing {
         for entry in plan.upsert {
             try Task.checkCancellation()
             let previous = links[entry.url.absoluteString]
-            var matches = findEvents(url: entry.url, link: previous, calendar: calendar, dueAt: entry.dueAt)
-            let event = matches.first ?? EKEvent(eventStore: store)
-            // Duplicate recovery is limited to the exact Talia URL, never a title match.
-            for duplicate in matches.dropFirst() {
-                try Task.checkCancellation()
-                try store.remove(duplicate, span: .thisEvent, commit: true)
-            }
-            matches.removeAll()
+            let matches = try findEvents(url: entry.url, link: previous, calendar: calendar, dueAt: entry.dueAt)
+            // Reuse within a source. EventKit cannot reliably move an event
+            // between accounts, so a cross-account calendar change replaces it.
+            let event = matches.first(where: { $0.calendar?.calendarIdentifier == calendarID }) ??
+                matches.first(where: { $0.calendar?.source.sourceIdentifier == calendar.source.sourceIdentifier }) ??
+                EKEvent(eventStore: store)
             let needsSave = event.eventIdentifier == nil || event.calendar?.calendarIdentifier != calendarID ||
                 event.title != entry.title || event.startDate != entry.dueAt || event.endDate != entry.endAt ||
                 event.isAllDay || event.url != entry.url || event.alarms?.count != 1 ||
                 event.alarms?.first?.relativeOffset != 0 || event.alarms?.first?.absoluteDate != nil
-            if needsSave {
-                event.calendar = calendar
-                event.title = entry.title
-                event.startDate = entry.dueAt
-                event.endDate = entry.endAt
-                event.timeZone = TimeZone(secondsFromGMT: 0)
-                event.isAllDay = false
-                event.url = entry.url
-                event.notes = "Deadline from Talia. Change the date or complete the item in Talia."
-                event.alarms = [EKAlarm(relativeOffset: 0)]
-                event.availability = calendar.supportedEventAvailabilities.contains(.free) ? .free : .notSupported
+            let duplicates = matches.filter { $0 !== event }
+            do {
+                if needsSave {
+                    event.calendar = calendar
+                    event.title = entry.title
+                    event.startDate = entry.dueAt
+                    event.endDate = entry.endAt
+                    event.timeZone = TimeZone(secondsFromGMT: 0)
+                    event.isAllDay = false
+                    event.url = entry.url
+                    event.notes = "Deadline from Talia. Change the date or complete the item in Talia."
+                    event.alarms = [EKAlarm(relativeOffset: 0)]
+                    event.availability = calendar.supportedEventAvailabilities.contains(.free) ? .free : .notSupported
+                    try store.save(event, span: .thisEvent, commit: false)
+                }
+                for duplicate in duplicates {
+                    try Task.checkCancellation()
+                    try store.remove(duplicate, span: .thisEvent, commit: false)
+                }
                 try Task.checkCancellation()
-                try store.save(event, span: .thisEvent, commit: true)
+                if needsSave || !duplicates.isEmpty { try store.commit() }
+            } catch {
+                store.reset()
+                throw error
             }
             links[entry.url.absoluteString] = CalendarEventLink(ownerID: ownerID, url: entry.url, calendarID: calendarID,
                                             dueAt: entry.dueAt, eventID: event.eventIdentifier,
@@ -113,14 +122,14 @@ actor EventKitCalendarStore: CalendarEventServing {
 
     private func remove(_ link: CalendarEventLink) throws {
         let calendar = store.calendar(withIdentifier: link.calendarID)
-        for event in findEvents(url: link.url, link: link, calendar: calendar, dueAt: link.dueAt) {
+        for event in try findEvents(url: link.url, link: link, calendar: calendar, dueAt: link.dueAt) {
             try Task.checkCancellation()
             try store.remove(event, span: .thisEvent, commit: true)
         }
         links.removeValue(forKey: link.url.absoluteString)
     }
 
-    private func findEvents(url: URL, link: CalendarEventLink?, calendar: EKCalendar?, dueAt: Date) -> [EKEvent] {
+    private func findEvents(url: URL, link: CalendarEventLink?, calendar: EKCalendar?, dueAt: Date) throws -> [EKEvent] {
         var candidates: [EKEvent] = []
         if let id = link?.eventID, let event = store.event(withIdentifier: id) { candidates.append(event) }
         if let id = link?.externalID {
@@ -135,6 +144,9 @@ actor EventKitCalendarStore: CalendarEventServing {
             let predicate = store.predicateForEvents(withStart: date.addingTimeInterval(-86400),
                                                      end: date.addingTimeInterval(86400), calendars: [calendar])
             candidates += store.events(matching: predicate)
+        }
+        if candidates.contains(where: { $0.url == url && $0.hasRecurrenceRules }) {
+            throw CalendarSyncError.recurringEvent
         }
         var seen = Set<String>()
         return candidates.filter {

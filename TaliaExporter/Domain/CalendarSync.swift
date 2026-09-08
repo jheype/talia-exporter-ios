@@ -87,13 +87,14 @@ struct CalendarReconciliationPlan {
 }
 
 enum CalendarSyncError: LocalizedError {
-    case accessDenied, missingCalendar, incomplete, accountMismatch, unavailable
+    case accessDenied, missingCalendar, incomplete, accountMismatch, unavailable, recurringEvent
     var errorDescription: String? {
         switch self {
         case .accessDenied: "Allow full Calendar access in iPhone Settings to update or remove Talia reminders."
         case .missingCalendar: "Choose an available calendar that allows new events."
         case .incomplete: "The deadline list is incomplete. Existing reminders were kept. Choose an assignee to reduce the number of tasks, then retry."
         case .accountMismatch: "The deadline response belongs to a different account. No calendar events were changed."
+        case .recurringEvent: "An exported event was made recurring in Calendar. Remove its recurrence in Calendar, then retry sync."
         case .unavailable: "Calendar sync needs the updated Talia backend. Existing reminders were kept."
         }
     }

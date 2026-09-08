@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct CalendarSettingsView: View {
     @ObservedObject var controller: CalendarSyncController
