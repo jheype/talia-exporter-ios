@@ -134,20 +134,38 @@ struct PersonalNotesView: View {
     @State private var bodyText = ""
     @State private var editing: PersonalNote?
     @State private var deleting: PersonalNote?
+    @State private var hasDeadline = false
+    @State private var deadline = Date().addingTimeInterval(3600)
     var body: some View {
         LazyVStack(alignment: .leading, spacing: 14) {
             Text("Only visible to you").font(.subheadline).foregroundStyle(Color.taliaSecondaryText)
-            HStack {
-                TextField(editing == nil ? "Add a personal note…" : "Edit note…", text: $bodyText, axis: .vertical).lineLimit(1...6)
-                Button {
-                    Task {
-                        if await store.saveNote(bodyText, note: editing) { bodyText = ""; editing = nil }
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    TextField(editing == nil ? "Add a personal note…" : "Edit note…", text: $bodyText, axis: .vertical).lineLimit(1...6)
+                    Button {
+                        Task {
+                            if await store.saveNote(bodyText, note: editing, dueAt: hasDeadline ? deadline : nil) { resetEditor() }
+                          }
+                      } label: { Image(systemName: editing == nil ? "plus.circle.fill" : "checkmark.circle.fill").font(.title).frame(width: 44, height: 44) }
+                    .disabled(store.isMutating || bodyText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || bodyText.unicodeScalars.count > 4000)
+                    .accessibilityLabel(editing == nil ? "Add note" : "Save note")
+                }
+                Toggle("Deadline", isOn: $hasDeadline).tint(Color.taliaAccent)
+                if hasDeadline {
+                  DatePicker("Due", selection: $deadline, displayedComponents: [.date, .hourAndMinute])
+                  Text("Uses your iPhone time zone. Enable Apple Calendar in Settings for a reminder.")
+                      .font(.caption).foregroundStyle(.secondary)
+                }
+            }.taliaCard().disabled(store.isMutating)
+            if let editing {
+                HStack {
+                    Button("Cancel editing") { resetEditor() }
+                    Spacer()
+                    if let latest = store.notes.first(where: { $0.id == editing.id }), latest.updatedAt != editing.updatedAt {
+                        Button("Reload saved note") { edit(latest) }
                     }
-                } label: { Image(systemName: editing == nil ? "plus.circle.fill" : "checkmark.circle.fill").font(.title).frame(width: 44, height: 44) }
-                .disabled(store.isMutating || bodyText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || bodyText.count > 4000)
-                .accessibilityLabel(editing == nil ? "Add note" : "Save note")
-            }.taliaCard()
-            if editing != nil { Button("Cancel editing") { editing = nil; bodyText = "" }.font(.subheadline) }
+                }.font(.subheadline).disabled(store.isMutating)
+            }
             if store.loading.contains("notes") { ProgressView().frame(maxWidth: .infinity) }
             ForEach(store.notes) { note in
                 HStack(alignment: .top, spacing: 12) {
@@ -159,11 +177,16 @@ struct PersonalNotesView: View {
                     VStack(alignment: .leading, spacing: 6) {
                         Text(note.body).font(.body).strikethrough(note.doneAt != nil)
                             .foregroundStyle(note.doneAt == nil ? Color.taliaAccent : .taliaSecondaryText)
+                        if let due = note.dueAt {
+                            Label(due.formatted(date: .abbreviated, time: .shortened), systemImage: "calendar.badge.clock")
+                                .font(.caption.weight(.medium))
+                                .foregroundStyle(note.doneAt == nil && due < Date() ? Color.orange : Color.taliaSecondaryText)
+                        }
                         Text("\(note.sourceGroupJID == nil ? "Added in app" : "From WhatsApp") · \(note.createdAt.formatted(date: .abbreviated, time: .shortened))")
                             .font(.caption).foregroundStyle(.secondary)
                     }.frame(maxWidth: .infinity, alignment: .leading)
                     Menu {
-                        Button("Edit note", systemImage: "pencil") { editing = note; bodyText = note.body }
+                        Button("Edit note", systemImage: "pencil") { edit(note) }
                         Button("Delete note", systemImage: "trash", role: .destructive) { deleting = note }
                     } label: { Image(systemName: "ellipsis").frame(width: 44, height: 44) }
                     .disabled(store.isMutating)
@@ -173,13 +196,38 @@ struct PersonalNotesView: View {
                 WorkEmptyState(title: "A place for your notes", message: "Add a note here or use a WhatsApp group routed to Personal notes.", symbol: "note.text")
             }
         }
+        .task(id: store.requestedNoteID) {
+            guard let id = store.requestedNoteID else { return }
+            if let note = await store.loadNote(id) { edit(note) }
+            if store.requestedNoteID == id { store.requestedNoteID = nil }
+        }
+        .onChange(of: store.ownerID) { _, _ in resetEditor() }
         .confirmationDialog("Delete this private note?", isPresented: Binding(
             get: { deleting != nil }, set: { if !$0 { deleting = nil } }
         ), titleVisibility: .visible) {
             Button("Delete note", role: .destructive) {
                 guard let note = deleting else { return }
-                Task { await store.deleteNote(note); deleting = nil }
+                Task {
+                    await store.deleteNote(note)
+                    if editing?.id == note.id && !store.notes.contains(where: { $0.id == note.id }) { resetEditor() }
+                    deleting = nil
+                }
             }
         }
     }
+
+    private func edit(_ note: PersonalNote) {
+        editing = note
+        bodyText = note.body
+        hasDeadline = note.dueAt != nil
+        deadline = note.dueAt ?? Date().addingTimeInterval(3600)
+    }
+
+    private func resetEditor() {
+        editing = nil
+        bodyText = ""
+        hasDeadline = false
+        deadline = Date().addingTimeInterval(3600)
+    }
+
 }

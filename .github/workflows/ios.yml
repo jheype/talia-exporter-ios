@@ -28,7 +28,34 @@ jobs:
         run: |
           set -o pipefail
           DEVICE=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next(x["udid"] for k,v in d["devices"].items() if "iOS" in k for x in v if "iPhone" in x["name"]))')
-          xcodebuild -project TaliaExporter.xcodeproj -scheme TaliaExporter -configuration Debug -destination "platform=iOS Simulator,id=$DEVICE" -resultBundlePath TestResults.xcresult CODE_SIGNING_ALLOWED=NO test | tee build.log
+          xcodebuild -project TaliaExporter.xcodeproj -scheme TaliaExporter -configuration Debug -destination "platform=iOS Simulator,id=$DEVICE" -derivedDataPath Build CODE_SIGNING_ALLOWED=NO build-for-testing | tee build.log
+          xcrun simctl boot "$DEVICE" || true
+          xcrun simctl bootstatus "$DEVICE" -b
+          xcrun simctl install "$DEVICE" "Build/Build/Products/Debug-iphonesimulator/Talia Exporter.app"
+          xcrun simctl privacy "$DEVICE" grant calendar com.talia.exporter
+          RUNFILE=$(python3 - <<'PYTEST'
+          import pathlib, plistlib
+          paths = list(pathlib.Path("Build/Build/Products").glob("*.xctestrun"))
+          assert len(paths) == 1, paths
+          path = paths[0]
+          data = plistlib.loads(path.read_bytes())
+          if "TestConfigurations" in data:
+              targets = [target for config in data["TestConfigurations"] for target in config["TestTargets"]]
+          else:
+              targets = [target for target in data.values() if isinstance(target, dict) and "TestBundlePath" in target]
+          assert targets, "No test targets in the generated xctestrun"
+          for target in targets:
+              target.setdefault("EnvironmentVariables", {})["TALIA_CALENDAR_INTEGRATION_TESTS"] = "1"
+          path.write_bytes(plistlib.dumps(data))
+          print(path)
+          PYTEST
+          )
+          xcodebuild -xctestrun "$RUNFILE" -destination "platform=iOS Simulator,id=$DEVICE" -resultBundlePath TestResults.xcresult CODE_SIGNING_ALLOWED=NO test-without-building | tee -a build.log
+          python3 - <<'PYTEST'
+          import pathlib, re
+          log = pathlib.Path("build.log").read_text()
+          assert re.search(r"testEventKitCreatesMovesAndRemovesOnlyTaliaEvents.*passed", log), "EventKit integration must pass, not skip"
+          PYTEST
       - name: Export screen captures
         if: always()
         run: |

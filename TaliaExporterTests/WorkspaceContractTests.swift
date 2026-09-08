@@ -139,6 +139,29 @@ final class WorkspaceContractTests: XCTestCase {
         XCTAssertEqual(request.httpMethod, "POST")
     }
 
+    @MainActor
+    func testPersonalNoteDeadlineAndClearPreserveOptimisticTimestamp() async throws {
+        let observed = RequestRecorder()
+        let timestamp = "2026-09-08T10:00:00.123456Z"
+        let payload = "{\"id\":\"33333333-3333-3333-3333-333333333333\",\"body\":\"Renew insurance\",\"due_at\":\"2026-10-25T01:30:00Z\",\"created_at\":\"2026-09-08T10:00:00Z\",\"updated_at\":\"\(timestamp)\"}"
+        WorkspaceStubProtocol.install { request in
+            observed.append(request)
+            return (200, payload, 0)
+        }
+        let api = makeAPI()
+        let note = try await api.personalNote(UUID(uuidString: "33333333-3333-3333-3333-333333333333")!)
+        XCTAssertEqual(note.updatedAt, timestamp)
+        XCTAssertNotNil(note.dueAt)
+        let store = WorkspaceStore(api: api)
+        store.setOwner(UUID())
+        let saved = await store.saveNote(note.body, note: note, dueAt: nil)
+        XCTAssertTrue(saved)
+        let patch = try XCTUnwrap(observed.values.first { $0.httpMethod == "PATCH" })
+        let body = try XCTUnwrap(JSONSerialization.jsonObject(with: patch.bodyData) as? [String: Any])
+        XCTAssertTrue(body["due_at"] is NSNull)
+        XCTAssertEqual(body["expected_updated_at"] as? String, timestamp)
+    }
+
     private func makeAPI() -> WorkspaceAPI {
         let config = URLSessionConfiguration.ephemeral
         config.protocolClasses = [WorkspaceStubProtocol.self]
@@ -253,4 +276,63 @@ final class ApprovedLayoutTests: XCTestCase {
             }
         }
     }
+    func testCalendarSettingsAndPersonalDeadlineRender() async throws {
+        let noteID = UUID(uuidString: "33333333-3333-3333-3333-333333333333")!
+        let note = #"{"id":"33333333-3333-3333-3333-333333333333","body":"Renew watch insurance","due_at":"2030-09-10T16:00:00Z","created_at":"2026-09-08T10:00:00Z","updated_at":"2026-09-08T10:00:00.123456Z"}"#
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [WorkspaceStubProtocol.self]
+        configuration.httpCookieStorage = nil
+        var dependencies = AppDependencies.preview
+        dependencies.workspaceAPI = WorkspaceAPI(client: APIClient(baseURL: URL(string: "https://layout.test/api/v1/")!, session: URLSession(configuration: configuration)))
+        WorkspaceStubProtocol.install { request in
+            if request.url?.path.hasSuffix("assignees") == true { return (200, #"{"items":["Joao","Finn"]}"#, 0) }
+            if request.url?.path.hasSuffix("personal-notes") == true { return (200, "{\"items\":[\(note)]}", 0) }
+            return (200, note, 0)
+        }
+        defer { WorkspaceStubProtocol.install(nil) }
+        let model = AppModel(dependencies: dependencies)
+        model.user = PreviewData.user
+        model.route = .main
+        model.workspace.section = .notes
+        await model.workspace.loadNotes()
+        let defaultsName = "calendar-layout-\(UUID())"
+        let defaults = UserDefaults(suiteName: defaultsName)!
+        defer { defaults.removePersistentDomain(forName: defaultsName) }
+        let controller = CalendarSyncController(api: CalendarAPIStub(snapshot: CalendarDeadlineSnapshot(
+            ownerUserID: PreviewData.user.id, complete: true,
+            items: [CalendarDeadline(id: noteID, kind: .note, title: "Renew watch insurance", dueAt: Date().addingTimeInterval(86400))]
+        )), events: CalendarEventsStub(), defaults: defaults)
+        controller.setOwner(PreviewData.user.id)
+        await controller.setEnabled(true)
+        let bounds = CGRect(x: 0, y: 0, width: 393, height: 852)
+        let window = UIWindow(frame: bounds)
+        defer { window.isHidden = true; window.rootViewController = nil }
+        for (style, scheme) in [(UIUserInterfaceStyle.dark, ColorScheme.dark), (.light, .light)] {
+            model.workspace.requestedNoteID = noteID
+            let screens: [(String, AnyView)] = [
+                ("Calendar", AnyView(NavigationStack { CalendarSettingsView(controller: controller) })),
+                ("MyNotes-deadline", AnyView(TasksView()))
+            ]
+            for (name, screen) in screens {
+                let view = screen.environmentObject(model).environmentObject(model.workspace)
+                    .environment(\.locale, Locale(identifier: "en_GB")).preferredColorScheme(scheme)
+                let host = UIHostingController(rootView: view)
+                host.overrideUserInterfaceStyle = style
+                window.rootViewController = host
+                window.makeKeyAndVisible()
+                host.view.frame = bounds
+                host.view.setNeedsLayout()
+                host.view.layoutIfNeeded()
+                try await Task.sleep(for: .milliseconds(450))
+                XCTAssertFalse(host.view.subviews.isEmpty)
+                let renderer = UIGraphicsImageRenderer(bounds: bounds)
+                let image = renderer.image { _ in host.view.drawHierarchy(in: bounds, afterScreenUpdates: true) }
+                let attachment = XCTAttachment(image: image)
+                attachment.name = "\(name)-\(scheme == .dark ? "dark" : "light")"
+                attachment.lifetime = .keepAlways
+                add(attachment)
+            }
+        }
+    }
+
 }

@@ -19,6 +19,9 @@
 		2F0082E719CEC86524838655 /* TaliaExporterWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 721BA6239135073E3BA082DA /* TaliaExporterWidgets.swift */; };
 		2F96F2C31AD18D38FE6ADC20 /* LiveFeedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4D0B214CCF151DC7FD29E11 /* LiveFeedView.swift */; };
 		311C51B0A5C24BC2266839C6 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5224105539FD2CF7E82FE274 /* AppState.swift */; };
+		3137B62217CC635D2819A58E /* CalendarSyncTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16BAB3B26189E0604220E536 /* CalendarSyncTests.swift */; };
+		31A6CE0B45DA584FE3F9DD73 /* CalendarSyncController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 644FA0B90C859C3DF3A2DF87 /* CalendarSyncController.swift */; };
+		37D6F11734ABE0C7524A1485 /* EventKitCalendarStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A45A9496467F9F1235F97831 /* EventKitCalendarStore.swift */; };
 		3AF1E6132A7D8DB733DAD6DB /* TaliaComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA5481771802BF213BD624FA /* TaliaComponents.swift */; };
 		44C6AC84787210E5DDD978E4 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44677CC66D9E1E891C9A2915 /* APIClient.swift */; };
 		4F6954104DA461530EC5D856 /* WorkspaceSections.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67AC9E470055BD801BD1B0EA /* WorkspaceSections.swift */; };
@@ -43,6 +46,8 @@
 		A9F0CF3EEB9F14896A585024 /* TaskProgressWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9DE0B72669929C6C78534B3 /* TaskProgressWidget.swift */; };
 		AA7892722AE7502312531DED /* WorkspaceMediaView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9216FFE0758FCB55B00C9E6 /* WorkspaceMediaView.swift */; };
 		BB578BB55E57C8E64BD968B1 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91A03AA3FD83DF1D9A23CC78 /* AppModel.swift */; };
+		C5B1F5BCA744C9F72E23F35A /* CalendarSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F75C0B109AEE8C2CE2686792 /* CalendarSettingsView.swift */; };
+		C72D0969FCD8D612E4995970 /* CalendarSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = C96B164AE61874C978431802 /* CalendarSync.swift */; };
 		C8D6D6C072A7DF4E6725DBED /* ExportGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = F63B655B552E0C1C7B9531DA /* ExportGroup.swift */; };
 		CCC3CBCA31FE58FB2D545A10 /* AccountIsolationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EA4F2E41504F188DB9057B0 /* AccountIsolationTests.swift */; };
 		CCF8717C5307521B39CCAF77 /* PreviewData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B473803B9BFA3B3880F235 /* PreviewData.swift */; };
@@ -52,6 +57,7 @@
 		DBBDFDC0823E211E7770164D /* PushNotificationCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D34F7C6FE41989269EB6A0B7 /* PushNotificationCoordinator.swift */; };
 		E41386AA9850DF500D10B59B /* TaliaExporterApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18751A21E859D9996F1AAD5B /* TaliaExporterApp.swift */; };
 		E47CD5ED88673DB0DE4CB4EA /* WidgetSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5FAE3A458DCC46DEAFC7C5E /* WidgetSettingsView.swift */; };
+		E952BA4ECF25ED5CD70B54FC /* AppModel+Calendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6152281E30B605D083C7DF4D /* AppModel+Calendar.swift */; };
 		ED66712C3DFB32F7CD520129 /* WidgetSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = B271DF63811D0B4877BE2E7E /* WidgetSupport.swift */; };
 		EE077E70F41BBE797560B5B1 /* SignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5272FB4B23229A5F8A5A7861 /* SignInView.swift */; };
 		F645CFFDA48EE067D344082A /* ConnectionFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D2B047E8B7DC802321C9F3 /* ConnectionFlowView.swift */; };
@@ -91,6 +97,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		16BAB3B26189E0604220E536 /* CalendarSyncTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarSyncTests.swift; sourceTree = "<group>"; };
 		1771CDEC3A4AA39495EC9CD2 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		18751A21E859D9996F1AAD5B /* TaliaExporterApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaliaExporterApp.swift; sourceTree = "<group>"; };
 		24F73CE6745ADBE6BEB294B7 /* CaptureControlRecoveryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureControlRecoveryTests.swift; sourceTree = "<group>"; };
@@ -104,9 +111,11 @@
 		5CFFFB56F7CFE8F3B582D288 /* Capture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Capture.swift; sourceTree = "<group>"; };
 		5DF12DCBC30A768A655CB62F /* WorkspaceModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceModels.swift; sourceTree = "<group>"; };
 		6117F0CE8D3E2BEED7EBE4E3 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		6152281E30B605D083C7DF4D /* AppModel+Calendar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppModel+Calendar.swift"; sourceTree = "<group>"; };
 		6246A8B4C4DB5A8E42A55A70 /* TaliaExporter.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TaliaExporter.entitlements; sourceTree = "<group>"; };
 		630B996A7D28F67FD1295EE9 /* AppModel+Widgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppModel+Widgets.swift"; sourceTree = "<group>"; };
 		6366F930F0066355EB49ADBF /* TasksView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TasksView.swift; sourceTree = "<group>"; };
+		644FA0B90C859C3DF3A2DF87 /* CalendarSyncController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarSyncController.swift; sourceTree = "<group>"; };
 		667994583DC2F0AE020D9ED9 /* TaliaTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaliaTheme.swift; sourceTree = "<group>"; };
 		67AC9E470055BD801BD1B0EA /* WorkspaceSections.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceSections.swift; sourceTree = "<group>"; };
 		721BA6239135073E3BA082DA /* TaliaExporterWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaliaExporterWidgets.swift; sourceTree = "<group>"; };
@@ -122,6 +131,7 @@
 		9C87E67640450B78F0C7D033 /* AppModel+Notifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppModel+Notifications.swift"; sourceTree = "<group>"; };
 		9C968771D5590D2B4F164673 /* ExporterAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExporterAPI.swift; sourceTree = "<group>"; };
 		A1B473803B9BFA3B3880F235 /* PreviewData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewData.swift; sourceTree = "<group>"; };
+		A45A9496467F9F1235F97831 /* EventKitCalendarStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventKitCalendarStore.swift; sourceTree = "<group>"; };
 		A5FAE3A458DCC46DEAFC7C5E /* WidgetSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSettingsView.swift; sourceTree = "<group>"; };
 		A7A5C00210B058D3599E5C44 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		AA5481771802BF213BD624FA /* TaliaComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaliaComponents.swift; sourceTree = "<group>"; };
@@ -135,6 +145,7 @@
 		C1D2B047E8B7DC802321C9F3 /* ConnectionFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionFlowView.swift; sourceTree = "<group>"; };
 		C4EC79468D89962EA7EA6009 /* AppDependencies.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDependencies.swift; sourceTree = "<group>"; };
 		C8DEEBC37316863B313DDA99 /* TaliaExporter.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = TaliaExporter.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C96B164AE61874C978431802 /* CalendarSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarSync.swift; sourceTree = "<group>"; };
 		CA753C67F5C8EA3C6ED9C4B5 /* IdeasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdeasView.swift; sourceTree = "<group>"; };
 		D0B63149E0833C221BE9A216 /* WorkspaceContractTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceContractTests.swift; sourceTree = "<group>"; };
 		D34F7C6FE41989269EB6A0B7 /* PushNotificationCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationCoordinator.swift; sourceTree = "<group>"; };
@@ -144,6 +155,7 @@
 		EA091E043AD3BCAB427F15A6 /* CapturedMessagesWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapturedMessagesWidget.swift; sourceTree = "<group>"; };
 		F15412B9B425EC8B58825E3E /* BackgroundRefreshCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundRefreshCoordinator.swift; sourceTree = "<group>"; };
 		F63B655B552E0C1C7B9531DA /* ExportGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportGroup.swift; sourceTree = "<group>"; };
+		F75C0B109AEE8C2CE2686792 /* CalendarSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarSettingsView.swift; sourceTree = "<group>"; };
 		F9216FFE0758FCB55B00C9E6 /* WorkspaceMediaView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceMediaView.swift; sourceTree = "<group>"; };
 		FCD308144059181AF4099385 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -175,9 +187,18 @@
 			path = Background;
 			sourceTree = "<group>";
 		};
+		256860CD71508B380F2E0155 /* Calendar */ = {
+			isa = PBXGroup;
+			children = (
+				A45A9496467F9F1235F97831 /* EventKitCalendarStore.swift */,
+			);
+			path = Calendar;
+			sourceTree = "<group>";
+		};
 		2D9B3D4B1582AA5FFA43E47B /* Domain */ = {
 			isa = PBXGroup;
 			children = (
+				C96B164AE61874C978431802 /* CalendarSync.swift */,
 				5CFFFB56F7CFE8F3B582D288 /* Capture.swift */,
 				794B3FAE9E3AEE9FFE8F63A7 /* Date+Display.swift */,
 				E46BF450F2A975946CE24D5F /* ExporterSession.swift */,
@@ -213,6 +234,7 @@
 			isa = PBXGroup;
 			children = (
 				1188C7FA45C3DF83A84E2228 /* Background */,
+				256860CD71508B380F2E0155 /* Calendar */,
 				304EF524C59C7F2397466FE9 /* Networking */,
 				C5E40F32CCB4EA3E536FFE81 /* Notifications */,
 				4FD2959A4018F3394C40F471 /* Persistence */,
@@ -225,6 +247,7 @@
 			children = (
 				8EA4F2E41504F188DB9057B0 /* AccountIsolationTests.swift */,
 				3AC18663E1C15CB63DFC0B91 /* APIClientAuthenticationTests.swift */,
+				16BAB3B26189E0604220E536 /* CalendarSyncTests.swift */,
 				24F73CE6745ADBE6BEB294B7 /* CaptureControlRecoveryTests.swift */,
 				D0B63149E0833C221BE9A216 /* WorkspaceContractTests.swift */,
 			);
@@ -333,6 +356,8 @@
 		B7FE6CEC2028702B1EA2BDBD /* Settings */ = {
 			isa = PBXGroup;
 			children = (
+				F75C0B109AEE8C2CE2686792 /* CalendarSettingsView.swift */,
+				644FA0B90C859C3DF3A2DF87 /* CalendarSyncController.swift */,
 				6117F0CE8D3E2BEED7EBE4E3 /* SettingsView.swift */,
 				A5FAE3A458DCC46DEAFC7C5E /* WidgetSettingsView.swift */,
 			);
@@ -384,6 +409,7 @@
 				C4EC79468D89962EA7EA6009 /* AppDependencies.swift */,
 				91A03AA3FD83DF1D9A23CC78 /* AppModel.swift */,
 				B2AF2E91CEAE30FF2086D3FA /* AppModel+Authentication.swift */,
+				6152281E30B605D083C7DF4D /* AppModel+Calendar.swift */,
 				8CFB257215C321ACFF9346FE /* AppModel+Capture.swift */,
 				787290B449A484698611D89E /* AppModel+Connection.swift */,
 				9C87E67640450B78F0C7D033 /* AppModel+Notifications.swift */,
@@ -511,6 +537,7 @@
 				227A76595E5FCD100F5BE01F /* ActivityView.swift in Sources */,
 				0A5EC1DD9E85F206E0C92813 /* AppDependencies.swift in Sources */,
 				7521E3C9F14D79E2665AEBFF /* AppModel+Authentication.swift in Sources */,
+				E952BA4ECF25ED5CD70B54FC /* AppModel+Calendar.swift in Sources */,
 				7E0A41BDCB0F711DD34EA0B6 /* AppModel+Capture.swift in Sources */,
 				202D399DFCE86EAD063A63D4 /* AppModel+Connection.swift in Sources */,
 				704F0696A11E2E2C35701BBB /* AppModel+Notifications.swift in Sources */,
@@ -519,9 +546,13 @@
 				D28472CA055C8AE9472A5BEA /* AppRootView.swift in Sources */,
 				311C51B0A5C24BC2266839C6 /* AppState.swift in Sources */,
 				768E34E63B31B621C3C8AFE5 /* BackgroundRefreshCoordinator.swift in Sources */,
+				C5B1F5BCA744C9F72E23F35A /* CalendarSettingsView.swift in Sources */,
+				C72D0969FCD8D612E4995970 /* CalendarSync.swift in Sources */,
+				31A6CE0B45DA584FE3F9DD73 /* CalendarSyncController.swift in Sources */,
 				D605AD69F46C38D3BC8C71B6 /* Capture.swift in Sources */,
 				F645CFFDA48EE067D344082A /* ConnectionFlowView.swift in Sources */,
 				239428422091F6C5660CC5F0 /* Date+Display.swift in Sources */,
+				37D6F11734ABE0C7524A1485 /* EventKitCalendarStore.swift in Sources */,
 				C8D6D6C072A7DF4E6725DBED /* ExportGroup.swift in Sources */,
 				534ADE9180AA183D529A9F27 /* ExporterAPI.swift in Sources */,
 				9B118DC79557F3E72838AD16 /* ExporterSession.swift in Sources */,
@@ -556,6 +587,7 @@
 			files = (
 				2A3F0DFB92C0FD27843431E3 /* APIClientAuthenticationTests.swift in Sources */,
 				CCC3CBCA31FE58FB2D545A10 /* AccountIsolationTests.swift in Sources */,
+				3137B62217CC635D2819A58E /* CalendarSyncTests.swift in Sources */,
 				69A645AAB10C074146D52C56 /* CaptureControlRecoveryTests.swift in Sources */,
 				A9A1DFF1E1D3AA927167A988 /* WorkspaceContractTests.swift in Sources */,
 			);
@@ -687,7 +719,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -700,7 +732,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.2.0;
+				MARKETING_VERSION = 0.3.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -745,7 +777,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -764,7 +796,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.2.0;
+				MARKETING_VERSION = 0.3.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;

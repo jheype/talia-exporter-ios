@@ -35,6 +35,7 @@ extension AppModel {
                 resetConnectionFlow()
                 route = .connection
             }
+            resumeWorkspaceURL()
         } catch {
             await handle(error, title: "Sign-in failed")
         }
@@ -47,6 +48,8 @@ extension AppModel {
         selectionTask?.cancel()
         defer { isWorking = false }
 
+        pendingWorkspaceURL = nil
+        await calendarSync.setEnabled(false)
         try? await api.unregisterDevices()
         do {
             try await api.signOut()

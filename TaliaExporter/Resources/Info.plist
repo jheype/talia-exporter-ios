@@ -32,6 +32,8 @@
 	<string>public.app-category.business</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Talia adds task and personal-note deadlines to your chosen calendar and updates or removes its events when deadlines change or items are completed.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsLocalNetworking</key>

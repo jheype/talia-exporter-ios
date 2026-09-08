@@ -51,7 +51,7 @@ struct TasksView: View {
                     }
                 }
             }
-            .onChange(of: store.requestedTaskID) { _, id in
+            .onChange(of: store.requestedTaskID, initial: true) { _, id in
                 if let id { path = [id]; store.requestedTaskID = nil }
             }
             .onChange(of: store.ownerID) { _, _ in path = [] }

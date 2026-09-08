@@ -136,11 +136,14 @@ struct PersonalNote: Decodable, Identifiable, Sendable {
     let id: UUID
     let body: String
     let sourceGroupJID: String?
+    let dueAt: Date?
+    let updatedAt: String?
     let doneAt: Date?
     let createdAt: Date
     enum CodingKeys: String, CodingKey {
         case id, body
         case sourceGroupJID = "source_group_jid", doneAt = "done_at", createdAt = "created_at"
+        case dueAt = "due_at", updatedAt = "updated_at"
     }
 }
 
@@ -215,7 +218,7 @@ struct WorkCanvas: Decodable, Sendable {
 
 /// Typed JSON values keep mutation payloads Sendable without unsafe Any dictionaries.
 enum WorkValue: Encodable, Sendable {
-    case string(String), integer(Int64), bool(Bool), strings([String])
+    case string(String), integer(Int64), bool(Bool), strings([String]), null
     func encode(to encoder: Encoder) throws {
         var container = encoder.singleValueContainer()
         switch self {
@@ -223,6 +226,7 @@ enum WorkValue: Encodable, Sendable {
         case .integer(let value): try container.encode(value)
         case .bool(let value): try container.encode(value)
         case .strings(let value): try container.encode(value)
+        case .null: try container.encodeNil()
         }
     }
 }

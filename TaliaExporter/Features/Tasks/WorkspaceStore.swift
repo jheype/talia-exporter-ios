@@ -39,6 +39,7 @@ final class WorkspaceStore: ObservableObject {
     @Published var logSeverity = ""
     @Published var logSearch = ""
     @Published var requestedTaskID: UUID?
+    @Published var requestedNoteID: UUID?
 
     let api: WorkspaceAPI?
     var onSessionExpired: ((Error) async -> Void)?
@@ -76,6 +77,7 @@ final class WorkspaceStore: ObservableObject {
         filters = WorkFilters()
         section = .board
         requestedTaskID = nil
+        requestedNoteID = nil
         logSeverity = ""
         logSearch = ""
         hasLoadedTasks = false
@@ -203,6 +205,17 @@ final class WorkspaceStore: ObservableObject {
         } catch { if isCurrent(ticket) { await report(error) } }
     }
 
+    func loadNote(_ id: UUID) async -> PersonalNote? {
+        guard let api, ownerID != nil else { return nil }
+        let ticket = begin("note")
+        defer { finish(ticket) }
+        do {
+            let result = try await api.personalNote(id)
+            guard isCurrent(ticket) else { return nil }
+            return result
+        } catch { if isCurrent(ticket) { await report(error) }; return nil }
+    }
+
     func loadLogs(append: Bool = false) async {
         guard let api, ownerID != nil else { return }
         if append && (nextLogCursor == nil || loading.contains("logs")) { return }
@@ -275,6 +288,8 @@ final class WorkspaceStore: ObservableObject {
             if let taskID = detail?.id { await openTask(taskID) }
             guard scope == generation, ownerID != nil else { return false }
             if let boardID = canvas?.board.id { await loadCanvas(boardID) }
+            guard scope == generation, ownerID != nil else { return false }
+            if section == .notes { await loadNotes() }
             guard scope == generation, ownerID != nil else { return false }
             await report(error)
             return false
@@ -383,13 +398,18 @@ final class WorkspaceStore: ObservableObject {
     }
 
     @discardableResult
-    func saveNote(_ body: String, note: PersonalNote? = nil) async -> Bool {
+    func saveNote(_ body: String, note: PersonalNote? = nil, dueAt: Date?) async -> Bool {
         let text = body.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty, text.count <= 4000 else { return false }
+        guard !text.isEmpty, text.unicodeScalars.count <= 4000 else { return false }
+        var fields: [String: WorkValue] = ["body": .string(text)]
+        if let dueAt { fields["due_at"] = .string(ISO8601DateFormatter().string(from: dueAt)) }
+        else if note != nil { fields["due_at"] = .null }
+        if let updatedAt = note?.updatedAt { fields["expected_updated_at"] = .string(updatedAt) }
+        let payload = fields
         return await mutate({ api in
             try await api.write(note == nil ? .post : .patch,
                                 path: note.map { "exporter/personal-notes/\($0.id)" } ?? "exporter/personal-notes",
-                                body: ["body": .string(text)], response: PersonalNote.self)
+                                body: payload, response: PersonalNote.self)
         }, apply: { result in
             self.notes.removeAll { $0.id == result.id }
             self.notes.insert(result, at: 0)
@@ -397,9 +417,12 @@ final class WorkspaceStore: ObservableObject {
     }
 
     func toggleNote(_ note: PersonalNote) async {
+        var fields: [String: WorkValue] = ["done": .bool(note.doneAt == nil)]
+        if let updatedAt = note.updatedAt { fields["expected_updated_at"] = .string(updatedAt) }
+        let payload = fields
         _ = await mutate({ api in
             try await api.write(.patch, path: "exporter/personal-notes/\(note.id)",
-                                body: ["done": .bool(note.doneAt == nil)], response: PersonalNote.self)
+                                body: payload, response: PersonalNote.self)
         }, apply: { result in
             if let index = self.notes.firstIndex(where: { $0.id == result.id }) { self.notes[index] = result }
         })
