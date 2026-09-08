@@ -398,7 +398,7 @@ final class WorkspaceStore: ObservableObject {
     }
 
     @discardableResult
-    func saveNote(_ body: String, note: PersonalNote? = nil, dueAt: Date? = nil) async -> Bool {
+    func saveNote(_ body: String, note: PersonalNote? = nil, dueAt: Date?) async -> Bool {
         let text = body.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty, text.unicodeScalars.count <= 4000 else { return false }
         var fields: [String: WorkValue] = ["body": .string(text)]

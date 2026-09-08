@@ -17,6 +17,7 @@ final class CalendarSyncController: ObservableObject {
     private let api: (any CalendarDeadlineServing)?
     private let events: any CalendarEventServing
     private let defaults: UserDefaults
+    private var didSetOwner = false
     private var revision: UInt64 = 0
     private var accessRevision: UInt64 = 0
     private var syncTask: Task<Void, Never>?
@@ -31,7 +32,8 @@ final class CalendarSyncController: ObservableObject {
     }
 
     func setOwner(_ id: UUID?) {
-        guard id != ownerID else { return }
+        guard !didSetOwner || id != ownerID else { return }
+        didSetOwner = true
         revision &+= 1
         accessRevision &+= 1
         syncTask?.cancel()
@@ -49,13 +51,14 @@ final class CalendarSyncController: ObservableObject {
         isSyncing = false
         isChangingAccess = false
         errorMessage = nil
+        let ownerToKeep = preferences.enabled ? id : nil
         let previous = cleanupTask
         let inFlight = syncTask
         let ticket = revision
         cleanupTask = Task { [weak self, events] in
             await previous?.value
             await inFlight?.value
-            do { try await events.removeEvents(keepingOwner: id) }
+            do { try await events.removeEvents(keepingOwner: ownerToKeep) }
             catch {
                 guard let self, self.revision == ticket else { return }
                 self.errorMessage = error.localizedDescription

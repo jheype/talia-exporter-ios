@@ -25,17 +25,19 @@ final class CalendarSyncTests: XCTestCase {
             .entries(for: owner, preferences: CalendarPreferences()))
     }
 
-    func testExpiredDeadlinesAreNotScheduledAndReconciliationRemovesOldItems() throws {
+    func testPassedDeadlinesStayIdentifiableUntilSourceIsCompletedOrDeleted() throws {
         let now = Date()
         let past = CalendarDeadline(id: itemID, kind: .note, title: "Old", dueAt: now.addingTimeInterval(-60))
         let entry = past.entry(ownerID: owner, calendarID: "private")
         let link = CalendarEventLink(ownerID: owner, url: entry.url, calendarID: "private", dueAt: entry.dueAt,
                                      eventID: "saved-event", externalID: nil)
         let snapshot = CalendarDeadlineSnapshot(ownerUserID: owner, complete: true, items: [past])
-        let entries = try snapshot.entries(for: owner, preferences: CalendarPreferences(), now: now)
+        let entries = try snapshot.entries(for: owner, preferences: CalendarPreferences())
         let plan = CalendarReconciliationPlan(existing: [link], entries: entries, ownerID: owner)
-        XCTAssertTrue(plan.upsert.isEmpty)
-        XCTAssertEqual(plan.remove.map(\.eventID), ["saved-event"])
+        XCTAssertEqual(plan.upsert.count, 1)
+        XCTAssertTrue(plan.remove.isEmpty)
+        let completed = CalendarReconciliationPlan(existing: [link], entries: [], ownerID: owner)
+        XCTAssertEqual(completed.remove.map(\.eventID), ["saved-event"])
     }
 
     @MainActor
@@ -142,7 +144,7 @@ final class CalendarSyncTests: XCTestCase {
     }
 }
 
-private actor CalendarAPIStub: CalendarDeadlineServing {
+actor CalendarAPIStub: CalendarDeadlineServing {
     var requests = 0
     private var snapshot: CalendarDeadlineSnapshot
     private var started: XCTestExpectation?
@@ -164,7 +166,7 @@ private actor CalendarAPIStub: CalendarDeadlineServing {
     }
 }
 
-private actor CalendarEventsStub: CalendarEventServing {
+actor CalendarEventsStub: CalendarEventServing {
     let granted: Bool
     var entries: [URL: CalendarEntry] = [:]
     var writes = 0

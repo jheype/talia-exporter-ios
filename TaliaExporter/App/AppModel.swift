@@ -290,6 +290,9 @@ final class AppModel: ObservableObject {
         clearAccountOwnedRuntimeState()
         user = nil
         await calendarSync.waitForCleanup()
+        if let message = calendarSync.errorMessage {
+            alert = AppAlert(title: "Calendar reminders", message: message)
+        }
         route = .signedOut
         if let authenticatedUserID {
             await cache.clear(for: authenticatedUserID)

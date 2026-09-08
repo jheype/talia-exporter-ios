@@ -56,7 +56,16 @@ actor EventKitCalendarStore: CalendarEventServing {
         for entry in plan.upsert {
             try Task.checkCancellation()
             let previous = links[entry.url.absoluteString]
+            let isUpcoming = entry.dueAt > Date()
+            // Keep already-exported events after the deadline so a sync cannot
+            // remove their alarm just as Calendar is delivering it. Historical
+            // deadlines are never added on the first sync.
+            if !isUpcoming && previous == nil { continue }
             let matches = try findEvents(url: entry.url, link: previous, calendar: calendar, dueAt: entry.dueAt)
+            if !isUpcoming && matches.isEmpty {
+                links.removeValue(forKey: entry.url.absoluteString)
+                continue
+            }
             // Reuse within a source. EventKit cannot reliably move an event
             // between accounts, so a cross-account calendar change replaces it.
             let event = matches.first(where: { $0.calendar?.calendarIdentifier == calendarID }) ??
@@ -64,8 +73,8 @@ actor EventKitCalendarStore: CalendarEventServing {
                 EKEvent(eventStore: store)
             let needsSave = event.eventIdentifier == nil || event.calendar?.calendarIdentifier != calendarID ||
                 event.title != entry.title || event.startDate != entry.dueAt || event.endDate != entry.endAt ||
-                event.isAllDay || event.url != entry.url || event.alarms?.count != 1 ||
-                event.alarms?.first?.relativeOffset != 0 || event.alarms?.first?.absoluteDate != nil
+                event.isAllDay || event.url != entry.url ||
+                (isUpcoming && (event.alarms?.count != 1 || event.alarms?.first?.relativeOffset != 0 || event.alarms?.first?.absoluteDate != nil))
             let duplicates = matches.filter { $0 !== event }
             do {
                 if needsSave {
@@ -77,7 +86,7 @@ actor EventKitCalendarStore: CalendarEventServing {
                     event.isAllDay = false
                     event.url = entry.url
                     event.notes = "Deadline from Talia. Change the date or complete the item in Talia."
-                    event.alarms = [EKAlarm(relativeOffset: 0)]
+                    event.alarms = isUpcoming ? [EKAlarm(relativeOffset: 0)] : []
                     event.availability = calendar.supportedEventAvailabilities.contains(.free) ? .free : .notSupported
                     try store.save(event, span: .thisEvent, commit: false)
                 }
@@ -95,7 +104,7 @@ actor EventKitCalendarStore: CalendarEventServing {
                                             dueAt: entry.dueAt, eventID: event.eventIdentifier,
                                             externalID: event.calendarItemExternalIdentifier)
         }
-        return entries.count
+        return entries.filter { $0.dueAt > Date() }.count
     }
 
     func removeEvents(keepingOwner ownerID: UUID?) throws {

@@ -156,8 +156,16 @@ struct PersonalNotesView: View {
                   Text("Uses your iPhone time zone. Enable Apple Calendar in Settings for a reminder.")
                       .font(.caption).foregroundStyle(.secondary)
                 }
-            }.taliaCard()
-            if editing != nil { Button("Cancel editing") { resetEditor() }.font(.subheadline) }
+            }.taliaCard().disabled(store.isMutating)
+            if let editing {
+                HStack {
+                    Button("Cancel editing") { resetEditor() }
+                    Spacer()
+                    if let latest = store.notes.first(where: { $0.id == editing.id }), latest.updatedAt != editing.updatedAt {
+                        Button("Reload saved note") { edit(latest) }
+                    }
+                }.font(.subheadline).disabled(store.isMutating)
+            }
             if store.loading.contains("notes") { ProgressView().frame(maxWidth: .infinity) }
             ForEach(store.notes) { note in
                 HStack(alignment: .top, spacing: 12) {
@@ -199,7 +207,11 @@ struct PersonalNotesView: View {
         ), titleVisibility: .visible) {
             Button("Delete note", role: .destructive) {
                 guard let note = deleting else { return }
-                Task { await store.deleteNote(note); deleting = nil }
+                Task {
+                    await store.deleteNote(note)
+                    if editing?.id == note.id && !store.notes.contains(where: { $0.id == note.id }) { resetEditor() }
+                    deleting = nil
+                }
             }
         }
     }

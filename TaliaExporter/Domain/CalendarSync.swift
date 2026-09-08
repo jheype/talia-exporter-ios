@@ -45,11 +45,11 @@ struct CalendarDeadlineSnapshot: Decodable, Sendable {
     let items: [CalendarDeadline]
     enum CodingKeys: String, CodingKey { case complete, items; case ownerUserID = "owner_user_id" }
 
-    func entries(for ownerID: UUID, preferences: CalendarPreferences, now: Date = Date()) throws -> [CalendarEntry] {
+    func entries(for ownerID: UUID, preferences: CalendarPreferences) throws -> [CalendarEntry] {
         guard ownerID == ownerUserID else { throw CalendarSyncError.accountMismatch }
         guard complete else { throw CalendarSyncError.incomplete }
         let entries = items.filter {
-            $0.dueAt > now && ($0.kind == .task ? preferences.includeTasks : preferences.includeNotes)
+            $0.kind == .task ? preferences.includeTasks : preferences.includeNotes
         }.map { $0.entry(ownerID: ownerID, calendarID: preferences.calendarID) }
         guard Set(entries.map(\.url)).count == entries.count else { throw CalendarSyncError.incomplete }
         return entries
