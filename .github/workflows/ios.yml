@@ -33,7 +33,26 @@ jobs:
           xcrun simctl bootstatus "$DEVICE" -b
           xcrun simctl install "$DEVICE" "Build/Build/Products/Debug-iphonesimulator/Talia Exporter.app"
           xcrun simctl privacy "$DEVICE" grant calendar com.talia.exporter
-          SIMCTL_CHILD_TALIA_CALENDAR_INTEGRATION_TESTS=1 xcodebuild -project TaliaExporter.xcodeproj -scheme TaliaExporter -configuration Debug -destination "platform=iOS Simulator,id=$DEVICE" -derivedDataPath Build -resultBundlePath TestResults.xcresult CODE_SIGNING_ALLOWED=NO test-without-building | tee -a build.log
+          RUNFILE=$(python3 - <<'PYTEST'
+          import pathlib, plistlib
+          paths = list(pathlib.Path("Build/Build/Products").glob("*.xctestrun"))
+          assert len(paths) == 1, paths
+          path = paths[0]
+          data = plistlib.loads(path.read_bytes())
+          targets = [target for config in data["TestConfigurations"] for target in config["TestTargets"]]
+          assert targets, "No test targets in the generated xctestrun"
+          for target in targets:
+              target.setdefault("EnvironmentVariables", {})["TALIA_CALENDAR_INTEGRATION_TESTS"] = "1"
+          path.write_bytes(plistlib.dumps(data))
+          print(path)
+          PYTEST
+          )
+          xcodebuild -xctestrun "$RUNFILE" -destination "platform=iOS Simulator,id=$DEVICE" -resultBundlePath TestResults.xcresult CODE_SIGNING_ALLOWED=NO test-without-building | tee -a build.log
+          python3 - <<'PYTEST'
+          import pathlib, re
+          log = pathlib.Path("build.log").read_text()
+          assert re.search(r"testEventKitCreatesMovesAndRemovesOnlyTaliaEvents.*passed", log), "EventKit integration must pass, not skip"
+          PYTEST
       - name: Export screen captures
         if: always()
         run: |
