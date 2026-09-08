@@ -188,8 +188,21 @@ final class CalendarSyncTests: XCTestCase {
         owned.startDate = passed.dueAt
         owned.endDate = passed.endAt
         try store.save(owned, span: .thisEvent, commit: true)
+        XCTAssertEqual(readEvents().first { $0.url == entry.url }?.alarms?.count, 1,
+                       "The existing past event must still have its alarm before reconciliation")
         _ = try await service.synchronise(entries: [passed], ownerID: owner, calendarID: calendarID)
         XCTAssertEqual(readEvents().first { $0.url == entry.url }?.alarms?.count, 1)
+        let renamed = CalendarEntry(ownerID: owner, url: passed.url, calendarID: passed.calendarID,
+                                    title: "Updated insurance note", dueAt: passed.dueAt)
+        _ = try await service.synchronise(entries: [renamed], ownerID: owner, calendarID: calendarID)
+        owned = try XCTUnwrap(readEvents().first { $0.url == entry.url })
+        XCTAssertEqual(owned.title, renamed.title)
+        XCTAssertEqual(owned.alarms?.count, 1, "A title change must preserve an unchanged past deadline's alarm")
+        let rescheduledPast = CalendarEntry(ownerID: owner, url: passed.url, calendarID: passed.calendarID,
+                                           title: renamed.title, dueAt: passed.dueAt.addingTimeInterval(-3600))
+        _ = try await service.synchronise(entries: [rescheduledPast], ownerID: owner, calendarID: calendarID)
+        XCTAssertTrue(readEvents().first { $0.url == entry.url }?.alarms?.isEmpty == true,
+                      "Moving a deadline into the past must not schedule an immediate alert")
         _ = try await service.synchronise(entries: [], ownerID: owner, calendarID: calendarID)
         let remaining = readEvents()
         XCTAssertFalse(remaining.contains { $0.url == entry.url })

@@ -73,8 +73,12 @@ actor EventKitCalendarStore: CalendarEventServing {
             let event = matches.first(where: { $0.calendar?.calendarIdentifier == calendarID }) ??
                 matches.first(where: { $0.calendar?.source.sourceIdentifier == calendar.source.sourceIdentifier }) ??
                 EKEvent(eventStore: store)
+            // EventKit can round subsecond values when persisting dates. Treat
+            // subsecond differences as unchanged, especially after a deadline
+            // passes: a storage round-trip must not clear its existing alarm.
+            let deadlineChanged = !datesMatch(event.startDate, entry.dueAt)
             let needsSave = event.eventIdentifier == nil || event.calendar?.calendarIdentifier != calendarID ||
-                event.title != entry.title || event.startDate != entry.dueAt || event.endDate != entry.endAt ||
+                event.title != entry.title || deadlineChanged || !datesMatch(event.endDate, entry.endAt) ||
                 event.isAllDay || event.url != entry.url ||
                 (isUpcoming && (event.alarms?.count != 1 || event.alarms?.first?.relativeOffset != 0 || event.alarms?.first?.absoluteDate != nil))
             let duplicates = matches.filter { $0 !== event }
@@ -88,7 +92,11 @@ actor EventKitCalendarStore: CalendarEventServing {
                     event.isAllDay = false
                     event.url = entry.url
                     event.notes = "Deadline from Talia. Change the date or complete the item in Talia."
-                    event.alarms = isUpcoming ? [EKAlarm(relativeOffset: 0)] : []
+                    if isUpcoming {
+                        event.alarms = [EKAlarm(relativeOffset: 0)]
+                    } else if deadlineChanged {
+                        event.alarms = []
+                    }
                     event.availability = calendar.supportedEventAvailabilities.contains(.free) ? .free : .notSupported
                     try store.save(event, span: .thisEvent, commit: false)
                 }
@@ -170,5 +178,10 @@ actor EventKitCalendarStore: CalendarEventServing {
 
     private func persist() {
         if let data = try? JSONEncoder().encode(Array(links.values)) { defaults.set(data, forKey: ledgerKey) }
+    }
+
+    private func datesMatch(_ stored: Date?, _ expected: Date) -> Bool {
+        guard let stored else { return false }
+        return abs(stored.timeIntervalSince(expected)) < 1
     }
 }
