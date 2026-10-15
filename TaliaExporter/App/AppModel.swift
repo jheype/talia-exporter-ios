@@ -27,6 +27,7 @@ final class AppModel: ObservableObject {
     @Published var widgetLastRefreshedAt: Date?
     @Published var widgetSnapshot: ExporterWidgetSnapshot?
     @Published var isWorking = false
+    @Published var isUnlinkingWhatsApp = false
     @Published var alert: AppAlert?
     @Published var appearance: AppearanceMode {
         didSet {
@@ -135,15 +136,7 @@ final class AppModel: ObservableObject {
             }
             await restoreCache(for: authenticatedUser.id)
 
-            if let currentSession = try await api.session(), currentSession.isLinked {
-                session = try validatedSession(currentSession)
-                route = .main
-                await refreshDashboard(showErrors: false)
-            } else {
-                await clearAccountOwnedState(for: authenticatedUser.id)
-                route = .connection
-                connectionStage = .intro
-            }
+            try await restoreConnectionSession(api.session())
         } catch let error as APIError where error.statusCode == 401 {
             await api.clearLocalAuthentication()
             await resetAuthenticatedState()
@@ -392,3 +385,4 @@ final class AppModel: ObservableObject {
         return model
     }
 }
+

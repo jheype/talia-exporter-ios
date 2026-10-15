@@ -26,15 +26,7 @@ extension AppModel {
             }
             user = confirmedUser
 
-            if let currentSession = try await api.session(), currentSession.isLinked {
-                session = try validatedSession(currentSession)
-                route = .main
-                await refreshDashboard(showErrors: false)
-            } else {
-                await clearAccountOwnedState(for: confirmedUser.id)
-                resetConnectionFlow()
-                route = .connection
-            }
+            try await restoreConnectionSession(api.session())
             resumeWorkspaceURL()
         } catch {
             await handle(error, title: "Sign-in failed")
@@ -59,3 +51,4 @@ extension AppModel {
         await resetAuthenticatedState()
     }
 }
+

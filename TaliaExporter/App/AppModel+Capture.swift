@@ -252,28 +252,67 @@ extension AppModel {
     }
 
     func unlinkWhatsApp() async {
-        guard !isWorking else { return }
+        guard !isWorking, let userID = user?.id else { return }
+        if let session {
+            do {
+                _ = try validatedSession(session)
+            } catch {
+                await handle(error, title: "Unable to unlink WhatsApp")
+                return
+            }
+        }
+        let generation = accountScopeGeneration
         isWorking = true
+        isUnlinkingWhatsApp = true
+        pairingTask?.cancel()
         selectionTask?.cancel()
         selectionTask = nil
         selectionTaskID = nil
         selectionRevision &+= 1
         stateReadRevision &+= 1
-        messageChangeWatermark = nil
-        messageCatchupCursor = nil
-        messageCatchupTarget = nil
-        messageCatchupHead = nil
-        latestMessageChanges = [:]
-        defer { isWorking = false }
+        defer {
+            isUnlinkingWhatsApp = false
+            isWorking = false
+        }
 
         do {
             try await api.unlinkSession()
-            await clearAccountOwnedState(for: user?.id)
-            resetConnectionFlow()
-            route = .connection
+            guard accountScopeGeneration == generation, user?.id == userID else { return }
+            await finishUnlink(for: userID)
         } catch {
+            guard accountScopeGeneration == generation, user?.id == userID else { return }
+            if let apiError = error as? APIError,
+               apiError.isAmbiguousMutationFailure || apiError.statusCode == 404 {
+                do {
+                    let currentSession = try await api.session()
+                    guard accountScopeGeneration == generation, user?.id == userID else { return }
+                    if let currentSession {
+                        // A disconnected/logged-out row is still an existing
+                        // session, not proof that the DELETE completed.
+                        session = try validatedSession(currentSession)
+                    } else {
+                        await finishUnlink(for: userID)
+                        return
+                    }
+                } catch {
+                    guard accountScopeGeneration == generation, user?.id == userID else { return }
+                    await handle(error, title: "Unable to confirm WhatsApp unlink")
+                    return
+                }
+            }
             await handle(error, title: "Unable to unlink WhatsApp")
         }
+    }
+
+    private func finishUnlink(for userID: UUID) async {
+        let generation = accountScopeGeneration
+        await clearAccountOwnedState(for: userID)
+        guard user?.id == userID, accountScopeGeneration == generation &+ 1 else { return }
+        // Unlinking WhatsApp does not sign out of the Talia task workspace.
+        workspace.setOwner(user?.id)
+        resetConnectionFlow()
+        route = .connection
+        alert = nil
     }
 
     private func scheduleSelectionSyncIfNeeded() {
@@ -339,3 +378,4 @@ extension AppModel {
         }
     }
 }
+

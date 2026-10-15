@@ -1,0 +1,46 @@
+TALIA EXPORTER iOS — CORREÇÃO DO UNLINK
+
+Este ZIP contém os ARQUIVOS COMPLETOS: 6 para substituir e 1 teste novo.
+Não é um patch nem o projeto inteiro.
+
+COMO APLICAR
+1. Extraia o ZIP em uma pasta separada.
+2. Copie cada arquivo para o mesmo caminho dentro do seu projeto talia-exporter-ios.
+   Substitua os 6 arquivos existentes e adicione UnlinkRecoveryTests.swift.
+   Preserve os demais arquivos do projeto. No Finder, NÃO substitua as pastas
+   TaliaExporter ou TaliaExporterTests inteiras: copie os arquivos dentro delas.
+3. Na raiz do projeto, execute: xcodegen generate
+   Isso inclui o novo arquivo de testes no projeto do Xcode.
+   Se XcodeGen não estiver instalado: brew install xcodegen
+4. Abra TaliaExporter.xcodeproj no Xcode 16.4 ou mais recente.
+   Selecione o esquema TaliaExporter, um simulador instalado e rode os testes
+   com Product > Test. Depois gere/instale a nova versão pelo fluxo habitual.
+
+ARQUIVOS
+TaliaExporter/App/AppModel.swift
+TaliaExporter/App/AppModel+Authentication.swift
+TaliaExporter/App/AppModel+Connection.swift
+TaliaExporter/App/AppModel+Capture.swift
+TaliaExporter/Features/Settings/SettingsView.swift
+TaliaExporter/Features/Connection/ConnectionFlowView.swift
+TaliaExporterTests/UnlinkRecoveryTests.swift
+
+O QUE MUDA
+- Mostra progresso durante o Unlink e evita cliques/ações concorrentes.
+- Permite recuperar conexões expiradas.
+- Após falha ambígua ou timeout, confirma no servidor se a sessão foi removida.
+- Ignora respostas antigas que poderiam restaurar a conexão anterior na tela.
+- Mantém a autenticação da conta Talia após desvincular o WhatsApp.
+
+VALIDAÇÃO E DEPENDÊNCIA
+Os 17 testes novos ainda não foram executados no Xcode neste ambiente.
+A correção completa também exige a publicação do backend:
+https://github.com/LucasYanezRenshaw/talia-v14/pull/1452
+Os testes do backend, incluindo PostgreSQL, passaram no GitHub.
+Substituir os arquivos não publica nem atualiza sozinho o app instalado no iPhone.
+
+BASE DO CÓDIGO
+Repositório: jheype/talia-exporter-ios
+Commit: a9de115dbccb4d79b589ebcf270b0ed0acc9e987
+Se você alterou esses mesmos arquivos desde essa versão, concilie as alterações
+antes de substituir para preservar o seu trabalho.

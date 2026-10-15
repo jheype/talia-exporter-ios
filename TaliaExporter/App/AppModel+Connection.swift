@@ -1,12 +1,33 @@
 import Foundation
 
 extension AppModel {
+    func restoreConnectionSession(_ candidate: ExporterSession?) async throws {
+        guard let userID = user?.id else { return }
+        // An expired link still belongs to this account and may need an
+        // explicit unlink before a replacement phone can be paired.
+        let ownedSession = try candidate.map(validatedSession)
+        if let ownedSession, ownedSession.isLinked {
+            session = ownedSession
+            route = .main
+            await refreshDashboard(showErrors: false)
+        } else {
+            let generation = accountScopeGeneration
+            await clearAccountOwnedState(for: userID)
+            guard user?.id == userID, accountScopeGeneration == generation &+ 1 else { return }
+            session = ownedSession
+            workspace.setOwner(user?.id)
+            resetConnectionFlow()
+            route = .connection
+        }
+    }
+
     func advanceFromIntro() {
         connectionStage = .number
     }
 
     func goBackInConnectionFlow() {
         guard connectionStage != .intro else { return }
+        stateReadRevision &+= 1
         if connectionStage == .pairing {
             pairingTask?.cancel()
             pairingCode = nil
@@ -17,6 +38,7 @@ extension AppModel {
 
     func requestPairingCode(phoneNumber: String) async {
         guard !isWorking else { return }
+        stateReadRevision &+= 1
         isWorking = true
         defer { isWorking = false }
 
@@ -106,6 +128,7 @@ extension AppModel {
     }
 
     func resetConnectionFlow() {
+        stateReadRevision &+= 1
         pairingTask?.cancel()
         connectionStage = .intro
         pairingCode = nil
@@ -126,7 +149,12 @@ extension AppModel {
                     return
                 }
 
-                try? await Task.sleep(for: .seconds(2))
+                do {
+                    try await Task.sleep(for: .seconds(2))
+                } catch {
+                    return
+                }
+                guard !Task.isCancelled else { return }
                 await self.pollPairingStatus(showErrors: false)
                 if self.connectionStage == .groups { return }
             }
@@ -134,18 +162,37 @@ extension AppModel {
     }
 
     private func pollPairingStatus(showErrors: Bool) async {
+        guard !isWorking, !isUnlinkingWhatsApp, let userID = user?.id else { return }
+        let generation = accountScopeGeneration
+        let readRevision = stateReadRevision
+        let stage = connectionStage
         do {
-            guard let currentSession = try await api.session() else { return }
-            session = try validatedSession(currentSession)
+            let response = try await api.session()
+            guard isCurrentPairingRead(userID: userID, generation: generation, revision: readRevision, stage: stage),
+                  let currentSession = response else { return }
+            let ownedSession = try validatedSession(currentSession)
             if currentSession.isLinked {
-                groups = try await api.groups()
+                let currentGroups = try await api.groups()
+                guard isCurrentPairingRead(userID: userID, generation: generation, revision: readRevision, stage: stage) else { return }
+                session = ownedSession
+                groups = currentGroups
                 connectionStage = .groups
                 pairingTask?.cancel()
+            } else {
+                session = ownedSession
             }
         } catch {
+            guard isCurrentPairingRead(userID: userID, generation: generation, revision: readRevision, stage: stage) else { return }
             if showErrors {
                 await handle(error, title: "Unable to check link")
             }
         }
     }
+
+    private func isCurrentPairingRead(userID: UUID, generation: UInt64, revision: UInt64, stage: ConnectionStage) -> Bool {
+        !Task.isCancelled && !isWorking && !isUnlinkingWhatsApp
+            && user?.id == userID && accountScopeGeneration == generation
+            && stateReadRevision == revision && connectionStage == stage
+    }
 }
+

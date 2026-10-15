@@ -3,6 +3,7 @@ import SwiftUI
 struct ConnectionFlowView: View {
     @EnvironmentObject private var appModel: AppModel
     @State private var phoneNumber = ""
+    @State private var showUnlinkConfirmation = false
 
     var body: some View {
         NavigationStack {
@@ -44,6 +45,17 @@ struct ConnectionFlowView: View {
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
+            .confirmationDialog(
+                "Unlink WhatsApp?",
+                isPresented: $showUnlinkConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button("Unlink", role: .destructive) {
+                    Task { await appModel.unlinkWhatsApp() }
+                }
+            } message: {
+                Text("Clear the existing WhatsApp link so you can connect your new phone. Previously captured messages are retained.")
+            }
         }
     }
 
@@ -55,11 +67,28 @@ struct ConnectionFlowView: View {
                 }
                 .buttonStyle(TaliaIconButtonStyle())
                 .accessibilityLabel("Back")
+                .disabled(appModel.isWorking)
             } else {
                 BrandLockup(compact: true)
             }
 
             Spacer()
+
+            if appModel.session != nil {
+                Button {
+                    showUnlinkConfirmation = true
+                } label: {
+                    if appModel.isUnlinkingWhatsApp {
+                        ProgressView()
+                    } else {
+                        Text("Unlink")
+                    }
+                }
+                .foregroundStyle(.red)
+                .disabled(appModel.isWorking)
+                .accessibilityLabel(appModel.isUnlinkingWhatsApp ? "Unlinking WhatsApp" : "Unlink WhatsApp")
+                .padding(.trailing, 12)
+            }
 
             Text("\(appModel.connectionStage.rawValue + 1) of 4")
                 .font(.caption.weight(.semibold))
@@ -99,8 +128,10 @@ private struct ConnectIntroView: View {
 
             Button("Connect WhatsApp", action: onContinue)
                 .buttonStyle(TaliaPrimaryButtonStyle())
+                .disabled(appModel.isWorking)
             Button("Set up later") { appModel.route = .main }
                 .frame(maxWidth: .infinity, minHeight: 48)
+                .disabled(appModel.isWorking)
         }
         .padding(TaliaLayout.screenPadding)
     }
@@ -237,9 +268,11 @@ private struct PairingCodeView: View {
                 }.padding(.top, 24)
                 Button("Generate another code") { appModel.goBackInConnectionFlow() }
                     .font(.subheadline).padding(.top, 16)
+                    .disabled(appModel.isWorking)
                 Button("Check link", action: onCheck)
                     .buttonStyle(TaliaPrimaryButtonStyle())
                     .padding(.top, 44)
+                    .disabled(appModel.isWorking)
             }
             .padding(TaliaLayout.screenPadding)
         }
@@ -359,3 +392,4 @@ private struct ConnectionGroupSelectionView: View {
     ConnectionFlowView()
         .environmentObject(AppModel.preview(route: .connection))
 }
+

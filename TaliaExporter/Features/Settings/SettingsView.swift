@@ -130,19 +130,32 @@ struct SettingsView: View {
             LabeledContent("Version", value: version)
             if appModel.session != nil {
                 Button { showUnlinkConfirmation = true } label: {
-                    Label("Unlink WhatsApp", systemImage: "link.badge.plus")
-                }.foregroundStyle(.red)
+                    HStack {
+                        Label(
+                            appModel.isUnlinkingWhatsApp ? "Unlinking WhatsApp…" : "Unlink WhatsApp",
+                            systemImage: "link.badge.plus"
+                        )
+                        if appModel.isUnlinkingWhatsApp {
+                            Spacer()
+                            ProgressView()
+                        }
+                    }
+                }
+                .foregroundStyle(.red)
+                .disabled(appModel.isWorking)
             } else {
                 Button("Connect WhatsApp", systemImage: "link") {
                     appModel.connectionStage = .intro
                     appModel.route = .connection
                 }
+                .disabled(appModel.isWorking)
             }
             Button(role: .destructive) {
                 Task { await appModel.signOut() }
             } label: {
                 Label("Sign out", systemImage: "rectangle.portrait.and.arrow.right")
             }
+            .disabled(appModel.isWorking)
             LabeledContent("WhatsApp", value: appModel.session?.phoneNumber ?? "Not linked")
             LabeledContent("Status", value: appModel.session?.status.title ?? "Unavailable")
         }
@@ -200,3 +213,4 @@ private struct AppearanceChoice: View {
     SettingsView()
         .environmentObject(AppModel.preview())
 }
+
