@@ -396,7 +396,7 @@ private actor UnlinkAPI: ExporterServing {
     func requestPairingCode(phoneNumber: String) async throws -> PairingCodeResponse {
         PairingCodeResponse(session: try requireSession(), code: "12345678", expiresAt: Date().addingTimeInterval(60))
     }
-    func saveSelection(groupJIDs: [String]) async throws -> ExporterSession { try requireSession() }
+    func saveSelection(groupJIDs: [String], startCapture: Bool) async throws -> ExporterSession { try requireSession() }
     func setCaptureEnabled(_ enabled: Bool) async throws -> ExporterSession { try requireSession() }
     func setPreferences(_ preferences: CapturePreferences) async throws -> ExporterSession { try requireSession() }
     private func requireSession() throws -> ExporterSession {

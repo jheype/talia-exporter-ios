@@ -250,8 +250,10 @@ struct GroupRoutingSetting: Codable, Sendable {
 
 struct GroupSelectionRequest: Codable, Sendable {
     let groupJIDs: [String]
+    var startCapture: Bool? = nil
 
     enum CodingKeys: String, CodingKey {
         case groupJIDs = "group_jids"
+        case startCapture = "start_capture"
     }
 }

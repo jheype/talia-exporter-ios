@@ -171,7 +171,7 @@ private actor AccountScopedAPI: ExporterServing {
 
     func retryHistorySync(groupJIDs: [String]) async throws -> [ExportGroup] { [] }
 
-    func saveSelection(groupJIDs: [String]) async throws -> ExporterSession {
+    func saveSelection(groupJIDs: [String], startCapture: Bool) async throws -> ExporterSession {
         guard let exporterSession else { throw StubError.noSession }
         return exporterSession
     }

@@ -4,6 +4,58 @@ import XCTest
 
 @MainActor
 final class CaptureControlRecoveryTests: XCTestCase {
+    func testStartExplicitlyResumesAnExistingPausedSelection() async {
+        let user = Self.user
+        let group = Self.group(selected: true)
+        let api = CaptureControlAPI(
+            user: user,
+            session: Self.session(userID: user.id, enabled: false, selectedCount: 1),
+            groups: [group]
+        )
+        let model = Self.model(api: api, user: user)
+        model.route = .connection
+        model.connectionStage = .groups
+        model.session = Self.session(userID: user.id, enabled: false, selectedCount: 1)
+        model.groups = [group]
+
+        await model.completeConnection()
+
+        XCTAssertEqual(model.route, .main)
+        XCTAssertEqual(model.session?.captureEnabled, true)
+        XCTAssertNil(model.alert)
+        let requests = await api.mutationRequests()
+        XCTAssertEqual(requests.starts, [true])
+        XCTAssertEqual(requests.captureCalls, 0)
+    }
+
+    func testOrdinarySelectionSavePreservesAnExistingPause() async throws {
+        let user = Self.user
+        let group = Self.group(selected: true)
+        let api = CaptureControlAPI(
+            user: user,
+            session: Self.session(userID: user.id, enabled: false, selectedCount: 1),
+            groups: [group]
+        )
+
+        let response = try await api.saveSelection(groupJIDs: [group.id])
+
+        XCTAssertFalse(response.captureEnabled)
+        let requests = await api.mutationRequests()
+        XCTAssertEqual(requests.starts, [false])
+        XCTAssertEqual(requests.captureCalls, 0)
+    }
+
+    func testStartIntentIsEncodedOnlyForExplicitStart() throws {
+        let start = try JSONEncoder().encode(GroupSelectionRequest(groupJIDs: ["1@g.us"], startCapture: true))
+        let startJSON = try XCTUnwrap(JSONSerialization.jsonObject(with: start) as? [String: Any])
+        XCTAssertEqual(startJSON["start_capture"] as? Bool, true)
+        XCTAssertEqual(startJSON["group_jids"] as? [String], ["1@g.us"])
+
+        let edit = try JSONEncoder().encode(GroupSelectionRequest(groupJIDs: ["1@g.us"]))
+        let editJSON = try XCTUnwrap(JSONSerialization.jsonObject(with: edit) as? [String: Any])
+        XCTAssertNil(editJSON["start_capture"])
+    }
+
     func testStartTreatsCommittedSelectionAsSuccessAfterConnectionEnds() async {
         let user = Self.user
         let group = Self.group(selected: true)
@@ -173,6 +225,12 @@ private actor CaptureControlAPI: ExporterServing {
     private var storedGroups: [ExportGroup]
     private let selectionMode: MutationMode
     private let captureMode: MutationMode
+    private var selectionStartRequests: [Bool] = []
+    private var captureCallCount = 0
+
+    func mutationRequests() -> (starts: [Bool], captureCalls: Int) {
+        (selectionStartRequests, captureCallCount)
+    }
 
     init(
         user: TaliaUser,
@@ -213,7 +271,8 @@ private actor CaptureControlAPI: ExporterServing {
 
     func retryHistorySync(groupJIDs: [String]) async throws -> [ExportGroup] { storedGroups }
 
-    func saveSelection(groupJIDs: [String]) async throws -> ExporterSession {
+    func saveSelection(groupJIDs: [String], startCapture: Bool) async throws -> ExporterSession {
+        selectionStartRequests.append(startCapture)
         if selectionMode == .staleGroups {
             throw APIError(
                 statusCode: 409,
@@ -226,7 +285,10 @@ private actor CaptureControlAPI: ExporterServing {
             updated.isSelected = groupJIDs.contains(group.id)
             return updated
         }
-        storedSession = copySession(enabled: !groupJIDs.isEmpty, selectedCount: groupJIDs.count)
+        storedSession = copySession(
+            enabled: !groupJIDs.isEmpty && (startCapture || storedSession.captureEnabled),
+            selectedCount: groupJIDs.count
+        )
         if selectionMode == .commitThenTransportFailure {
             throw APIError(
                 statusCode: nil,
@@ -238,6 +300,7 @@ private actor CaptureControlAPI: ExporterServing {
     }
 
     func setCaptureEnabled(_ enabled: Bool) async throws -> ExporterSession {
+        captureCallCount += 1
         if captureMode == .noSelectedGroups {
             throw APIError(
                 statusCode: 409,

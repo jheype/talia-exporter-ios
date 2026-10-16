@@ -11,7 +11,7 @@ protocol ExporterServing: Sendable {
     func groups() async throws -> [ExportGroup]
     func retryHistorySync(groupJIDs: [String]) async throws -> [ExportGroup]
     func setGroupRouting(_ request: GroupRoutingRequest) async throws -> GroupRoutingSetting
-    func saveSelection(groupJIDs: [String]) async throws -> ExporterSession
+    func saveSelection(groupJIDs: [String], startCapture: Bool) async throws -> ExporterSession
     func setCaptureEnabled(_ enabled: Bool) async throws -> ExporterSession
     func setPreferences(_ preferences: CapturePreferences) async throws -> ExporterSession
     func unlinkSession() async throws
@@ -122,11 +122,11 @@ actor ExporterAPI: ExporterServing {
         )
     }
 
-    func saveSelection(groupJIDs: [String]) async throws -> ExporterSession {
+    func saveSelection(groupJIDs: [String], startCapture: Bool) async throws -> ExporterSession {
         try await client.send(
             .put,
             path: "exporter/groups/selection",
-            body: GroupSelectionRequest(groupJIDs: groupJIDs)
+            body: GroupSelectionRequest(groupJIDs: groupJIDs, startCapture: startCapture ? true : nil)
         )
     }
 
@@ -191,6 +191,10 @@ actor ExporterAPI: ExporterServing {
 }
 
 extension ExporterServing {
+    func saveSelection(groupJIDs: [String]) async throws -> ExporterSession {
+        try await saveSelection(groupJIDs: groupJIDs, startCapture: false)
+    }
+
     func setGroupRouting(_ request: GroupRoutingRequest) async throws -> GroupRoutingSetting {
         throw APIError(
             statusCode: nil,
@@ -282,7 +286,7 @@ actor PreviewExporterAPI: ExporterServing {
         )
     }
 
-    func saveSelection(groupJIDs: [String]) async throws -> ExporterSession {
+    func saveSelection(groupJIDs: [String], startCapture: Bool) async throws -> ExporterSession {
         currentGroups = currentGroups.map { group in
             var group = group
             group.isSelected = groupJIDs.contains(group.id)
