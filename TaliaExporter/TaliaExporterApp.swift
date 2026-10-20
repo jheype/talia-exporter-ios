@@ -20,11 +20,17 @@ struct TaliaExporterApp: App {
                     guard let token = notification.object as? String else { return }
                     Task { await appModel.registerDeviceToken(token) }
                 }
+                .onReceive(NotificationCenter.default.publisher(for: .exporterPushFailure)) { notification in
+                    appModel.superAdmin.pushRegistrationFailed(notification.object as? String ?? "Unable to register this phone")
+                }
                 .onChange(of: scenePhase) { _, phase in
                     guard phase == .active else { return }
                     BackgroundRefreshCoordinator.shared.schedule()
                     appModel.registerForRemoteNotificationsIfNeeded()
-                    Task { await appModel.refreshDashboard(showErrors: false) }
+                    Task {
+                        await appModel.superAdmin.resume()
+                        await appModel.refreshDashboard(showErrors: false)
+                    }
                 }
                 .task(id: appModel.user?.id) {
                     appModel.registerForRemoteNotificationsIfNeeded()
@@ -51,6 +57,15 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         NotificationCenter.default.post(name: .exporterPushToken, object: token)
     }
 
+    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        NotificationCenter.default.post(name: .exporterPushFailure, object: error.localizedDescription)
+    }
+
+    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
+        let info = response.notification.request.content.userInfo
+        await MainActor.run { SANotificationRouter.shared.receive(info) }
+    }
+
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification
@@ -60,5 +75,6 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
 }
 
 private extension Notification.Name {
+    static let exporterPushFailure = Notification.Name("com.talia.exporter.push-failure")
     static let exporterPushToken = Notification.Name("com.talia.exporter.push-token")
 }

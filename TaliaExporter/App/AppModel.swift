@@ -8,11 +8,16 @@ import WidgetKit
 final class AppModel: ObservableObject {
     @Published var route: AppRoute = .loading
     @Published var selectedTab: MainTab = .home
+    @Published var selectedWorkspace: AppWorkspace = .exporter
     @Published var connectionStage: ConnectionStage = .intro
     @Published var user: TaliaUser? {
         didSet {
             workspace.setOwner(user?.id)
             calendarSync.setOwner(user?.id)
+            if oldValue?.id != user?.id {
+                selectedWorkspace = .exporter
+                superAdmin.setOwner(user?.id)
+            }
         }
     }
     @Published var session: ExporterSession?
@@ -37,6 +42,7 @@ final class AppModel: ObservableObject {
 
     let api: any ExporterServing
     let workspace: WorkspaceStore
+    let superAdmin = SuperAdminPortalStore()
     let calendarSync: CalendarSyncController
     let cache: any DashboardCaching
     let pushNotifications: any PushNotificationCoordinating
@@ -315,6 +321,8 @@ final class AppModel: ObservableObject {
     }
 
     private func clearAccountOwnedRuntimeState() {
+        selectedWorkspace = .exporter
+        superAdmin.setOwner(nil)
         accountScopeGeneration &+= 1
         pairingTask?.cancel()
         selectionTask?.cancel()

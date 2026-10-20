@@ -48,6 +48,11 @@ enum MainTab: Hashable {
     case settings
 }
 
+enum AppWorkspace: Hashable {
+    case exporter
+    case superAdmin
+}
+
 enum ConnectionStage: Int, Hashable {
     case intro
     case number

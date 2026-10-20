@@ -7,6 +7,8 @@ extension AppModel {
         let query = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
         if let account = query.first(where: { $0.name == "account" })?.value,
            UUID(uuidString: account) != user.id { return }
+        selectedWorkspace = .exporter
+        superAdmin.dismissTransientUI()
         let itemID = query.first(where: { $0.name == "id" })?.value.flatMap(UUID.init(uuidString:))
         switch url.host {
         case "tasks":

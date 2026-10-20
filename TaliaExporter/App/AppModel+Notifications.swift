@@ -27,7 +27,8 @@ extension AppModel {
 
     func disableInterruptionAlerts() async {
         UserDefaults.standard.set(false, forKey: Self.interruptionAlertsKey)
-        pushNotifications.unregisterForRemoteNotifications()
+        // The SA workspace independently owns its security subscription.
+        if !superAdmin.pushEnabled { pushNotifications.unregisterForRemoteNotifications() }
         do {
             try await api.unregisterDevices()
         } catch {
@@ -36,11 +37,14 @@ extension AppModel {
     }
 
     func registerForRemoteNotificationsIfNeeded() {
-        guard user != nil, UserDefaults.standard.bool(forKey: Self.interruptionAlertsKey) else { return }
-        pushNotifications.registerForRemoteNotifications()
+        guard user != nil else { return }
+        if UserDefaults.standard.bool(forKey: Self.interruptionAlertsKey) || superAdmin.pushEnabled {
+            pushNotifications.registerForRemoteNotifications()
+        }
     }
 
     func registerDeviceToken(_ token: String) async {
+        await superAdmin.receiveDeviceToken(token)
         guard user != nil, UserDefaults.standard.bool(forKey: Self.interruptionAlertsKey) else { return }
         do {
             try await api.registerDevice(token: token)

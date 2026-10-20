@@ -16,7 +16,7 @@ struct AppRootView: View {
                 ConnectionFlowView()
                     .transition(.move(edge: .trailing).combined(with: .opacity))
             case .main:
-                MainTabView()
+                MainWorkspaceView()
                     .transition(.opacity)
             }
         }
