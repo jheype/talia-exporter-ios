@@ -1,0 +1,119 @@
+import Foundation
+import SwiftUI
+import XCTest
+@testable import TaliaExporter
+
+@MainActor
+final class SuperAdminPortalTests: XCTestCase {
+    func testExporterOwnerDoesNotGrantSuperAdminAccess() {
+        let model = AppModel.preview()
+        XCTAssertEqual(model.superAdmin.phase, .signedOut)
+        XCTAssertNil(model.superAdmin.api?.credentials)
+        XCTAssertEqual(SuperAdminSection.allCases.count, 13)
+    }
+    func testAccountSwitchDiscardsCredentialsAndPendingAlert() throws {
+        let store = SuperAdminPortalStore(), owner = UUID()
+        store.setOwner(owner)
+        let retired = try XCTUnwrap(store.api)
+        store.openAlert(UUID().uuidString)
+        store.setOwner(UUID())
+        XCTAssertNil(retired.credentials)
+        XCTAssertNil(store.alertToOpen)
+        XCTAssertEqual(store.phase, .signedOut)
+        XCTAssertFalse(store.api === retired)
+        store.setOwner(nil)
+    }
+    func testPushRouteRejectsForeignPayloadsAndMalformedIDs() {
+        let router = SANotificationRouter.shared
+        router.pendingAlertID = nil
+        router.receive(["kind": "other", "alert_id": UUID().uuidString])
+        XCTAssertNil(router.pendingAlertID)
+        router.receive(["kind": "sa-security", "alert_id": "https://evil.test"])
+        XCTAssertNil(router.pendingAlertID)
+        let id = UUID().uuidString
+        router.receive(["kind": "sa-security", "alert_id": id])
+        XCTAssertEqual(router.pendingAlertID, id)
+        router.pendingAlertID = nil
+    }
+    func testNativeRequestUsesVersionedCRMAPIAndNoExporterCookies() async throws {
+        let recorder = SARequestRecorder()
+        SAStubProtocol.install { request in
+            recorder.add(request)
+            return (200, #"{"authorised":true}"#)
+        }
+        defer { SAStubProtocol.install(nil) }
+        let client = makeClient()
+        defer { client.clear() }
+        try client.save(.init(accessToken: "crm-token", refreshToken: "crm-refresh", userID: UUID().uuidString, email: "sa@example.test"))
+        _ = try await client.request("admin/session")
+        let request = try XCTUnwrap(recorder.requests.first)
+        XCTAssertEqual(request.url?.absoluteString, "https://app.taliaai.com/api/v1/admin/session")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer crm-token")
+        XCTAssertNil(request.value(forHTTPHeaderField: "Cookie"))
+    }
+    func testRefreshRotatesPairAndRetriesUnauthorisedRead() async throws {
+        let recorder = SARequestRecorder()
+        SAStubProtocol.install { request in
+            recorder.add(request)
+            if request.url!.path.hasSuffix("auth/refresh") { return (200, #"{"accessToken":"new-access","refreshToken":"new-refresh"}"#) }
+            if request.value(forHTTPHeaderField: "Authorization") == "Bearer new-access" { return (200, #"{"authorised":true}"#) }
+            return (401, #"{"code":"AUTH.EXPIRED","message":"Expired"}"#)
+        }
+        defer { SAStubProtocol.install(nil) }
+        let client = makeClient(); defer { client.clear() }
+        try client.save(.init(accessToken: "old", refreshToken: "refresh", userID: UUID().uuidString, email: "sa@example.test"))
+        _ = try await client.request("admin/session")
+        XCTAssertEqual(client.credentials?.refreshToken, "new-refresh")
+        XCTAssertEqual(recorder.requests.count, 3)
+    }
+    func testAmbiguousMutationIsNeverRetriedAutomatically() async throws {
+        let recorder = SARequestRecorder()
+        SAStubProtocol.install { request in recorder.add(request); return (503, #"{"message":"Unavailable"}"#) }
+        defer { SAStubProtocol.install(nil) }
+        let client = makeClient(); defer { client.clear() }
+        try client.save(.init(accessToken: "access", refreshToken: "refresh", userID: UUID().uuidString, email: "sa@example.test"))
+        do { _ = try await client.request("admin/tenants", method: "POST", body: [:], requestID: "same-request"); XCTFail("Expected failure") }
+        catch { XCTAssertEqual((error as? SARequestError)?.status, 503) }
+        XCTAssertEqual(recorder.requests.count, 1)
+    }
+    func testForeignAPIPathsAreRejectedBeforeSendingCredentials() async throws {
+        let client = makeClient(); defer { client.clear() }
+        for path in ["https://evil.test/", "/auth/login", "../admin/session"] {
+            do { _ = try await client.request(path); XCTFail("Should reject \(path)") } catch { XCTAssertTrue(error is URLError) }
+        }
+    }
+    func testNativeSignInRendersInBothAppearances() throws {
+        let store = SuperAdminPortalStore()
+        for appearance in [ColorScheme.light, .dark] {
+            let renderer = ImageRenderer(content: SuperAdminPortalView(store: store)
+                .environment(\.colorScheme, appearance).frame(width: 393, height: 852))
+            XCTAssertNotNil(renderer.uiImage)
+        }
+    }
+    private func makeClient() -> SuperAdminAPI {
+        let config = URLSessionConfiguration.ephemeral
+        config.httpCookieStorage = nil; config.httpShouldSetCookies = false; config.protocolClasses = [SAStubProtocol.self]
+        return SuperAdminAPI(owner: UUID(), session: URLSession(configuration: config), restore: false)
+    }
+}
+private final class SARequestRecorder: @unchecked Sendable {
+    private let lock = NSLock()
+    private var saved: [URLRequest] = []
+    func add(_ request: URLRequest) { lock.lock(); defer { lock.unlock() }; saved.append(request) }
+    var requests: [URLRequest] { lock.lock(); defer { lock.unlock() }; return saved }
+}
+private final class SAStubProtocol: URLProtocol {
+    private static let lock = NSLock()
+    private static var handler: ((URLRequest) -> (Int, String))?
+    static func install(_ value: ((URLRequest) -> (Int, String))?) { lock.lock(); defer { lock.unlock() }; handler = value }
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override func startLoading() {
+        Self.lock.lock(); let handler = Self.handler; Self.lock.unlock()
+        let (status, body) = handler?(request) ?? (500, "{}")
+        let response = HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: "HTTP/1.1", headerFields: ["Content-Type": "application/json"])!
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        client?.urlProtocol(self, didLoad: Data(body.utf8)); client?.urlProtocolDidFinishLoading(self)
+    }
+    override func stopLoading() {}
+}

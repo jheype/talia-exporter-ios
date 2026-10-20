@@ -1,9 +1,10 @@
-# Talia Exporter iOS 0.3
+# Talia Exporter iOS 0.4
 
-Native SwiftUI Exporter with the approved graphite and warm-white design, five tabs, and the v14 Tasks workspace. Minimum iOS 17. No web view or second login.
+Native SwiftUI Exporter with the approved graphite and warm-white design, five tabs, and the v14 Tasks workspace. Minimum iOS 17. SA Portal is a native SwiftUI workspace with separate CRM authentication/MFA and server-generated APNs security alerts.
 
 ## Included
 
+- Workspace switcher: **SA Portal** at the top of every Exporter tab; **Exporter** returns to the capture/task workspace. Native screens include Overview, Tenants, Billing, Developers, Pricing, Exchange, Analytics, AI Usage, Watch Signals, Email Log, Audit Log, Access Security and Security.
 - Home: capture state, pause/resume, group selection, task overview and latest messages.
 - Groups: search, selected/all views, routing to UK Chats, Tasks, operations logs or personal notes; history progress and retry in group settings.
 - Tasks: status board, search, assignee/priority/date/project filters, cursor pagination, task creation and details, checklist, assignment, due dates, progress, messages, notes and attributed history.
@@ -51,6 +52,14 @@ Edits send expected versions. Conflicts load the latest server state and require
 Coverage shows the selected **rolling period**, not an inferred calendar-day count. The Inbox endpoint returns at most 200 messages per request; attaching messages and refreshing reveals the remaining items. Creating a task requires a group currently routed to Tasks on a linked, selected capture session. WhatsApp replies depend on the existing server delivery configuration.
 
 Previous capture recovery notes are preserved in `docs/capture-recovery-history.md`.
+
+## SA Portal
+
+Tap **SA Portal** at the top to open the native workspace. Sign in with a CRM Super Admin account and complete MFA. The workspace has Overview, Alerts, Manage and Security tabs, and provides the existing thirteen administrative areas using native SwiftUI controls. **Exporter** returns to the previous capture/task tab.
+
+Use **Security → Enable security alerts**, then **Send a test notification**. Real remote alerts require the companion CRM migration/backend patch and an APNs signing key configured on that server. Deploy them before enabling push. No web view or simulated local alerts are used.
+
+See [docs/SA_NATIVE.md](docs/SA_NATIVE.md) for native capabilities, session behaviour, notification rules and release checks. This package has not been compiled with Xcode or tested against a signed iPhone; those gates still need to run on your Mac.
 
 ## Apple Calendar
 
