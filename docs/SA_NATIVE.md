@@ -2,7 +2,7 @@
 
 SA Portal is a SwiftUI workspace in Talia Exporter. It uses the app's existing graphite/warm-white theme, native navigation, forms, lists, charts, confirmation sheets and sharing. No web page is embedded.
 
-The top switch preserves the Exporter tab tree. SA has Overview, Alerts, Manage and Security tabs. Manage exposes the existing thirteen portal areas. The server remains authoritative for permissions and mutations.
+The top switch preserves the Exporter tab tree. SA has Overview, Users, Alerts, Manage and Security tabs. Manage exposes the existing thirteen portal areas. The server remains authoritative for permissions and mutations.
 
 | Area | Native coverage |
 | --- | --- |
@@ -19,6 +19,18 @@ The top switch preserves the Exporter tab tree. SA has Overview, Alerts, Manage 
 | Audit Log | Admin actions and exact action filter |
 | Access Security | Summary, searchable/paginated requests, risk filters and reversible account blocking |
 | Security | Native MFA login/enrolment, disable MFA, notification controls and sign-out |
+
+## Users (customer analytics and outreach)
+
+The Users tab lists every CRM user from `admin/user-analytics`. Each row shows the last time they used Talia on desktop or phone, their active time, their top area and a churn-risk status (new, active, cooling, at risk, dormant). Filters: churn risk, inactive 2+ days, warm, follow-ups due, not contacted in 30 days, and internal. A user's page shows:
+
+- daily active time (desktop vs phone) and time per area
+- what they did (stock, invoices, sales, clients, Exchange, price searches, AI and so on) and a recent activity timeline
+- the relationship (stage, owner, follow-up, note, internal flag) and the outreach log
+
+Log outreach and edit the relationship from the + menu. Swipe an outreach entry to delete it.
+
+Each morning the server sends one **inactivity digest** alert to every SA phone with alerts on, whatever its risk preference: people who haven't used Talia for 2 days, plus follow-ups due. Its notification (`kind: sa-inactivity`) opens the alert, which lists the people, each linking to their page. The lock screen shows counts only. Server details: talia-crm-ai-v20 `docs/operations/sa-user-analytics.md`.
 
 ## Authentication
 

@@ -48,12 +48,14 @@ struct SuperAdminPortalView: View {
                 TabView(selection: $store.selectedTab) {
                     NavigationStack { SASectionView(store: store, section: .overview) }
                         .tabItem { Label("Overview", systemImage: "square.grid.2x2") }.tag(0)
+                    NavigationStack { SAUsersView(store: store) }
+                        .tabItem { Label("Users", systemImage: "person.2") }.tag(4)
                     NavigationStack {
                         SADatasetView(store: store, dataset: .alerts)
-                            .navigationTitle("Security alerts")
+                            .navigationTitle("Alerts")
                             .navigationDestination(isPresented: Binding(get: { store.alertToOpen != nil }, set: { if !$0 { store.alertToOpen = nil } })) {
                                 if let id = store.alertToOpen {
-                                    SARecordDetail(store: store, record: .object(["id": .string(id), "title": .string("Security alert")]), kind: .alert).id(id)
+                                    SARecordDetail(store: store, record: .object(["id": .string(id), "title": .string("Alert")]), kind: .alert).id(id)
                                 }
                             }
                     }.tabItem { Label("Alerts", systemImage: "bell.badge") }.tag(1)
@@ -162,7 +164,7 @@ struct SASecurityView: View {
                 Button("iPhone notification settings") { if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) } }
             }
             Section {
-                Text("Alerts cover high-risk access, scanners, rate-limit abuse and repeated rejected sign-ins detected by Talia. Similar events are grouped. Tap a notification to inspect the incident.")
+                Text("Alerts cover high-risk access, scanners, rate-limit abuse and repeated rejected sign-ins detected by Talia. Similar events are grouped. Tap a notification to inspect the incident.\n\nEvery phone with alerts on also gets one morning digest of customers who haven't used Talia for 2 days, whichever risk level is chosen above.")
                     .font(.footnote).foregroundStyle(.secondary)
             }
             Section("Admin account") {

@@ -71,6 +71,7 @@
 		ACA31103FF9161845391560B /* SuperAdminPortalTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44F7A8F84FFE479C81D78941 /* SuperAdminPortalTests.swift */; };
 		112AD68C70DE95B2C49F1B3C /* SuperAdminAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64BA86582F4B3AB787A9DF91 /* SuperAdminAPI.swift */; };
 		6D2FC71BC917A2EC00451008 /* SuperAdminDataViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A8AD502637F6FBDD169D37 /* SuperAdminDataViews.swift */; };
+		912CFC450BEB0755FBA27781 /* SuperAdminUsers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 703CF73CBEED6ED500748A05 /* SuperAdminUsers.swift */; };
 		C78D1EB3FC45F2DB177CF218 /* SuperAdminActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53EC95195891BB0487C519F5 /* SuperAdminActions.swift */; };
 /* End PBXBuildFile section */
 
@@ -175,6 +176,7 @@
 		44F7A8F84FFE479C81D78941 /* SuperAdminPortalTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuperAdminPortalTests.swift; sourceTree = "<group>"; };
 		64BA86582F4B3AB787A9DF91 /* SuperAdminAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuperAdminAPI.swift; sourceTree = "<group>"; };
 		F8A8AD502637F6FBDD169D37 /* SuperAdminDataViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuperAdminDataViews.swift; sourceTree = "<group>"; };
+		703CF73CBEED6ED500748A05 /* SuperAdminUsers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuperAdminUsers.swift; sourceTree = "<group>"; };
 		53EC95195891BB0487C519F5 /* SuperAdminActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuperAdminActions.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -448,6 +450,7 @@
 				3CC52232407A3EF4898258DF /* SuperAdminNavigation.swift */,
 				53EC95195891BB0487C519F5 /* SuperAdminActions.swift */,
 				F8A8AD502637F6FBDD169D37 /* SuperAdminDataViews.swift */,
+				703CF73CBEED6ED500748A05 /* SuperAdminUsers.swift */,
 				64BA86582F4B3AB787A9DF91 /* SuperAdminAPI.swift */,
 				4BED3B7D886B1C898771EF91 /* SuperAdminPortalStore.swift */,
 				00E523C2E1302B206EE61AAE /* SuperAdminPortalView.swift */,
@@ -583,6 +586,7 @@
 				4A74E223FEC925075B5EA865 /* SuperAdminNavigation.swift in Sources */,
 				C78D1EB3FC45F2DB177CF218 /* SuperAdminActions.swift in Sources */,
 				6D2FC71BC917A2EC00451008 /* SuperAdminDataViews.swift in Sources */,
+				912CFC450BEB0755FBA27781 /* SuperAdminUsers.swift in Sources */,
 				112AD68C70DE95B2C49F1B3C /* SuperAdminAPI.swift in Sources */,
 				44C6AC84787210E5DDD978E4 /* APIClient.swift in Sources */,
 				227A76595E5FCD100F5BE01F /* ActivityView.swift in Sources */,

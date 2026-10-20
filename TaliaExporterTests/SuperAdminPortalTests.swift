@@ -34,6 +34,25 @@ final class SuperAdminPortalTests: XCTestCase {
         router.receive(["kind": "sa-security", "alert_id": id])
         XCTAssertEqual(router.pendingAlertID, id)
         router.pendingAlertID = nil
+        let digest = UUID().uuidString
+        router.receive(["kind": "sa-inactivity", "alert_id": digest])
+        XCTAssertEqual(router.pendingAlertID, digest)
+        router.pendingAlertID = nil
+    }
+    func testUserAnalyticsFiltersMatchServerAndFormatting() {
+        XCTAssertEqual(SAUserFilter.allCases.map(\.rawValue), ["all", "at_risk", "inactive", "warm", "follow_up_due", "not_contacted", "internal"])
+        XCTAssertEqual(SAUserStage.allCases.map(\.rawValue), ["champion", "warm", "neutral", "cold", "do_not_contact"])
+        XCTAssertEqual(saDuration(0), "0m")
+        XCTAssertEqual(saDuration(30), "under 1m")
+        XCTAssertEqual(saDuration(45 * 60), "45m")
+        XCTAssertEqual(saDuration(80 * 60), "1h 20m")
+        XCTAssertEqual(saDuration(7200), "2h")
+        let day = Calendar.current.date(from: DateComponents(year: 2026, month: 3, day: 29, hour: 23, minute: 30))!
+        XCTAssertEqual(saDayString(day), "2026-03-29")
+        XCTAssertEqual(saDayString(saDayDate("2026-10-27")!), "2026-10-27")
+        XCTAssertNil(saDayDate("27/10/2026"))
+        XCTAssertNotNil(saDate("2026-10-20T09:00:00.123Z"))
+        XCTAssertNotNil(saDate("2026-10-20T09:00:00Z"))
     }
     func testNativeRequestUsesVersionedCRMAPIAndNoExporterCookies() async throws {
         let recorder = SARequestRecorder()

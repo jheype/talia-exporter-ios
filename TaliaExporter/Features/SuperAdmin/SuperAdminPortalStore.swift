@@ -198,7 +198,7 @@ final class SANotificationRouter: ObservableObject {
     static let shared = SANotificationRouter()
     @Published var pendingAlertID: String?
     func receive(_ info: [AnyHashable: Any]) {
-        guard info["kind"] as? String == "sa-security", let id = info["alert_id"] as? String, UUID(uuidString: id) != nil else { return }
+        guard ["sa-security", "sa-inactivity"].contains(info["kind"] as? String ?? ""), let id = info["alert_id"] as? String, UUID(uuidString: id) != nil else { return }
         pendingAlertID = id
     }
 }

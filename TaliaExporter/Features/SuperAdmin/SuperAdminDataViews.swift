@@ -189,7 +189,9 @@ struct SARecordRow: View {
     private var status: String { value.first("severity", "risk_level", "status", "riskLevel", "confidence_band", "plan_tier") }
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            if kind == .alert || kind == .access {
+            if kind == .alert && value["kind"].text == "inactivity" {
+                Image(systemName: "person.badge.clock").foregroundStyle(Color.orange).padding(.top, 2)
+            } else if kind == .alert || kind == .access {
                 Image(systemName: "shield.lefthalf.filled").foregroundStyle(status == "critical" ? Color.red : Color.orange).padding(.top, 2)
             }
             VStack(alignment: .leading, spacing: 6) {
@@ -197,7 +199,7 @@ struct SARecordRow: View {
                 let detail = value.first("reason", "primary_email", "to_email", "email", "reference_number", "path", "tenant_name", "description")
                 if !detail.isEmpty && detail != value.recordTitle { Text(detail).font(.subheadline).foregroundStyle(.secondary).lineLimit(2) }
                 HStack {
-                    if !status.isEmpty { Text(saLabel(status)).font(.caption.weight(.medium)).padding(.horizontal, 8).padding(.vertical, 3).background(Color.taliaTertiaryBackground, in: Capsule()) }
+                    if !status.isEmpty && value["kind"].text != "inactivity" { Text(saLabel(status)).font(.caption.weight(.medium)).padding(.horizontal, 8).padding(.vertical, 3).background(Color.taliaTertiaryBackground, in: Capsule()) }
                     let date = value.first("created_at", "last_activity", "lastLoginAt")
                     if let parsed = ISO8601DateFormatter().date(from: date) { Text(parsed, style: .relative).font(.caption).foregroundStyle(.secondary) }
                 }
@@ -274,6 +276,16 @@ struct SAOverviewView: View {
                         }.frame(maxWidth: .infinity, alignment: .leading).taliaCard()
                     }
                 }
+                Button { store.selectedTab = 4 } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "person.badge.clock").font(.title2)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Customers").font(.headline)
+                            Text("Who's using Talia, churn risk and outreach").font(.subheadline).foregroundStyle(.secondary)
+                        }
+                        Spacer(); Image(systemName: "chevron.right")
+                    }.taliaCard()
+                }.buttonStyle(.plain)
                 Button { store.selectedTab = 1 } label: {
                     HStack(spacing: 12) {
                         Image(systemName: "bell.badge").font(.title2)
