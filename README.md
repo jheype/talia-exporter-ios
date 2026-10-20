@@ -23,6 +23,8 @@ Native SwiftUI Exporter with the approved graphite and warm-white design, five t
 3. For a physical iPhone, select your signing team for the app and widget targets. Both targets use `group.com.talia.exporter.shared`; enable that App Group for both identifiers in your Apple developer account.
 4. Sign in with your existing Talia account. WhatsApp pairing remains optional for using the shared Tasks workspace and private notes.
 
+For TestFlight, use Xcode 26 or later and follow [docs/TESTFLIGHT.md](docs/TESTFLIGHT.md). Version 0.4.0, build 7 includes the app and widget privacy manifests for their UserDefaults usage. The Archive action uses Release and production APNs.
+
 The default API is `https://api.talia.co.uk/api/v1/`, configured in `TaliaExporter/Resources/Info.plist`. The existing cookie session and token refresh are shared across capture and workspace APIs. This is source code, not a signed IPA or TestFlight release.
 
 `project.yml` is the source for regenerating the checked-in project with XcodeGen:
