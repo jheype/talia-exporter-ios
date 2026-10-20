@@ -151,7 +151,13 @@ struct SARecordDetail: View {
         List {
             if loading { ProgressView("Loading details…") }
             if let error { Text(error).foregroundStyle(.red); Button("Refresh") { Task { await load() } } }
-            if !loading && error == nil {
+            if !loading && error == nil && kind == .alert && detail["kind"].text == "inactivity" {
+                Section {
+                    Text(detail["title"].text).font(.headline)
+                    if let at = saDate(detail["created_at"].text) { Text(at.formatted(date: .abbreviated, time: .shortened)).font(.caption).foregroundStyle(.secondary) }
+                }
+                SAInactivityAlertSections(store: store, details: detail["details"])
+            } else if !loading && error == nil {
                 Section { SAFields(value: mainRecord) }
                 if !actions.isEmpty { Section("Actions") { ForEach(actions) { item in Button(item.title) { action = item } } } }
                 if kind == .tenant {
