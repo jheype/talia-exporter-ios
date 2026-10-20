@@ -85,6 +85,7 @@ struct SAUsersView: View {
                                 .font(.subheadline.weight(.semibold)).padding(.horizontal, 12).padding(.vertical, 8)
                                 .background(filter == item ? Color.taliaAccent : Color.taliaSecondaryBackground, in: Capsule())
                                 .foregroundStyle(filter == item ? Color.taliaOnAccent : Color.taliaAccent)
+                                .accessibilityAddTraits(filter == item ? .isSelected : [])
                                 .buttonStyle(.plain)
                         }
                     }
@@ -96,7 +97,7 @@ struct SAUsersView: View {
             if let error { Section { Text(error).foregroundStyle(.red); Button("Try again") { Task { await load() } } } }
             if loading && response.isNull { ProgressView("Loading people…") }
             Section {
-                ForEach(Array(response["items"].array.enumerated()), id: \.offset) { _, user in
+                ForEach(response["items"].array, id: \.recordID) { user in
                     NavigationLink { SAUserAnalyticsView(store: store, userID: user.recordID, title: displayName(user)) } label: { row(user) }
                         .listRowBackground(Color.taliaSecondaryBackground)
                 }
@@ -108,7 +109,7 @@ struct SAUsersView: View {
                 Button(runningDigest ? "Sending…" : "Send today's inactivity digest now") { Task { await runDigest() } }.disabled(runningDigest)
                 if let digestMessage { Text(digestMessage).font(.footnote).foregroundStyle(.secondary) }
             } footer: {
-                Text("Each morning at 9:00 you get one alert listing people who haven't used Talia on desktop or phone for 2 days, plus follow-ups due. Each person is reported once per lapse.")
+                Text("Each morning from 9:00 UK time you get one alert listing people who stopped using Talia on desktop or phone 2 to 14 days ago, plus follow-ups due. Each person is reported once per lapse. Sending now uses up today's digest.")
             }
         }.taliaSurface().navigationTitle("Users")
         .searchable(text: $query, prompt: "Name, email or company")
@@ -146,8 +147,8 @@ struct SAUsersView: View {
                 if !lastOutreach.isNull, let at = saDate(lastOutreach["at"].text) {
                     Text("Contacted \(at.formatted(date: .abbreviated, time: .omitted))").font(.caption).foregroundStyle(.secondary)
                 }
-                if !user["relationship"]["follow_up_at"].isNull {
-                    Label(user["relationship"]["follow_up_at"].text, systemImage: "calendar.badge.clock").font(.caption).foregroundStyle(.orange)
+                if let due = saDayDate(user["relationship"]["follow_up_at"].text) {
+                    Label(due.formatted(date: .abbreviated, time: .omitted), systemImage: "calendar.badge.clock").font(.caption).foregroundStyle(.orange)
                 }
             }
         }.padding(.vertical, 4)
@@ -160,12 +161,16 @@ struct SAUsersView: View {
         var components = URLComponents()
         components.queryItems = [.init(name: "days", value: String(days)), .init(name: "filter", value: filter.rawValue)]
         if !query.isEmpty { components.queryItems?.append(.init(name: "q", value: query)) }
+        // URLComponents leaves "+" alone, which servers read as a space ("lucas+test@…").
+        let encoded = (components.percentEncodedQuery ?? "").replacingOccurrences(of: "+", with: "%2B")
         do {
-            let result = try await api.request("admin/user-analytics?" + (components.percentEncodedQuery ?? ""))
-            guard generation == current, scope == store.sessionRevision else { return }
+            let result = try await api.request("admin/user-analytics?" + encoded)
+            guard generation == current, scope == store.sessionRevision, !Task.isCancelled else { return }
             if result["items"].isNull { throw SARequestError(status: 502, code: "CONTRACT", message: "The server response has changed. Refresh or update the app.") }
             response = result
-        } catch { if generation == current && scope == store.sessionRevision { self.error = error.localizedDescription } }
+        } catch {
+            if generation == current && scope == store.sessionRevision && !Task.isCancelled && !(error is CancellationError) { self.error = error.localizedDescription }
+        }
         if generation == current { loading = false }
     }
 
@@ -193,6 +198,8 @@ struct SAUserAnalyticsView: View {
     @State private var error: String?
     @State private var loggingOutreach = false
     @State private var editingRelationship = false
+    @State private var generation = UUID()
+    @State private var pendingDelete: SAValue?
 
     private var user: SAValue { detail["user"] }
     var body: some View {
@@ -210,6 +217,12 @@ struct SAUserAnalyticsView: View {
         .refreshable { await load() }
         .task { await load() }
         .onChange(of: days) { _, _ in Task { await load() } }
+        .confirmationDialog("Delete this outreach entry? This can't be undone.", isPresented: Binding(get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } }), titleVisibility: .visible) {
+            Button("Delete", role: .destructive) {
+                if let id = pendingDelete?.recordID { Task { await deleteOutreach(id) } }
+                pendingDelete = nil
+            }
+        }
         .sheet(isPresented: $loggingOutreach, onDismiss: { Task { await load() } }) {
             SAOutreachForm(store: store, userID: userID, name: title)
         }
@@ -239,7 +252,7 @@ struct SAUserAnalyticsView: View {
             let rel = user["relationship"]
             LabeledContent("Stage", value: SAUserStage(rawValue: rel["stage"].text)?.title ?? "Not set")
             LabeledContent("Owner", value: rel["owner"]["email"].text.isEmpty ? "Nobody" : rel["owner"]["email"].text)
-            LabeledContent("Follow up", value: rel["follow_up_at"].text.isEmpty ? "None" : rel["follow_up_at"].text)
+            LabeledContent("Follow up", value: saDayDate(rel["follow_up_at"].text)?.formatted(date: .abbreviated, time: .omitted) ?? "None")
             if !rel["note"].text.isEmpty { Text(rel["note"].text).font(.subheadline) }
             if rel["is_internal"].flag { Label("Internal or test account: not alerted on", systemImage: "eye.slash").font(.footnote).foregroundStyle(.secondary) }
             Button("Log outreach") { loggingOutreach = true }
@@ -305,7 +318,7 @@ struct SAUserAnalyticsView: View {
         }
         Section("Outreach") {
             if detail["outreach"].array.isEmpty { Text("Nobody has logged contact yet.").foregroundStyle(.secondary) }
-            ForEach(Array(detail["outreach"].array.enumerated()), id: \.offset) { _, item in
+            ForEach(detail["outreach"].array, id: \.recordID) { item in
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
                         Text("\(saChoiceTitle(saOutreachChannels, item["channel"].text)) · \(saChoiceTitle(saOutreachOutcomes, item["outcome"].text))").font(.subheadline.weight(.semibold))
@@ -315,30 +328,29 @@ struct SAUserAnalyticsView: View {
                     if !item["note"].text.isEmpty { Text(item["note"].text).font(.subheadline) }
                     if !item["created_by_email"].text.isEmpty { Text("by \(item["created_by_email"].text)").font(.caption).foregroundStyle(.secondary) }
                 }
-                .swipeActions {
-                    Button("Delete", role: .destructive) { Task { await deleteOutreach(item.recordID) } }
+                .swipeActions(allowsFullSwipe: false) {
+                    Button("Delete", role: .destructive) { pendingDelete = item }
                 }
             }
         }
     }
 
-    private func saDay(_ text: String) -> Date {
-        let formatter = DateFormatter(); formatter.calendar = Calendar(identifier: .gregorian)
-        formatter.timeZone = TimeZone(identifier: "Europe/London"); formatter.dateFormat = "yyyy-MM-dd"
-        return formatter.date(from: text) ?? Date()
-    }
+    /// The server's day label as a local calendar day, which is how Charts bins `.day`.
+    private func saDay(_ text: String) -> Date { saDayDate(text) ?? Date() }
 
     private func load() async {
         guard let api = store.api, UUID(uuidString: userID) != nil else { return }
-        loading = true; error = nil
+        let current = UUID(); generation = current; loading = true; error = nil
         let scope = store.sessionRevision
         do {
             let value = try await api.request("admin/user-analytics/\(userID)?days=\(days)")
-            guard scope == store.sessionRevision else { return }
+            guard generation == current, scope == store.sessionRevision, !Task.isCancelled else { return }
             detail = value
             if meta.isNull, let loaded = try? await api.request("admin/user-analytics/meta"), scope == store.sessionRevision { meta = loaded }
-        } catch { if scope == store.sessionRevision { self.error = error.localizedDescription } }
-        if scope == store.sessionRevision { loading = false }
+        } catch {
+            if generation == current && scope == store.sessionRevision && !(error is CancellationError) { self.error = error.localizedDescription }
+        }
+        if generation == current { loading = false }
     }
 
     private func deleteOutreach(_ id: String) async {
@@ -406,6 +418,7 @@ struct SARelationshipForm: View {
     @State private var isInternal = false
     @State private var saving = false
     @State private var error: String?
+    @State private var initial: [String: SAValue] = [:]
     var body: some View {
         NavigationStack {
             Form {
@@ -415,7 +428,11 @@ struct SARelationshipForm: View {
                 }
                 Picker("Owner", selection: $owner) {
                     Text("Nobody").tag("")
-                    ForEach(Array(owners.enumerated()), id: \.offset) { _, person in Text(person["email"].text).tag(person.recordID) }
+                    ForEach(owners, id: \.recordID) { person in Text(person["email"].text).tag(person.recordID) }
+                    // An owner who is no longer a super admin still shows, so the form isn't blank.
+                    if !owner.isEmpty && !owners.contains(where: { $0.recordID == owner }) {
+                        Text(relationship["owner"]["email"].text.isEmpty ? "Former owner" : relationship["owner"]["email"].text).tag(owner)
+                    }
                 }
                 Section {
                     Toggle("Follow-up date", isOn: $hasFollowUp)
@@ -437,20 +454,26 @@ struct SARelationshipForm: View {
                 note = relationship["note"].text
                 isInternal = relationship["is_internal"].flag
                 if let day = saDayDate(relationship["follow_up_at"].text) { hasFollowUp = true; followUp = day }
+                initial = values
             }
         }
     }
-    private func save() async {
-        guard let api = store.api else { return }
-        saving = true; error = nil
+    private var values: [String: SAValue] {
         let trimmed = note.trimmingCharacters(in: .whitespacesAndNewlines)
-        let body: [String: SAValue] = [
+        return [
             "stage": stage.isEmpty ? .null : .string(stage),
             "owner_user_id": owner.isEmpty ? .null : .string(owner),
             "follow_up_at": hasFollowUp ? .string(saDayString(followUp)) : .null,
             "note": trimmed.isEmpty ? .null : .string(trimmed),
             "is_internal": .bool(isInternal),
         ]
+    }
+    private func save() async {
+        guard let api = store.api else { return }
+        // Only what changed here, so another admin's edits to other fields are kept.
+        let body = values.filter { initial[$0.key] != $0.value }
+        if body.isEmpty { dismiss(); return }
+        saving = true; error = nil
         do { _ = try await api.request("admin/user-analytics/\(userID)/relationship", method: "PUT", body: body); dismiss() }
         catch { self.error = error.localizedDescription }
         saving = false
@@ -473,14 +496,14 @@ struct SAInactivityAlertSections: View {
     @ObservedObject var store: SuperAdminPortalStore
     let details: SAValue
     var body: some View {
-        section("Not signed in for 2+ days", details["inactive"].array)
+        section("Not used Talia for 2+ days", details["inactive"].array)
         section("Follow-ups due", details["follow_ups"].array)
-        Section { Button("See everyone at risk") { store.selectedTab = 4 } }
+        Section { Button("Open Users") { store.selectedTab = 4 } }
     }
     @ViewBuilder private func section(_ title: String, _ people: [SAValue]) -> some View {
         if !people.isEmpty {
             Section(title) {
-                ForEach(Array(people.enumerated()), id: \.offset) { _, person in
+                ForEach(people, id: \.recordID) { person in
                     let name = person["name"].text.isEmpty ? person["email"].text : person["name"].text
                     NavigationLink { SAUserAnalyticsView(store: store, userID: person.recordID, title: name) } label: {
                         VStack(alignment: .leading, spacing: 3) {
