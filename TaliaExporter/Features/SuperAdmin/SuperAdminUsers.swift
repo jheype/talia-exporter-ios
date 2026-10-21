@@ -496,9 +496,25 @@ struct SAInactivityAlertSections: View {
     @ObservedObject var store: SuperAdminPortalStore
     let details: SAValue
     var body: some View {
+        let accounts = details["accounts"].array
+        if !accounts.isEmpty {
+            Section("Accounts to follow up") {
+                ForEach(accounts, id: \.recordID) { account in
+                    NavigationLink { SAAccountDetailView(store: store, accountID: account.recordID, title: account["name"].text) } label: {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(account["name"].text).font(.body.weight(.semibold))
+                            Text("\(account["stage_label"].text) · \(account["reason"].text)").font(.subheadline).foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            }
+        }
         section("Not used Talia for 2+ days", details["inactive"].array)
         section("Follow-ups due", details["follow_ups"].array)
-        Section { Button("Open Users") { store.selectedTab = 4 } }
+        Section {
+            if !accounts.isEmpty { Button("Open Accounts") { store.selectedTab = 5 } }
+            Button("Open Users") { store.selectedTab = 4 }
+        }
     }
     @ViewBuilder private func section(_ title: String, _ people: [SAValue]) -> some View {
         if !people.isEmpty {

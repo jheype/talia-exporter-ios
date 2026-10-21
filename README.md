@@ -57,7 +57,7 @@ Previous capture recovery notes are preserved in `docs/capture-recovery-history.
 
 ## SA Portal
 
-Tap **SA Portal** at the top to open the native workspace. Sign in with a CRM Super Admin account and complete MFA. The workspace has Overview, Alerts, Manage and Security tabs, and provides the existing thirteen administrative areas using native SwiftUI controls. **Exporter** returns to the previous capture/task tab.
+Tap **SA Portal** at the top to open the native workspace. Sign in with a CRM Super Admin account and complete MFA. The workspace has Overview (with Your day), Accounts, Users, Alerts and Manage tabs (Security is under Manage), and provides the existing thirteen administrative areas using native SwiftUI controls. **Exporter** returns to the previous capture/task tab.
 
 Use **Security → Enable security alerts**, then **Send a test notification**. Real remote alerts require the companion CRM migration/backend patch and an APNs signing key configured on that server. Deploy them before enabling push. No web view or simulated local alerts are used.
 

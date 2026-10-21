@@ -2,7 +2,7 @@
 
 SA Portal is a SwiftUI workspace in Talia Exporter. It uses the app's existing graphite/warm-white theme, native navigation, forms, lists, charts, confirmation sheets and sharing. No web page is embedded.
 
-The top switch preserves the Exporter tab tree. SA has Overview, Users, Alerts, Manage and Security tabs. Manage exposes the existing thirteen portal areas. The server remains authoritative for permissions and mutations.
+The top switch preserves the Exporter tab tree. SA has Overview, Accounts, Users, Alerts and Manage tabs. Manage exposes Security (this iPhone's alerts, MFA and sign-out) and the existing thirteen portal areas. The server remains authoritative for permissions and mutations.
 
 | Area | Native coverage |
 | --- | --- |
@@ -19,6 +19,16 @@ The top switch preserves the Exporter tab tree. SA has Overview, Users, Alerts, 
 | Audit Log | Admin actions and exact action filter |
 | Access Security | Summary, searchable/paginated requests, risk filters and reversible account blocking |
 | Security | Native MFA login/enrolment, disable MFA, notification controls and sign-out |
+
+## Accounts (pipeline, follow-ups and calendar)
+
+**Your day** at the top of Overview lists who to reach out to today (with why), calls and follow-ups booked for today and the next six days, and opens the calendar. The Accounts tab lists prospects and tenants from `admin/accounts`, with views Follow up, Scheduled, Prospects, Onboarding, Customers, Closed and All. An account page shows its stage, warmth, owner, next follow-up (with any call time), contact details (tap to call, WhatsApp or email), notes, people and timeline.
+
+- **+ → Log an update:** a call, WhatsApp, email, meeting or note, with outcome, who you spoke to, the next follow-up (Tomorrow, 3 days, a week, 2 weeks, a month or a date, with an optional time) and an optional stage move.
+- **+ → Edit account:** stage, warmth, owner, follow-up, contact, notes and the internal flag; delete a prospect.
+- **+** on the Accounts list adds a prospect; the calendar button opens the calendar (follow-ups, trial ends and cancellations by day).
+
+The morning digest also lists accounts to follow up, each linking to its page. Server details: talia-crm-ai-v20 `docs/operations/sa-accounts.md`.
 
 ## Users (customer analytics and outreach)
 
@@ -46,7 +56,7 @@ On account change, pending requests are invalidated synchronously and old creden
 
 Deploy the companion CRM backend patch and migration first. Enable Push Notifications for the app identifier and configure the server's Apple APNs key. The app already contains `aps-environment`; `TaliaPushEnvironment` expands the same build setting so device registration selects sandbox for development and production for distribution.
 
-In **SA Portal → Security → Enable security alerts**, grant iOS permission. Use **Send a test notification** to test this phone. A successful API result means Apple accepted the request, not a delivery receipt from the handset. Confirm it on a signed physical device, including with the app closed and by tapping the notification.
+In **SA Portal → Manage → Security and this iPhone → Enable security alerts**, grant iOS permission. Use **Send a test notification** to test this phone. A successful API result means Apple accepted the request, not a delivery receipt from the handset. Confirm it on a signed physical device, including with the app closed and by tapping the notification.
 
 The server creates alerts for existing high/critical access-risk signals and at least ten rejected sign-ins from the same IP within five minutes. Repeated events with the same source/rule/severity are grouped into ten-minute buckets. This is access-security telemetry, not a financial-fraud classifier or a guarantee of detecting every suspicious event. The existing telemetry writer remains best effort; events that never reach that log cannot produce an incident.
 

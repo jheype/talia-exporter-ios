@@ -257,6 +257,7 @@ struct SAOverviewView: View {
     @State private var alertCount: Int?
     @State private var error: String?
     @State private var loading = true
+    @State private var dayRevision = 0
     private let cards: [(String, String, String)] = [("active_tenants", "Active companies", "building.2"), ("trial_tenants", "On trial", "clock"), ("total_users", "People", "person.2"), ("new_tenants_this_month", "New this month", "chart.line.uptrend.xyaxis")]
     var body: some View {
         ScrollView {
@@ -265,6 +266,7 @@ struct SAOverviewView: View {
                     Text("TALIA / ADMIN").font(.caption.weight(.semibold)).tracking(3).foregroundStyle(.secondary)
                     Text("Your platform,\nat a glance.").font(.system(size: 32, weight: .semibold)).fixedSize(horizontal: false, vertical: true)
                 }.padding(.top, 12)
+                SAYourDayCard(store: store, revision: dayRevision)
                 if loading { ProgressView("Loading platform activity…") }
                 if let error { Text(error).foregroundStyle(.red) }
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
@@ -301,7 +303,7 @@ struct SAOverviewView: View {
                 }.buttonStyle(.plain)
                 if !metrics.isNull { VStack(alignment: .leading) { Text("Platform totals").font(.headline); SAFields(value: metrics) }.taliaCard() }
             }.padding(20)
-        }.background(Color.taliaBackground).refreshable { await load() }.task { await load() }
+        }.background(Color.taliaBackground).refreshable { dayRevision += 1; await load() }.task { await load() }
     }
     private func load() async {
         guard let api = store.api else { return }
