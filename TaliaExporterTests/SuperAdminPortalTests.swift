@@ -55,7 +55,7 @@ final class SuperAdminPortalTests: XCTestCase {
         XCTAssertNotNil(saDate("2026-10-20T09:00:00Z"))
     }
     func testAccountViewsStagesAndFollowUpsMatchServer() {
-        XCTAssertEqual(SAAccountView.allCases.map(\.rawValue), ["follow_up", "upcoming", "prospects", "onboarding", "customers", "closed", "all"])
+        XCTAssertEqual(SAAccountView.allCases.map(\.rawValue), ["follow_up", "upcoming", "prospects", "onboarding", "customers", "closed", "all", "internal"])
         XCTAssertEqual(saAccountStages.map(\.0), ["lead", "contacted", "demo", "invited", "onboarding", "customer", "at_risk", "churned", "lost"])
         XCTAssertEqual(saAccountWarmth.map(\.0), ["champion", "warm", "neutral", "cold", "do_not_contact"])
         let today = Calendar.current.date(from: DateComponents(year: 2026, month: 10, day: 21, hour: 10))!

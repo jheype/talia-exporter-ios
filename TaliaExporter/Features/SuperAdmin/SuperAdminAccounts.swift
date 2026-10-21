@@ -3,7 +3,7 @@ import SwiftUI
 /// Accounts: prospects and tenants, who to follow up with today, their stage and notes.
 /// Server: /api/admin/accounts (super admin + verified MFA).
 enum SAAccountView: String, CaseIterable, Identifiable {
-    case followUp = "follow_up", upcoming, prospects, onboarding, customers, closed, all
+    case followUp = "follow_up", upcoming, prospects, onboarding, customers, closed, all, internalOnly = "internal"
     var id: String { rawValue }
     var title: String {
         switch self {
@@ -14,6 +14,7 @@ enum SAAccountView: String, CaseIterable, Identifiable {
         case .customers: "Customers"
         case .closed: "Closed"
         case .all: "All"
+        case .internalOnly: "Internal"
         }
     }
 }
@@ -239,7 +240,9 @@ struct SAAccountDetailView: View {
     @State private var editing = false
     @State private var generation = UUID()
     @State private var pendingDelete: SAValue?
+    @State private var deleted = false
     @Environment(\.openURL) private var openURL
+    @Environment(\.dismiss) private var dismissPage
 
     private var account: SAValue { detail["account"] }
     var body: some View {
@@ -265,8 +268,8 @@ struct SAAccountDetailView: View {
         .sheet(isPresented: $logging, onDismiss: { Task { await load() } }) {
             SAAccountUpdateForm(store: store, account: account, people: detail["people"].array.filter { !$0["is_internal"].flag })
         }
-        .sheet(isPresented: $editing, onDismiss: { Task { await load() } }) {
-            SAAccountEditForm(store: store, account: account, owners: meta["owners"].array)
+        .sheet(isPresented: $editing, onDismiss: { if deleted { dismissPage() } else { Task { await load() } } }) {
+            SAAccountEditForm(store: store, account: account, owners: meta["owners"].array) { deleted = true }
         }
     }
 
@@ -398,6 +401,7 @@ struct SAAccountUpdateForm: View {
     @State private var nextStep = ""
     @State private var hasTime = false
     @State private var time = Calendar.current.date(bySettingHour: 10, minute: 0, second: 0, of: Date()) ?? Date()
+    @State private var followUpChosen = false
     @State private var stage = ""
     @State private var saving = false
     @State private var error: String?
@@ -420,7 +424,7 @@ struct SAAccountUpdateForm: View {
                 DatePicker("When", selection: $occurredAt, in: ...Date())
                 Section(isNote ? "Note" : "Note (optional)") { TextField(isNote ? "Anything worth remembering" : "What was said, what they need", text: $note, axis: .vertical).lineLimit(3...8) }
                 Section("Next follow-up") {
-                    Picker("Follow up", selection: $followUp) {
+                    Picker("Follow up", selection: Binding(get: { followUp }, set: { followUp = $0; followUpChosen = true })) {
                         let due = saDayDate(current).map { saDayString($0) <= saDayString(Date()) } ?? false
                         ForEach(saFollowUpChoices(current: current, isNote: isNote, noAnswer: outcome == "no_answer")) {
                             Text($0.title(keeping: saDayDate(current), due: due && !isNote)).tag($0)
@@ -450,9 +454,17 @@ struct SAAccountUpdateForm: View {
                 }
             }
             .onAppear { followUp = saDefaultFollowUp(current: current, isNote: false, outcome: outcome) }
-            .onChange(of: type) { _, value in followUp = saDefaultFollowUp(current: current, isNote: value == "note", outcome: outcome) }
-            .onChange(of: outcome) { _, value in followUp = saDefaultFollowUp(current: current, isNote: isNote, outcome: value) }
+            .onChange(of: type) { _, value in refreshFollowUp(isNote: value == "note", outcome: outcome) }
+            .onChange(of: outcome) { _, value in refreshFollowUp(isNote: isNote, outcome: value) }
         }
+    }
+    /// A follow-up the tester picked is kept while it is still offered;
+    /// otherwise the default for the new type and outcome applies.
+    private func refreshFollowUp(isNote: Bool, outcome: String) {
+        let offered = saFollowUpChoices(current: current, isNote: isNote, noAnswer: outcome == "no_answer")
+        if followUpChosen && offered.contains(followUp) { return }
+        followUp = saDefaultFollowUp(current: current, isNote: isNote, outcome: outcome)
+        followUpChosen = false
     }
     private func save() async {
         guard let api = store.api, UUID(uuidString: account.recordID) != nil else { return }
@@ -481,6 +493,8 @@ struct SAAccountEditForm: View {
     @ObservedObject var store: SuperAdminPortalStore
     let account: SAValue
     let owners: [SAValue]
+    /// The prospect was deleted: the page behind this sheet has nothing to show.
+    var onDeleted: () -> Void = {}
     @Environment(\.dismiss) private var dismiss
     @State private var name = ""
     @State private var stage = ""
@@ -604,7 +618,7 @@ struct SAAccountEditForm: View {
     }
     private func deleteProspect() async {
         guard let api = store.api, UUID(uuidString: account.recordID) != nil else { return }
-        do { _ = try await api.request("admin/accounts/\(account.recordID)", method: "DELETE"); dismiss() }
+        do { _ = try await api.request("admin/accounts/\(account.recordID)", method: "DELETE"); onDeleted(); dismiss() }
         catch { self.error = error.localizedDescription }
     }
 }
@@ -753,6 +767,8 @@ struct SAAccountsCalendarView: View {
         }.taliaSurface().navigationTitle("Calendar").navigationBarTitleDisplayMode(.inline)
         .refreshable { await load(force: true) }
         .task(id: monthKey) { await load(force: false) }
+        // Back from an account page: what was edited there shows at once.
+        .onAppear { if !loadedMonth.isEmpty { Task { await load(force: true) } } }
     }
 
     private func load(force: Bool) async {
