@@ -54,6 +54,35 @@ final class SuperAdminPortalTests: XCTestCase {
         XCTAssertNotNil(saDate("2026-10-20T09:00:00.123Z"))
         XCTAssertNotNil(saDate("2026-10-20T09:00:00Z"))
     }
+    func testAccountViewsStagesAndFollowUpsMatchServer() {
+        XCTAssertEqual(SAAccountView.allCases.map(\.rawValue), ["follow_up", "upcoming", "prospects", "onboarding", "customers", "closed", "all"])
+        XCTAssertEqual(saAccountStages.map(\.0), ["lead", "contacted", "demo", "invited", "onboarding", "customer", "at_risk", "churned", "lost"])
+        XCTAssertEqual(saAccountWarmth.map(\.0), ["champion", "warm", "neutral", "cold", "do_not_contact"])
+        let today = Calendar.current.date(from: DateComponents(year: 2026, month: 10, day: 21, hour: 10))!
+        XCTAssertNil(saFollowUpValue(.keep, picked: today, today: today))
+        XCTAssertEqual(saFollowUpValue(.none, picked: today, today: today), .null)
+        XCTAssertEqual(saFollowUpValue(.week, picked: today, today: today), .string("2026-10-28"))
+        XCTAssertEqual(saFollowUpValue(.month, picked: today, today: today), .string("2026-11-20"))
+        // Keep is offered only for a follow-up still to come (a due one is done once they are reached).
+        XCTAssertFalse(saFollowUpChoices(current: "2026-10-21", isNote: false, today: today).contains(.keep))
+        XCTAssertTrue(saFollowUpChoices(current: "2026-10-25", isNote: false, today: today).contains(.keep))
+        // No answer keeps a due follow-up due, or tries again tomorrow.
+        XCTAssertTrue(saFollowUpChoices(current: "2026-10-21", isNote: false, noAnswer: true, today: today).contains(.keep))
+        XCTAssertEqual(saDefaultFollowUp(current: "2026-10-21", isNote: false, outcome: "no_answer", today: today), .keep)
+        XCTAssertEqual(saDefaultFollowUp(current: "", isNote: false, outcome: "no_answer", today: today), .tomorrow)
+        XCTAssertEqual(saDefaultFollowUp(current: "2026-10-21", isNote: false, outcome: "reached", today: today), .week)
+        XCTAssertEqual(SAFollowUpChoice.keep.title(keeping: today, due: true), "Keep it due")
+        XCTAssertEqual(saTimeString(Calendar.current.date(bySettingHour: 9, minute: 5, second: 0, of: today)!), "09:05")
+        XCTAssertEqual(saTimeString(saTimeDate("14:30", on: today)!), "14:30")
+        XCTAssertNil(saTimeDate("soon"))
+        let booked: SAValue = .object(["reasons": .array([]), "follow_up_at": .string("2026-10-23"), "follow_up_time": .string("14:30"), "next_step": .string("Call Jo")])
+        XCTAssertTrue(saAccountNextLine(booked).text.hasSuffix(" at 14:30 · Call Jo"))
+        XCTAssertFalse(saAccountNextLine(booked).due)
+        let due: SAValue = .object(["reasons": .array([.object(["label": .string("Trial ends in 3 days")]), .object(["label": .string("Payment failed")])])])
+        XCTAssertEqual(saAccountNextLine(due).text, "Trial ends in 3 days · Payment failed")
+        XCTAssertTrue(saAccountNextLine(due).due)
+        XCTAssertEqual(saAccountNextLine(.object([:])).text, "No follow-up")
+    }
     func testNativeRequestUsesVersionedCRMAPIAndNoExporterCookies() async throws {
         let recorder = SARequestRecorder()
         SAStubProtocol.install { request in

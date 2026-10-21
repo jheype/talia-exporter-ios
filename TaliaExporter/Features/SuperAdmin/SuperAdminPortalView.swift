@@ -48,6 +48,8 @@ struct SuperAdminPortalView: View {
                 TabView(selection: $store.selectedTab) {
                     NavigationStack { SASectionView(store: store, section: .overview) }
                         .tabItem { Label("Overview", systemImage: "square.grid.2x2") }.tag(0)
+                    NavigationStack { SAAccountsView(store: store) }
+                        .tabItem { Label("Accounts", systemImage: "checklist") }.tag(5)
                     NavigationStack { SAUsersView(store: store) }
                         .tabItem { Label("Users", systemImage: "person.2") }.tag(4)
                     NavigationStack {
@@ -61,6 +63,10 @@ struct SuperAdminPortalView: View {
                     }.tabItem { Label("Alerts", systemImage: "bell.badge") }.tag(1)
                     NavigationStack {
                         List {
+                            // Security moved here from the tab bar to make room for Accounts (five tabs fit an iPhone).
+                            NavigationLink { SASecurityView(store: store) } label: {
+                                Label("Security and this iPhone", systemImage: "lock.shield").padding(.vertical, 7)
+                            }.listRowBackground(Color.taliaSecondaryBackground)
                             ForEach(SuperAdminSection.allCases.filter { $0 != .overview && $0 != .security }) { section in
                                 NavigationLink { SASectionView(store: store, section: section) } label: {
                                     Label(section.title, systemImage: section.symbol).padding(.vertical, 7)
@@ -68,8 +74,6 @@ struct SuperAdminPortalView: View {
                             }
                         }.taliaSurface().navigationTitle("Manage")
                     }.tabItem { Label("Manage", systemImage: "slider.horizontal.3") }.tag(2)
-                    NavigationStack { SASecurityView(store: store) }
-                        .tabItem { Label("Security", systemImage: "lock.shield") }.tag(3)
                 }.tint(.taliaAccent).id(store.sessionRevision)
             } else { SALoginView(store: store) }
         }
